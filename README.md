@@ -12,18 +12,22 @@ what sinks.
 
 ## Status
 
-Phase 0 (engine) and Phase 1 (sim harness) are complete. Phase 2 (playable
-alpha) has not started. Phase 3 (online) is not begun and needs explicit
-go-ahead.
+Playable end to end, offline, installable. You can start a run, draft hulls
+and cards, deploy a fleet, fight a full match against the AI, advance or drop
+through a double-elimination bracket, and reach a championship or elimination.
+
+Phase 3 (online play) has not started and needs explicit go-ahead.
 
 ## Commands
 
 ```sh
 npm install
+npm run dev                       # dev server
 npm test                          # unit tests
 npm run sim                       # balance harness (400 matches, seed 42)
 npm run sim -- --matches 2000 --seed 42 --voyage 6
-npm run dev                       # (Phase 2) dev server
+npm run build                     # production PWA build
+npm run build:standalone          # single self-contained HTML file
 ```
 
 `npm run sim` writes `sim-report.md` and exits non-zero if any balance band
@@ -47,6 +51,9 @@ src/
   content/         all game data — ships, cards, patches, modifiers, voyage
   ai/              opponent + probability-density heuristics
   sim/             headless harness, balance bands, report
+  art/             tokens, procedural SVG placeholders, single-swap registry
+  game/            run/save layer and the UI store
+  ui/              screens and components
 ```
 
 Determinism is the product: same seed and same action log must produce a
