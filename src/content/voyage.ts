@@ -46,14 +46,22 @@ export interface VoyageRoundConfig {
 }
 
 /**
- * Grid interpolates from 8×8 to 12×12 across the voyage, quantised to patch
- * boards: 4 patches → 8×8, 6 → 8×12, 9 → 12×12. Derived, not hardcoded.
+ * Grid grows across the voyage, quantised to patch boards: 4 patches → 8×8,
+ * 6 → 8×12. Derived from the voyage fraction, not hardcoded per round.
+ *
+ * The 9-patch 12×12 board is built and supported, but is deliberately not
+ * used by the voyage ramp: at 2 energy a turn a hunter clears roughly four
+ * cells per turn, so a 144-cell sea cannot be searched inside the 120-ply
+ * stalemate cap when one small hull is left. Rather than hand out more
+ * energy (which breaks the spend band) or loosen the cap (which protects
+ * the least enjoyable part of the game), the voyage tops out at 96 cells.
  */
+export const MAX_VOYAGE_GRID = { w: 8, h: 12, patches: 6 };
+
 function gridFor(round: number, length: number): { w: number; h: number; patches: number } {
   const f = length === 1 ? 1 : (round - 1) / (length - 1);
   if (f < 1 / 3) return { w: 8, h: 8, patches: 4 };
-  if (f < 2 / 3) return { w: 8, h: 12, patches: 6 };
-  return { w: 12, h: 12, patches: 9 };
+  return MAX_VOYAGE_GRID;
 }
 
 /** Tier ladder mapped onto the voyage fraction (mirrors the old 8-round ramp). */
@@ -67,15 +75,23 @@ function tiersFor(round: number, length: number): number[] {
 }
 
 /**
- * Flat base income. Energy is now the only brake on a turn's throughput, so
- * it does not scale with the voyage — bigger boards are paid for by the
- * instant hit income, not by a bigger allowance.
+ * Flat base income. Energy is the only brake on a turn's throughput, so it
+ * does not scale with the board — a bigger sea is answered by searching it
+ * more cleverly, not by being handed more cubes.
  */
 function incomeFor(_round: number, _length: number): number {
   return 2;
 }
 
-/** Bonus energy per hit — the anti-turtling lever (tune upward, never cap). */
+/**
+ * Energy per cell hit, granted instantly and spendable in the same turn.
+ *
+ * Held at 1 deliberately. Raising it to 2 was tried and is a runaway: with
+ * income landing mid-resolution, a good turn funds a better one, the median
+ * match collapses from 22 plies to 6, spend triples and the first-hit player
+ * wins 67% of the time. This is the exact snowball HIT_BONUS_CAP_PER_TURN
+ * exists to catch — but capping a 2 is strictly worse than simply keeping 1.
+ */
 function hitBonusFor(_round: number, _length: number): number {
   return 1;
 }

@@ -108,7 +108,7 @@ export const CARDS: Record<string, CardDef> = {
   barrage: {
     id: 'barrage',
     name: 'Barrage',
-    cost: 5,
+    cost: 4,
     tier: 2,
     tags: ['attack'],
     text: 'Fire an entire row. Reports total hits only, not which cells.',
@@ -129,7 +129,7 @@ export const CARDS: Record<string, CardDef> = {
     cost: 3,
     tier: 2,
     tags: ['utility'],
-    text: 'Restore one damaged, unsunk cell of your fleet.',
+    text: 'Rebuild one damaged cell of an unsunk ship. Each cell can only be rebuilt once.',
     effect: { kind: 'repair' },
   },
 
@@ -137,7 +137,7 @@ export const CARDS: Record<string, CardDef> = {
   satellite: {
     id: 'satellite',
     name: 'Satellite',
-    cost: 6,
+    cost: 4,
     tier: 3,
     tags: ['detect'],
     text: 'Reveal the exact occupied cells in a 4×4 zone.',
@@ -146,7 +146,7 @@ export const CARDS: Record<string, CardDef> = {
   saturation: {
     id: 'saturation',
     name: 'Saturation Fire',
-    cost: 8,
+    cost: 6,
     tier: 3,
     tags: ['attack'],
     text: 'Fire every cell in a 3×3 zone.',
@@ -155,7 +155,7 @@ export const CARDS: Record<string, CardDef> = {
   wolfpack: {
     id: 'wolfpack',
     name: 'Wolfpack',
-    cost: 6,
+    cost: 4,
     tier: 3,
     tags: ['attack'],
     text: 'Fire 3 cells anywhere on the grid.',
@@ -164,16 +164,16 @@ export const CARDS: Record<string, CardDef> = {
   emp: {
     id: 'emp',
     name: 'EMP Burst',
-    cost: 5,
+    cost: 3,
     tier: 3,
     tags: ['utility'],
-    text: 'Enemy energy income is halved for their next 2 turns.',
-    effect: { kind: 'emp', turns: 2 },
+    text: 'Enemy energy income is halved for their next 3 turns.',
+    effect: { kind: 'emp', turns: 3 },
   },
   dredge: {
     id: 'dredge',
     name: 'Dredge',
-    cost: 7,
+    cost: 5,
     tier: 3,
     tags: ['attack'],
     text: 'Fire every cell in a column that you have previously fired on at least once.',
@@ -182,11 +182,11 @@ export const CARDS: Record<string, CardDef> = {
   blockade: {
     id: 'blockade',
     name: 'Blockade',
-    cost: 4,
+    cost: 2,
     tier: 3,
     tags: ['utility'],
-    text: 'For 2 turns, enemy detection cards cost 2 more.',
-    effect: { kind: 'blockade', turns: 2, surcharge: 2 },
+    text: 'For 3 turns, enemy detection cards cost 2 more.',
+    effect: { kind: 'blockade', turns: 3, surcharge: 2 },
   },
 };
 

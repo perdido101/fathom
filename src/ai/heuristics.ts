@@ -44,18 +44,6 @@ export function densityGrid(ms: MatchState, p: PlayerId): number[] {
   const sizes = [...expected.entries()].filter(([, e]) => e > 0.05);
   if (sizes.length === 0) return weights;
 
-  // A remaining size-1 ship may be an evasive skiff hiding behind a false
-  // miss. A skiff dodges exactly once, so a cell missed twice is truly empty:
-  // only single-miss cells are worth a re-check.
-  if ((expected.get(1) ?? 0) > 0.3) {
-    for (let c = 0; c < area; c++) {
-      const ci = intel[c];
-      if (ci.fireCount === 1 && ci.mark === 'miss' && ms.terrain[c] !== 'REEF') {
-        weights[c] += 0.3;
-      }
-    }
-  }
-
   // Ship placements along all four axes (diagonals are legal).
   for (const [s, e] of sizes) {
     const strength = Math.min(1, e);
@@ -93,8 +81,7 @@ export function densityGrid(ms: MatchState, p: PlayerId): number[] {
     const ci = intel[c];
     if (ci.mark === 'sunk' || ci.known === 'empty') continue;
     // Known-occupied cells — unless our shots there have started reporting
-    // misses (an unannounced sink leaves stale "occupied" knowledge; one
-    // re-check covers a dodged skiff, then we let it go).
+    // misses, which means an unannounced sink left the knowledge stale.
     if (
       ci.known === 'occupied' &&
       !(ci.mark === 'hit' && ci.partial === false) &&
@@ -139,12 +126,19 @@ export function densityGrid(ms: MatchState, p: PlayerId): number[] {
     }
   }
 
-  // Last resort: enemy ships remain but every placement is contradicted.
-  // Our intel is lying — repaired cells read as destroyed, evasive skiffs as
-  // misses, decoys as hits. Re-check the board, cheapest lies first, with
+  // Last resort: the enemy still has hulls, but they cannot fit in the cells
+  // we still believe are possible — so our intel is lying. Repaired cells
+  // read as destroyed, decoys as hits, silent hulls sank unannounced, blinded
+  // probes reported nothing. Re-check the board, cheapest lies first, using
   // fireCount as memory so the sweep never revisits a double-checked cell
-  // while single-checked cells remain.
-  if (weights.every((wt) => wt <= 0)) {
+  // while single-checked ones remain.
+  //
+  // The test is capacity, not emptiness: a single stale cell carrying a
+  // sliver of weight must not be allowed to freeze the hunt.
+  let cellsNeeded = 0;
+  for (const [size, count] of expected) cellsNeeded += size * count;
+  const liveCells = weights.reduce((n, wt) => (wt > 0.001 ? n + 1 : n), 0);
+  if (liveCells < Math.ceil(cellsNeeded)) {
     for (let c = 0; c < area; c++) {
       const ci = intel[c];
       if (ms.terrain[c] === 'REEF' || ci.mark === 'sunk') continue;
@@ -191,8 +185,8 @@ export function bestZone(
 
 /**
  * "Interesting to a probe": an unknown cell, or one whose story is suspect —
- * a single miss could be a dodge, an unsunk hit a repair, a "hit" a decoy.
- * Probes report the truth; they are how lies get burned away.
+ * an unsunk hit could be a repair, a "hit" could be a decoy. Probes report
+ * the truth; they are how stale intel gets burned away.
  */
 function probeInterest(ms: MatchState, p: PlayerId, cell: CellIndex): number {
   if (ms.terrain[cell] === 'REEF') return 0;

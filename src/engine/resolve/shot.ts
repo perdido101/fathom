@@ -121,15 +121,6 @@ export function applyShot(ms: MatchState, shooter: PlayerId, cell: CellIndex, op
       return 'wreck';
     }
 
-    // Evasive: the first hit ever scored on this ship reports as a miss —
-    // indistinguishable from a real one.
-    if (def.ability === 'evasive' && !ship.evasiveUsed) {
-      ship.evasiveUsed = true;
-      if (!opts.aggregate) intel.mark = 'miss';
-      if (!opts.quiet) log(ms, shooter, `${opts.source} at ${name} — miss.`);
-      return 'dodge';
-    }
-
     // Real hit. Trench terrain and armor each add a required hit
     // (Silted Up removes the trench bonus).
     const trenchBonus = ms.terrain[cell] === 'TRENCH' && !modIs(ms, 'trench_single_hit') ? 1 : 0;
@@ -239,6 +230,8 @@ function sinkShip(ms: MatchState, shooter: PlayerId, shipUid: number): void {
   const fogHides = (c: CellIndex) =>
     ms.terrain[c] === 'FOG' && !modIs(ms, 'fog_reveals_identity');
 
+  // Silent Running: this hull's sinking is never announced at all.
+  const silent = def.ability === 'silent';
   const camouflaged =
     def.ability === 'camouflage' &&
     ship.cells.some((c) => ms.terrain[c] === 'REEF' || ms.terrain[c] === 'FOG');
@@ -246,7 +239,7 @@ function sinkShip(ms: MatchState, shooter: PlayerId, shipUid: number): void {
     modIs(ms, 'reef_conceals_adjacent') &&
     ship.cells.some((c) => orthNeighbours(c, w, h).some((n) => ms.terrain[n] === 'REEF'));
   const allFogged = ship.cells.every(fogHides);
-  const suppressed = camouflaged || coralConcealed || allFogged;
+  const suppressed = silent || camouflaged || coralConcealed || allFogged;
 
   if (!suppressed) {
     for (const c of ship.cells) {
@@ -577,6 +570,11 @@ export function executeEffect(
       if (!ship) throw new Error('Repair needs a damaged cell of an unsunk ship');
       const ci = ship.cells.indexOf(cells[0]);
       if (ship.damage[ci] <= 0) throw new Error('That cell is not damaged');
+      // A section can be rebuilt once and once only. Unlimited restoration
+      // let a tough hull outlast any attacker; a single rebuild per cell
+      // keeps repair a real play without making a fleet unkillable.
+      if (ship.repaired[ci]) throw new Error('That section has already been rebuilt');
+      ship.repaired[ci] = true;
       ship.damage[ci] = 0;
       ship.destroyed[ci] = false;
       log(ms, p, `${ps.name} patches a hull breach.`, 'card');

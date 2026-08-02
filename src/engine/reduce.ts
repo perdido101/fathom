@@ -117,9 +117,9 @@ function placeFleet(ms: MatchState, action: PlaceFleetAction): void {
       cells: placement.cells.slice(),
       damage: placement.cells.map(() => 0),
       destroyed: placement.cells.map(() => false),
+      repaired: placement.cells.map(() => false),
       sunk: false,
       sinkAnnounced: false,
-      evasiveUsed: false,
       swiftUsed: false,
       launchUsed: false,
     });

@@ -6,9 +6,9 @@ export const SHIPS: Record<string, ShipDef> = {
     name: 'Skiff',
     size: 1,
     tier: 1,
-    ability: 'evasive',
-    abilityName: 'Evasive',
-    abilityText: 'The first hit ever scored on it is reported to the shooter as a miss.',
+    ability: 'silent',
+    abilityName: 'Silent Running',
+    abilityText: 'When it goes down, no length is announced. Nobody hears it sink.',
   },
   cutter: {
     id: 'cutter',

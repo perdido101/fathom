@@ -39,7 +39,7 @@ export const DEFAULT_BANDS: BalanceBands = {
   stalemateCapPlies: 120,
   shotsToFinalShipMedianMax: 12,
   modifierNeutralityMaxShift: 0.06,
-  modifierMinSample: 40,
+  modifierMinSample: 150,
   distinctCardsMedianMin: 4,
   energyPerTurn: [2, 5],
   peakBankMedianMax: 14,

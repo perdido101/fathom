@@ -270,7 +270,9 @@ function candidateFor(
   // Endgame: with 1–2 enemy ships left, finding beats shooting — probes
   // localise the survivor far cheaper than a blind sweep.
   const enemyRemaining = ms.players[other(p)].ships.length - ps.enemySunkLengths.length;
-  const probeBoost = enemyRemaining <= 2 ? 1.6 : 1;
+  // Hunting one small survivor, a zero-count sweep is worth far more than a
+  // shot: it clears nine cells from the search for the price of three.
+  const probeBoost = enemyRemaining <= 1 ? 2 : enemyRemaining <= 2 ? 1.6 : 1;
   const mk = (target: TargetPayload, raw: number): Candidate => ({
     action: { type: 'PLAY_CARD', player: p, cardUid, target },
     score: (raw * variety) / Math.sqrt(cost),
@@ -349,7 +351,7 @@ function candidateFor(
     case 'probe_line': {
       const seg = bestSegment(ms, p, effect.length);
       if (seg.unknown <= 1) return null;
-      return mk({ cells: seg.cells }, seg.unknown * 0.45 * probeBoost);
+      return mk({ cells: seg.cells }, seg.unknown * 0.55 * probeBoost);
     }
     case 'fire_probe_adjacent': {
       const cells = topCells(weights, 1);
@@ -364,12 +366,12 @@ function candidateFor(
     case 'probe_zone_count': {
       const zone = bestUnknownZone(ms, p, effect.zone);
       if (zone.unknown <= 2) return null;
-      return mk({ origin: zone.origin }, zone.unknown * 0.28 * probeBoost);
+      return mk({ origin: zone.origin }, zone.unknown * 0.4 * probeBoost);
     }
     case 'reveal_zone': {
       const zone = bestUnknownZone(ms, p, effect.zone);
       if (zone.unknown <= 3) return null;
-      return mk({ origin: zone.origin }, zone.unknown * 0.42 * probeBoost);
+      return mk({ origin: zone.origin }, zone.unknown * 0.52 * probeBoost);
     }
     case 'energy_delayed':
       return mk({}, ps.energy <= 4 ? 0.9 : 0.2);
@@ -380,6 +382,10 @@ function candidateFor(
         if (!occupied.has(c) && ms.terrain[c] !== 'REEF') empties.push(c);
       }
       if (empties.length < effect.count || ps.decoys.length > 0) return null;
+      // A decoy is worth roughly the shots it wastes: most valuable while the
+      // enemy is still sweeping wide and cheap shots are landing on us.
+      const beingHunted = ms.players[other(p)].shotsFired;
+      const decoyValue = beingHunted >= 3 && ps.turnCount <= 10 ? 2.4 : 0.5;
       let st: RngState = hashString(`${ms.seed}:decoy:${ms.turn}`);
       const cells: CellIndex[] = [];
       while (cells.length < effect.count) {
@@ -388,13 +394,17 @@ function candidateFor(
         const c = empties[i];
         if (!cells.includes(c)) cells.push(c);
       }
-      return mk({ cells }, ps.turnCount <= 6 ? 1.0 : 0.4);
+      return mk({ cells }, decoyValue);
     }
     case 'repair': {
       for (const ship of ps.ships) {
         if (ship.sunk) continue;
         for (let i = 0; i < ship.cells.length; i++) {
-          if (ship.damage[i] > 0) return mk({ cells: [ship.cells[i]] }, 2.2);
+          if (ship.damage[i] > 0 && !ship.repaired[i]) {
+            // Rebuilding a destroyed section is worth more than patching a
+            // dented one: it takes a cell back off the enemy's ledger.
+            return mk({ cells: [ship.cells[i]] }, ship.destroyed[i] ? 2.6 : 2.0);
+          }
         }
       }
       return null;
@@ -406,11 +416,20 @@ function candidateFor(
       return mk({}, enemyAlive >= 2 && ms.players[other(p)].empTurns === 0 ? 1.25 + 0.12 * enemyAlive : 0.1);
     }
     case 'blockade': {
-      // Only REVEALED enemy cards are knowable — trays are hidden.
-      const enemyDetect = ms.players[other(p)].tray.some(
+      const foe = ms.players[other(p)];
+      if (foe.blockadeTurns > 0) return mk({}, 0.05);
+      // Only REVEALED enemy cards are knowable — trays are hidden until
+      // played — so a seen detect card is strong evidence, not a precondition.
+      const seenDetect = foe.tray.some(
         (c) => c.revealed && CARDS[c.typeId].tags.includes('detect') && !c.spent,
       );
-      return mk({}, enemyDetect && ms.players[other(p)].blockadeTurns === 0 ? 0.8 : 0.05);
+      // Our own losses tell us how well they are finding us.
+      const ourCellsLost = ps.ships.reduce(
+        (n, s2) => n + s2.destroyed.filter(Boolean).length,
+        0,
+      );
+      const stillHunting = ourCellsLost >= 2;
+      return mk({}, (seenDetect ? 1.6 : 0.8) + (stillHunting ? 0.8 : 0));
     }
     default:
       return null;

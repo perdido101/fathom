@@ -140,7 +140,7 @@ describe('voyage configuration', () => {
       const last = voyageRound(len, len);
       expect(first.gridW).toBe(8);
       expect(first.gridH).toBe(8);
-      expect(last.gridW).toBe(12);
+      expect(last.gridW).toBe(8);
       expect(last.gridH).toBe(12);
       // Fleet sizes are cumulative sums of keeps.
       let total = 0;
@@ -339,16 +339,20 @@ describe('match flow', () => {
     }
   });
 
-  it('evasive skiff dodges the first hit and reports a miss', () => {
+  it('a silent-running skiff sinks without announcing its length', () => {
     let ms = createMatch(baseConfig('flow-5'));
     ms = placeBoth(ms);
     const skiff = ms.players[1].ships.find((s) => s.typeId === 'skiff')!;
     const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
     ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [skiff.cells[0]] } });
     const after = ms.players[1].ships.find((s) => s.typeId === 'skiff')!;
-    expect(after.evasiveUsed).toBe(true);
-    expect(after.damage[0]).toBe(0);
-    expect(ms.players[0].intel[skiff.cells[0]].mark).toBe('miss');
+    // It takes the hit like anything else — no false miss to poison the map.
+    expect(after.sunk).toBe(true);
+    expect(ms.players[0].intel[skiff.cells[0]].mark).toBe('hit');
+    // But nothing is announced, so the hunter learns no length.
+    expect(after.sinkAnnounced).toBe(false);
+    expect(ms.players[0].enemySunkLengths).toEqual([]);
+    expect(ms.log.some((l) => l.text.includes('goes down'))).toBe(false);
   });
 
   it('a played card sits out exactly the next turn', () => {

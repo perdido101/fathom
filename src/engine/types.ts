@@ -9,7 +9,7 @@ export type CardTag = 'attack' | 'detect' | 'utility';
 export type Tier = 1 | 2 | 3;
 
 export type ShipAbilityId =
-  | 'evasive'
+  | 'silent'
   | 'swift'
   | 'camouflage'
   | 'supply'
@@ -86,10 +86,11 @@ export interface PlacedShip {
   damage: number[];
   /** Whether each cell is fully destroyed. */
   destroyed: boolean[];
+  /** Cells already restored once — a section can only be rebuilt one time. */
+  repaired: boolean[];
   sunk: boolean;
   /** Whether the sink was announced (length only). Fog/camouflage suppress. */
   sinkAnnounced: boolean;
-  evasiveUsed: boolean;
   swiftUsed: boolean;
   launchUsed: boolean;
 }
