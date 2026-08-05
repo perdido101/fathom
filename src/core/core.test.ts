@@ -15,7 +15,7 @@ import { cellAddress, DIRECTIONS } from './types';
 
 const setup: MatchSetup = {
   seed: 'core-test',
-  size: 'standard',
+  size: 'duel',
   players: [
     { name: 'Alpha', isAI: false },
     { name: 'Bravo', isAI: true },
@@ -62,10 +62,10 @@ function deployBoth(ms: MatchState): MatchState {
 
 describe('board', () => {
   it('tiles the dealt grid cards into the match size', () => {
-    const [board] = dealBoard(seedRng('b1'), MATCH_SIZES.standard);
+    const [board] = dealBoard(seedRng('b1'), MATCH_SIZES.duel);
     expect(board.gridW).toBe(8);
-    expect(board.gridH).toBe(12);
-    expect(board.symbols.length).toBe(96);
+    expect(board.gridH).toBe(8);
+    expect(board.symbols.length).toBe(64);
     // Every cell carries a printed address.
     for (let i = 0; i < board.symbols.length; i++) {
       expect(cellAddress(board, i)).toMatch(/^\d+-[A-D][1-4]$/);
@@ -73,8 +73,8 @@ describe('board', () => {
   });
 
   it('is deterministic for a seed', () => {
-    const [a] = dealBoard(seedRng('same'), MATCH_SIZES.standard);
-    const [b] = dealBoard(seedRng('same'), MATCH_SIZES.standard);
+    const [a] = dealBoard(seedRng('same'), MATCH_SIZES.duel);
+    const [b] = dealBoard(seedRng('same'), MATCH_SIZES.duel);
     expect(a.symbols).toEqual(b.symbols);
     expect(a.cardIds).toEqual(b.cardIds);
   });
@@ -89,7 +89,7 @@ describe('board', () => {
 });
 
 describe('deployment legality', () => {
-  const [board] = dealBoard(seedRng('deploy-board'), MATCH_SIZES.standard);
+  const [board] = dealBoard(seedRng('deploy-board'), MATCH_SIZES.duel);
 
   it('accepts all eight orientations', () => {
     // Find a spot where every direction fits and nothing is reef.
@@ -211,14 +211,14 @@ describe('the pack drafts', () => {
 
 describe('terrain cards', () => {
   it('flips two, and they are distinct', () => {
-    const [board] = dealBoard(seedRng('tc'), MATCH_SIZES.standard);
+    const [board] = dealBoard(seedRng('tc'), MATCH_SIZES.duel);
     const [pair] = drawTerrainPair(seedRng('tc2'), board, [5, 4, 3, 2, 1]);
     expect(pair.length).toBe(2);
     expect(pair[0]).not.toBe(pair[1]);
   });
 
   it('rejects a pair that makes deployment impossible, by checking not listing', () => {
-    const [board] = dealBoard(seedRng('tc3'), MATCH_SIZES.standard);
+    const [board] = dealBoard(seedRng('tc3'), MATCH_SIZES.duel);
     // A fleet that cannot fit at all must be rejected whatever the pair.
     const huge = new Array(40).fill(5);
     const why = terrainPairConflict(['blockade', 'war_chest'], board, huge, seedRng('x'));
@@ -226,7 +226,7 @@ describe('terrain cards', () => {
   });
 
   it('accepts an ordinary pair on an ordinary sea', () => {
-    const [board] = dealBoard(seedRng('tc4'), MATCH_SIZES.standard);
+    const [board] = dealBoard(seedRng('tc4'), MATCH_SIZES.duel);
     expect(terrainPairConflict(['blockade', 'war_chest'], board, [5, 4, 3, 2, 1], seedRng('y'))).toBeNull();
   });
 });
@@ -235,10 +235,12 @@ describe('a match', () => {
   it('sets up with hidden fleets and hidden hands', () => {
     const ms = freshMatch();
     expect(ms.phase).toBe('deploy');
-    expect(ms.players[0].toDeploy.length).toBe(MATCH_SIZES.standard.hulls);
-    expect(ms.players[0].hand.length).toBe(MATCH_SIZES.standard.actionCards);
-    // Everything burned in both drafts lands in one pile.
-    expect(ms.burnPile.length).toBe(10 + 20);
+    expect(ms.players[0].toDeploy.length).toBe(MATCH_SIZES.duel.hulls);
+    expect(ms.players[0].hand.length).toBe(MATCH_SIZES.duel.actionCards);
+    // Everything burned in both drafts lands in one pile: one burn per pack
+    // per player, across both drafts.
+    const packs = MATCH_SIZES.duel.hulls + MATCH_SIZES.duel.actionCards;
+    expect(ms.burnPile.length).toBe(packs * 2);
   });
 
   it('reaches the spend phase once both have deployed', () => {

@@ -52,9 +52,25 @@ export function localCoord(col: number, row: number): string {
   return `${String.fromCharCode(65 + col)}${row + 1}`;
 }
 
-/** Match sizes, from the rulebook's setup table. */
+/**
+ * Match sizes.
+ *
+ * Density is the number that matters: hull cells as a fraction of the board.
+ * Classic Battleship runs at 17%, but Fathom legalises diagonals, which
+ * roughly doubles the orientations a hit could belong to and makes each
+ * answer far less informative. So Fathom needs to sit *above* 17%, not at it
+ * — the printed prototype played at 17% and felt empty, which is exactly
+ * what that predicts.
+ *
+ * Every size below targets ~21%.
+ *
+ * The 24-hull roster caps a two-player match at six hulls each (six packs of
+ * four consumes the whole deck), so a 12x12 sea cannot reach a sensible
+ * density for a duel at all — at six hulls it is 14%. That size is reserved
+ * for team play, where four fleets share the water.
+ */
 export interface MatchSize {
-  id: 'first' | 'standard' | 'deep';
+  id: 'duel' | 'deep' | 'squadron';
   name: string;
   gridCards: number;
   /** Board dimensions in cells. */
@@ -63,42 +79,65 @@ export interface MatchSize {
   /** Grid cards across and down. */
   cardsAcross: number;
   cardsDown: number;
+  /** Hulls per player, which is also the number of ship packs. */
   hulls: number;
+  /** Action cards per player. */
   actionCards: number;
+  /** Players this size is built for. */
+  players: 2 | 4;
 }
 
 export const MATCH_SIZES: Record<MatchSize['id'], MatchSize> = {
-  first: {
-    id: 'first',
-    name: 'First game',
+  duel: {
+    id: 'duel',
+    name: 'Duel',
     gridCards: 4,
     gridW: 8,
     gridH: 8,
     cardsAcross: 2,
     cardsDown: 2,
     hulls: 4,
-    actionCards: 6,
+    actionCards: 5,
+    players: 2,
   },
-  standard: {
-    id: 'standard',
-    name: 'Standard',
+  deep: {
+    id: 'deep',
+    name: 'Deep duel',
     gridCards: 6,
     gridW: 8,
     gridH: 12,
     cardsAcross: 2,
     cardsDown: 3,
-    hulls: 5,
-    actionCards: 10,
+    hulls: 6,
+    actionCards: 7,
+    players: 2,
   },
-  deep: {
-    id: 'deep',
-    name: 'Deep water',
+  /**
+   * Reserved for team play. The 2v2 rules are not written yet, so the hull
+   * count here is a placeholder and the density figure is meaningless until
+   * they say whether the four fleets share one sea or hold two. A duel on
+   * this board sits at 14% and plays exactly as flat as the prototype did,
+   * which is why it is not offered as a two-player size.
+   */
+  squadron: {
+    id: 'squadron',
+    name: 'Squadron',
     gridCards: 9,
     gridW: 12,
     gridH: 12,
     cardsAcross: 3,
     cardsDown: 3,
-    hulls: 6,
-    actionCards: 12,
+    hulls: 4,
+    actionCards: 5,
+    players: 4,
   },
 };
+
+export const DUEL_SIZES: MatchSize['id'][] = ['duel', 'deep'];
+
+/** Hull cells as a fraction of the board — the number that sets the feel. */
+export const AVERAGE_HULL_LENGTH = 10 / 3;
+
+export function density(size: MatchSize): number {
+  return (size.hulls * AVERAGE_HULL_LENGTH) / (size.gridW * size.gridH);
+}
