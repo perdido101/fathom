@@ -42,7 +42,10 @@ function blank(kind: 'ship' | 'card', packs: string[][]): DraftState {
     kind,
     packs,
     index: 0,
-    picks: [[null, null, null], [null, null, null]],
+    picks: [
+      [null, null, null],
+      [null, null, null],
+    ],
     collisions: [false, false, false],
     done: false,
   };

@@ -23,7 +23,14 @@ import {
   rowCount,
   shipAt,
 } from './board';
-import { abilityShot, ambushShot, cardShot, echoReveal, specMatchesCard, specMatchesShip } from './targeting';
+import {
+  abilityShot,
+  ambushShot,
+  cardShot,
+  echoReveal,
+  specMatchesCard,
+  specMatchesShip,
+} from './targeting';
 import { nextInt, pick, type RngState } from './rng';
 
 /**
@@ -100,7 +107,8 @@ export function validatePlan(ms: MatchState, p: PlayerId, plan: Plan): string | 
     const card = findCard(ps, plan.fire.uid);
     if (!card) return 'fired card is not in hand';
     const chargesAtFire = card.charges + (plan.chargeTo === card.uid ? BALANCE.chargePerRound : 0);
-    if (!canFireAt(card.defId, chargesAtFire)) return `${card.defId} cannot fire at ${chargesAtFire}`;
+    if (!canFireAt(card.defId, chargesAtFire))
+      return `${card.defId} cannot fire at ${chargesAtFire}`;
     if (r.chargeLock !== null && chargesAtFire === r.chargeLock) {
       return `cards holding exactly ${r.chargeLock} charges are locked this round`;
     }
@@ -149,7 +157,9 @@ function specSane(spec: FireSpec, ms: MatchState, p: PlayerId): string | null {
       return onBoardCell(spec.origin) ? null : 'target off the board';
     case 'line':
       if (!onBoardCell(spec.origin)) return 'target off the board';
-      return Math.abs(spec.dir[0]) + Math.abs(spec.dir[1]) === 1 ? null : 'lines are orthogonal only';
+      return Math.abs(spec.dir[0]) + Math.abs(spec.dir[1]) === 1
+        ? null
+        : 'lines are orthogonal only';
     case 'block':
       return onBoardCell(spec.anchor) ? null : 'target off the board';
     case 'beacon':
@@ -194,7 +204,7 @@ export function timeoutPlan(ms: MatchState, p: PlayerId): [Plan, RngState] {
   [card, st] = pick(st, ps.hand);
   return [
     {
-      chargeTo: ps.restrictions.noCharge ? null : card?.uid ?? null,
+      chargeTo: ps.restrictions.noCharge ? null : (card?.uid ?? null),
       bonusTo: card?.uid ?? null,
       fire: null,
       ability: null,
@@ -218,6 +228,14 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
   const s: MatchState = structuredClone(ms);
   const events: ResolveEvent[] = [];
   let rng = s.rng;
+
+  // Ruling Q2: if both fleets go down together, the round is decided on who
+  // walked into it with more hull left. That has to be measured now, before a
+  // single shot lands, because by the end of the round both numbers are zero.
+  const hullAtRoundStart: [number, number] = [
+    hullCellsRemaining(s.players[0].ships),
+    hullCellsRemaining(s.players[1].ships),
+  ];
 
   events.push({ t: 'reveal', plans: [structuredClone(plans[0]), structuredClone(plans[1])] });
 
@@ -279,7 +297,14 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
     for (const f of fired.filter((x) => x.by === p)) {
       if (f.defId === 'jam' && f.spec.shape === 'strip') {
         for (const from of spread(f.spec.from, f.charges)) {
-          claims.push({ by: p, target: foe, uid: from.uid, amount: from.amount, toUid: null, reason: 'Jam' });
+          claims.push({
+            by: p,
+            target: foe,
+            uid: from.uid,
+            amount: from.amount,
+            toUid: null,
+            reason: 'Jam',
+          });
         }
         events.push({ t: 'nerf', by: p, text: `Jam strips ${f.charges} charges` });
       }
@@ -321,7 +346,14 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
       let picked: { uid: number; amount: number }[];
       [picked, rng] = randomCharges(rng, s.players[foe].hand, BALANCE.blackoutStrip);
       for (const q of picked) {
-        claims.push({ by: p, target: foe, uid: q.uid, amount: q.amount, toUid: null, reason: 'Blackout' });
+        claims.push({
+          by: p,
+          target: foe,
+          uid: q.uid,
+          amount: q.amount,
+          toUid: null,
+          reason: 'Blackout',
+        });
       }
       events.push({ t: 'nerf', by: p, text: 'Blackout: no charge next round, 2 charges lost' });
     }
@@ -385,8 +417,14 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
   rng = resolveIntel(s, fired, plans, snapshot, events, rng);
 
   // --- Step 5 and 6: sinks, then REACTs, cascading under a cap -------------
+  // Thorn always mirrors the salvo that was declared this round. It never
+  // mirrors another REACT's output — otherwise two facing Thorns would answer
+  // each other and the round would never settle. Ruling checked in Build 2.
+  const declaredAttacks = attacks.slice();
   let cascade = 0;
-  let pendingAttacks = struck.newlySunk.length ? collectReacts(struck.newlySunk, attacks, events) : [];
+  let pendingAttacks = struck.newlySunk.length
+    ? collectReacts(struck.newlySunk, declaredAttacks, events)
+    : [];
   rng = struck.rng ?? rng;
   rng = applyReactCharges(s, struck.newlySunk, plans, events, rng);
 
@@ -401,7 +439,8 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
       new Set(snap[1].filter((x) => x.hits.some(Boolean)).map((x) => x.defId)),
     ];
     const r = applyAttacks(s, pendingAttacks, snap, dmg, events);
-    pendingAttacks = r.newlySunk.length ? collectReacts(r.newlySunk, pendingAttacks, events) : [];
+    // Still the declared attacks, not what the last cascade fired.
+    pendingAttacks = r.newlySunk.length ? collectReacts(r.newlySunk, declaredAttacks, events) : [];
     rng = applyReactCharges(s, r.newlySunk, plans, events, rng);
   }
 
@@ -411,8 +450,8 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
     const reasons: string[] = [];
     const landed = struck.hitsBy[p];
     if (landed > 0) {
-      const counted = s.config.hitBonusMode === 'per-round' ? 1 : landed;
-      gain += counted * BALANCE.hitBonusPerHit;
+      // One charge for connecting, however many cells connected. Ruling Q1.
+      gain += BALANCE.hitBonusPerRound;
       reasons.push(`${landed} hit${landed === 1 ? '' : 's'}`);
     }
     if (mirrorGain[p] > 0) {
@@ -482,14 +521,15 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
   s.rng = rng;
   s.round += 1;
 
-  const outcome = checkOutcome(s);
+  const outcome = checkOutcome(s, hullAtRoundStart);
   if (outcome) {
     s.outcome = outcome;
     s.phase = 'over';
     events.push({ t: 'end', outcome });
   }
 
-  for (const e of events) s.log.push({ round: ms.round, step: e.t, player: null, text: describe(e) });
+  for (const e of events)
+    s.log.push({ round: ms.round, step: e.t, player: null, text: describe(e) });
   return { state: s, events };
 }
 
@@ -498,12 +538,7 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
 // ---------------------------------------------------------------------------
 
 /** Cells a plan declares, used by Mirror and Ambush to make their reads. */
-function declaredCells(
-  ms: MatchState,
-  plan: Plan,
-  fired: FiredCard[],
-  p: PlayerId,
-): CellIndex[] {
+function declaredCells(ms: MatchState, plan: Plan, fired: FiredCard[], p: PlayerId): CellIndex[] {
   const out: CellIndex[] = [];
   if (plan.basic !== null) out.push(plan.basic);
   for (const f of fired.filter((x) => x.by === p)) {
@@ -520,7 +555,8 @@ function declaredCells(
 
 function plannedAttacks(ms: MatchState, plan: Plan, fired: FiredCard[], p: PlayerId): Attack[] {
   const out: Attack[] = [];
-  if (plan.basic !== null) out.push({ by: p, cells: [plan.basic], source: 'basic', execute: false });
+  if (plan.basic !== null)
+    out.push({ by: p, cells: [plan.basic], source: 'basic', execute: false });
   for (const f of fired.filter((x) => x.by === p)) {
     const shot = cardShot(f.defId, f.charges, f.spec);
     if (shot.cells.length) {
@@ -730,7 +766,11 @@ function resolveIntel(
       if (f.charges >= 2) {
         const n = columnCount(foeShips, x);
         me.counts.cols[x] = n;
-        events.push({ t: 'intel', to: f.by, text: `Sounding: column ${String.fromCharCode(65 + x)} holds ${n}` });
+        events.push({
+          t: 'intel',
+          to: f.by,
+          text: `Sounding: column ${String.fromCharCode(65 + x)} holds ${n}`,
+        });
       }
       if (f.charges >= 3) {
         const n = rowCount(foeShips, y);
@@ -786,7 +826,10 @@ function neighbours(cell: CellIndex): CellIndex[] {
 // ---------------------------------------------------------------------------
 
 /** Trim or pad a declared split so it totals exactly `budget`. */
-function spread(from: { uid: number; amount: number }[], budget: number): { uid: number; amount: number }[] {
+function spread(
+  from: { uid: number; amount: number }[],
+  budget: number,
+): { uid: number; amount: number }[] {
   const out: { uid: number; amount: number }[] = [];
   let left = budget;
   for (const f of from) {
@@ -829,9 +872,7 @@ function applyClaims(s: MatchState, claims: ChargeClaim[], events: ResolveEvent[
         handed += v;
       });
       // Deterministic remainder: earlier player, then declaration order.
-      const order = list
-        .map((c, i) => ({ c, i }))
-        .sort((a, b) => a.c.by - b.c.by || a.i - b.i);
+      const order = list.map((c, i) => ({ c, i })).sort((a, b) => a.c.by - b.c.by || a.i - b.i);
       let leftover = available - handed;
       for (const { c } of order) {
         if (leftover <= 0) break;
@@ -852,7 +893,12 @@ function applyClaims(s: MatchState, claims: ChargeClaim[], events: ResolveEvent[
       if (dest) dest.charges += amount;
       s.players[c.by].stats.chargesEarned += amount;
     }
-    events.push({ t: 'charges', to: c.by, amount: c.toUid !== null ? amount : 0, reason: c.reason });
+    events.push({
+      t: 'charges',
+      to: c.by,
+      amount: c.toUid !== null ? amount : 0,
+      reason: c.reason,
+    });
   }
 }
 
@@ -906,10 +952,26 @@ function randomCharges(
 // Endings
 // ---------------------------------------------------------------------------
 
-export function checkOutcome(s: MatchState): MatchState['outcome'] {
+/**
+ * Who won, if anyone.
+ *
+ * `hullAtRoundStart` is what both fleets were worth before this round's damage
+ * was applied. It only matters for the mutual-elimination case: two symmetric
+ * fleets hunting with the same information die in the same round often enough
+ * that leaving it a draw put the draw rate near 9%. Ruling Q2 breaks that tie
+ * on who was ahead going in, and keeps the draw for the genuinely level case.
+ */
+export function checkOutcome(
+  s: MatchState,
+  hullAtRoundStart: [number, number] = [0, 0],
+): MatchState['outcome'] {
   const dead0 = fleetDestroyed(s.players[0].ships);
   const dead1 = fleetDestroyed(s.players[1].ships);
-  if (dead0 && dead1) return { kind: 'draw', reason: 'mutual' };
+  if (dead0 && dead1) {
+    const [a, b] = hullAtRoundStart;
+    if (a === b) return { kind: 'draw', reason: 'mutual' };
+    return { kind: 'win', winner: a > b ? 0 : 1, reason: 'mutual' };
+  }
   if (dead1) return { kind: 'win', winner: 0, reason: 'fleet' };
   if (dead0) return { kind: 'win', winner: 1, reason: 'fleet' };
 

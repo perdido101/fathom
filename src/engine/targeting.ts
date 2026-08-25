@@ -37,10 +37,14 @@ export function cardShot(defId: string, charges: number, spec: FireSpec): Shot {
   const c = charges;
   switch (defId) {
     case 'salvo':
-      return spec.shape === 'cells' ? { cells: unique(spec.cells).slice(0, c), execute: false } : NOTHING;
+      return spec.shape === 'cells'
+        ? { cells: unique(spec.cells).slice(0, c), execute: false }
+        : NOTHING;
     case 'ping':
     case 'echo':
-      return spec.shape === 'cells' ? { cells: unique(spec.cells).slice(0, c), execute: false } : NOTHING;
+      return spec.shape === 'cells'
+        ? { cells: unique(spec.cells).slice(0, c), execute: false }
+        : NOTHING;
     case 'lance':
       return spec.shape === 'line'
         ? { cells: orthLine(spec.origin, spec.dir, c), execute: false }
@@ -86,11 +90,15 @@ export function abilityShot(defId: string, spec: FireSpec): Shot {
     case 'warhead':
       return spec.shape === 'block' ? { cells: block(spec.anchor, 2), execute: true } : NOTHING;
     case 'ember':
-      return spec.shape === 'cells' ? { cells: unique(spec.cells).slice(0, 4), execute: false } : NOTHING;
+      return spec.shape === 'cells'
+        ? { cells: unique(spec.cells).slice(0, 4), execute: false }
+        : NOTHING;
     case 'pin':
       return spec.shape === 'cell' ? { cells: [spec.cell], execute: false } : NOTHING;
     case 'beacon':
-      return spec.shape === 'beacon' ? { cells: unique(spec.cells).slice(0, 4), execute: false } : NOTHING;
+      return spec.shape === 'beacon'
+        ? { cells: unique(spec.cells).slice(0, 4), execute: false }
+        : NOTHING;
     default:
       return NOTHING;
   }

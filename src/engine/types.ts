@@ -12,7 +12,8 @@ export type CellIndex = number;
 
 export const xy = (cell: CellIndex): [number, number] => [cell % BOARD, Math.floor(cell / BOARD)];
 export const cellAt = (x: number, y: number): CellIndex => y * BOARD + x;
-export const onBoard = (x: number, y: number): boolean => x >= 0 && x < BOARD && y >= 0 && y < BOARD;
+export const onBoard = (x: number, y: number): boolean =>
+  x >= 0 && x < BOARD && y >= 0 && y < BOARD;
 
 /** Ships deploy orthogonally only. */
 export const ORTH: readonly (readonly [number, number])[] = [
@@ -130,7 +131,17 @@ export interface PlayerStats {
 export type Phase = 'shipDraft' | 'cardDraft' | 'deploy' | 'battle' | 'over';
 
 export type Outcome =
-  | { kind: 'win'; winner: PlayerId; reason: 'fleet' | 'timeout-strikes' | 'disconnect' | 'cells' }
+  | {
+      kind: 'win';
+      winner: PlayerId;
+      /**
+       * 'fleet'    — their last ship went down and yours did not.
+       * 'mutual'   — both fleets went down together and you entered the round
+       *              with more hull left. Ruling Q2.
+       * 'cells'    — round twenty, decided on hull cells.
+       */
+      reason: 'fleet' | 'mutual' | 'timeout-strikes' | 'disconnect' | 'cells';
+    }
   | { kind: 'draw'; reason: 'mutual' | 'cells' };
 
 export interface LogEntry {
@@ -163,14 +174,6 @@ export interface MatchConfig {
   /** Hand size at or below which a player draws. */
   drawThreshold: number;
   disconnectGraceSeconds: number;
-  /**
-   * How the hit bonus is counted. The rules say "landing a hit grants 1 bonus
-   * charge" without saying whether that is once per hit or once per round in
-   * which you connected — see RULINGS.md Q3. Both readings are implemented so
-   * the difference can be measured instead of argued about; 'per-hit' is the
-   * literal reading and the default.
-   */
-  hitBonusMode: 'per-hit' | 'per-round';
 }
 
 export const DEFAULT_CONFIG: MatchConfig = {
@@ -180,7 +183,6 @@ export const DEFAULT_CONFIG: MatchConfig = {
   handSize: 3,
   drawThreshold: 1,
   disconnectGraceSeconds: 60,
-  hitBonusMode: 'per-hit',
 };
 
 export interface MatchState {

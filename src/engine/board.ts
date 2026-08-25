@@ -13,7 +13,11 @@ export interface Placement {
 }
 
 /** All cells a ship of this length would occupy from `origin` heading `dir`. */
-export function run(origin: CellIndex, length: number, dir: readonly [number, number]): CellIndex[] | null {
+export function run(
+  origin: CellIndex,
+  length: number,
+  dir: readonly [number, number],
+): CellIndex[] | null {
   const [x0, y0] = xy(origin);
   const cells: CellIndex[] = [];
   for (let i = 0; i < length; i++) {
@@ -56,7 +60,11 @@ export function runsOfLength(length: number): CellIndex[][] {
 }
 
 /** Ships may touch, but may not overlap or leave the board. */
-export function placementLegal(cells: CellIndex[], length: number, occupied: Set<CellIndex>): boolean {
+export function placementLegal(
+  cells: CellIndex[],
+  length: number,
+  occupied: Set<CellIndex>,
+): boolean {
   if (cells.length !== length) return false;
   if (new Set(cells).size !== cells.length) return false;
   for (const c of cells) {
@@ -187,7 +195,11 @@ export function wholeRow(rowIndex: number): CellIndex[] {
   return out;
 }
 
-export function orthLine(origin: CellIndex, dir: readonly [number, number], length: number): CellIndex[] {
+export function orthLine(
+  origin: CellIndex,
+  dir: readonly [number, number],
+  length: number,
+): CellIndex[] {
   const [x0, y0] = xy(origin);
   const out: CellIndex[] = [];
   for (let i = 0; i < length; i++) {

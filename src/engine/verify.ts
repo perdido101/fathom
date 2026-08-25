@@ -36,7 +36,10 @@ export interface MatchTranscript {
   /** Published on-chain at match start. */
   deployCommits: [string, string];
   /** Revealed at match end. */
-  deployments: [{ placements: Placement[]; nonce: string }, { placements: Placement[]; nonce: string }];
+  deployments: [
+    { placements: Placement[]; nonce: string },
+    { placements: Placement[]; nonce: string },
+  ];
   /** One entry per round, each holding both players' committed plans. */
   rounds: [CommittedPlan, CommittedPlan][];
   /** What the server said happened. */
@@ -132,7 +135,9 @@ export function verify(t: MatchTranscript): VerifyResult {
         problems.push(`round ${ms.round}: player ${p} plan is unsigned`);
       } else if (checkable[p]) {
         if (!verifyPlanSignature(t.sessionKeys[p], cp.signature, cp.commitHash)) {
-          problems.push(`round ${ms.round}: player ${p} signature does not match their session key`);
+          problems.push(
+            `round ${ms.round}: player ${p} signature does not match their session key`,
+          );
         }
       }
     }
@@ -149,7 +154,14 @@ export function verify(t: MatchTranscript): VerifyResult {
     }
   }
 
-  return { ok: problems.length === 0, problems, warnings, outcome, state: ms, roundsReplayed: replayed };
+  return {
+    ok: problems.length === 0,
+    problems,
+    warnings,
+    outcome,
+    state: ms,
+    roundsReplayed: replayed,
+  };
 }
 
 /** Build a transcript from a finished match, for publishing alongside a result. */

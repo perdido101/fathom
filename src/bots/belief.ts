@@ -269,7 +269,10 @@ export function bestBlock(weight: number[], size: number): CellIndex {
 }
 
 /** Best origin and direction for a straight run of `length`. */
-export function bestLine(weight: number[], length: number): { origin: CellIndex; dir: [number, number] } {
+export function bestLine(
+  weight: number[],
+  length: number,
+): { origin: CellIndex; dir: [number, number] } {
   let best = { origin: 0, dir: [1, 0] as [number, number] };
   let bestScore = -1;
   for (let c = 0; c < CELLS; c++) {

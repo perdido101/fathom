@@ -176,7 +176,10 @@ describe('hidden information', () => {
   it('reveals a ship identity when its ability is used, but not its position', () => {
     let ms = battle({
       place: [rows(DEFAULT_SHIPS[0], 0), rows(DEFAULT_SHIPS[1], 3)],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     const a: Plan = {
       ...idle(ms, 0),
@@ -191,12 +194,18 @@ describe('hidden information', () => {
 
   it('announces a sink by length only', () => {
     let ms = battle({
-      place: [rows(DEFAULT_SHIPS[0], 0), [
-        { defId: 'forge', cells: [0, 1, 2, 3] },
-        { defId: 'kiln', cells: [6, 7, 8] },
-        { defId: 'pin', cells: [12, 13] },
-      ]],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      place: [
+        rows(DEFAULT_SHIPS[0], 0),
+        [
+          { defId: 'forge', cells: [0, 1, 2, 3] },
+          { defId: 'kiln', cells: [6, 7, 8] },
+          { defId: 'pin', cells: [12, 13] },
+        ],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     charge(ms, 0, 'salvo', 1);
     const a: Plan = {
@@ -214,7 +223,12 @@ describe('hidden information', () => {
 
 describe('the charge economy', () => {
   it('spends every charge and destroys the card', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'salvo', 3);
     const uid = card(ms, 0, 'salvo').uid;
     const a: Plan = {
@@ -230,7 +244,12 @@ describe('the charge economy', () => {
   });
 
   it('fires one cell per charge and no more', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'salvo', 1);
     const uid = card(ms, 0, 'salvo').uid;
     const a: Plan = {
@@ -244,8 +263,37 @@ describe('the charge economy', () => {
     expect(shots).toHaveLength(2); // salvo at 2 charges
   });
 
+  it('grants exactly one bonus charge however many cells connect', () => {
+    // Ruling Q1: connecting is worth one charge, not one per hit.
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['lance', 'salvo', 'rake'],
+      ],
+    });
+    charge(ms, 0, 'salvo', 3);
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const rakeUid = card(ms, 0, 'rake').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: salvoUid,
+      bonusTo: rakeUid,
+      basic: null,
+      // Their 4-ship sits on 0..3, so all four cells connect.
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [0, 1, 2, 3] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 0 && e.hit)).toHaveLength(4);
+    expect(res.state.players[0].hand.find((c) => c.uid === rakeUid)!.charges).toBe(1);
+  });
+
   it('does not let charges earned this round be spent this round', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'lance', 2);
     const lanceUid = card(ms, 0, 'lance').uid;
     const rakeUid = card(ms, 0, 'rake').uid;
@@ -258,32 +306,61 @@ describe('the charge economy', () => {
     };
     const res = run(ms, a, idle(ms, 1));
     const rake = res.state.players[0].hand.find((c) => c.uid === rakeUid)!;
-    expect(rake.charges).toBeGreaterThan(0); // bonus landed after firing
+    expect(rake.charges).toBe(1); // the round's single bonus, landing after the shot
     expect(res.state.players[0].graveyard[0].charges).toBe(3); // lance fired at 2+1
   });
 
   it('refuses to fire Burst below two charges', async () => {
     const { validatePlan } = await import('./resolve');
-    const ms = battle({ hands: [['burst', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    const ms = battle({
+      hands: [
+        ['burst', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     const uid = card(ms, 0, 'burst').uid;
-    const plan: Plan = { ...idle(ms, 0), chargeTo: uid, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    const plan: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      fire: { uid, spec: { shape: 'block', anchor: 0 } },
+    };
     expect(validatePlan(ms, 0, plan)).toMatch(/cannot fire/);
   });
 
   it('scales Burst from 2x2 to 3x3 at four charges', () => {
-    let ms = battle({ hands: [['burst', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['burst', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'burst', 3);
     const uid = card(ms, 0, 'burst').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 14 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'block', anchor: 14 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(9);
   });
 
   it('grows Rake by one cell per charge above the first', () => {
-    let ms = battle({ hands: [['rake', 'lance', 'salvo'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['rake', 'lance', 'salvo'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'rake', 2);
     const uid = card(ms, 0, 'rake').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'row', origin: 18 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'row', origin: 18 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(5);
   });
@@ -305,7 +382,10 @@ describe('simultaneity', () => {
           { defId: 'pin', cells: [12, 13] },
         ],
       ],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     for (const p of [0, 1] as PlayerId[]) {
       for (const s of ms.players[p].ships) {
@@ -328,12 +408,22 @@ describe('simultaneity', () => {
   });
 
   it('scores both attacks against the same pre-damage board', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'salvo', 1);
     charge(ms, 1, 'salvo', 1);
     const mk = (p: PlayerId): Plan => {
       const uid = card(ms, p, 'salvo').uid;
-      return { ...idle(ms, p), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cells', cells: [0, 1] } } };
+      return {
+        ...idle(ms, p),
+        chargeTo: uid,
+        basic: null,
+        fire: { uid, spec: { shape: 'cells', cells: [0, 1] } },
+      };
     };
     const res = run(ms, mk(0), mk(1));
     const hits = res.events.filter((e) => e.t === 'shot' && e.hit);
@@ -343,20 +433,40 @@ describe('simultaneity', () => {
 
 describe('execute effects', () => {
   it('sinks a damaged ship outright with Breaker', () => {
-    let ms = battle({ hands: [['breaker', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['breaker', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms.players[1].ships[0].hits[3] = true; // the 4-ship is damaged
     charge(ms, 0, 'breaker', 2);
     const uid = card(ms, 0, 'breaker').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'block', anchor: 0 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.state.players[1].ships[0].sunk).toBe(true);
   });
 
   it('leaves an undamaged ship merely damaged', () => {
-    let ms = battle({ hands: [['breaker', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['breaker', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'breaker', 2);
     const uid = card(ms, 0, 'breaker').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'block', anchor: 0 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.state.players[1].ships[0].sunk).toBe(false);
     expect(res.state.players[1].ships[0].hits.filter(Boolean).length).toBe(2);
@@ -365,7 +475,12 @@ describe('execute effects', () => {
 
 describe('predictions', () => {
   it('makes their whole attack miss when Mirror reads it', () => {
-    let ms = battle({ hands: [['mirror', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['mirror', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'mirror', 1);
     charge(ms, 1, 'salvo', 2);
     const mirrorUid = card(ms, 0, 'mirror').uid;
@@ -389,7 +504,12 @@ describe('predictions', () => {
   });
 
   it('fires Ambush back from zero charges', () => {
-    let ms = battle({ hands: [['ambush', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['ambush', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     const ambushUid = card(ms, 0, 'ambush').uid;
     const lanceUid = card(ms, 0, 'lance').uid;
     const a: Plan = {
@@ -406,7 +526,12 @@ describe('predictions', () => {
   });
 
   it('does nothing when the read is wrong', () => {
-    let ms = battle({ hands: [['ambush', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['ambush', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     const ambushUid = card(ms, 0, 'ambush').uid;
     const a: Plan = {
       ...idle(ms, 0),
@@ -419,9 +544,152 @@ describe('predictions', () => {
   });
 });
 
+describe('rulings from build 2', () => {
+  it('refuses to fire Mirror below two charges', async () => {
+    const { validatePlan } = await import('./resolve');
+    const ms = battle({
+      hands: [
+        ['mirror', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    const uid = card(ms, 0, 'mirror').uid;
+    // One banked plus this round's charge is still only two, so one banked
+    // is the lowest that works; zero banked must be refused.
+    const plan: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      fire: { uid, spec: { shape: 'cell', cell: 7 } },
+    };
+    expect(validatePlan(ms, 0, plan)).toMatch(/cannot fire/);
+    charge(ms, 0, 'mirror', 1);
+    expect(validatePlan(ms, 0, plan)).toBeNull();
+  });
+
+  it('awards a mutual elimination to whoever entered the round ahead', () => {
+    let ms = battle({
+      place: [rows(DEFAULT_SHIPS[0], 0), rows(DEFAULT_SHIPS[1], 0)],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    // Both fleets one cell from gone, but player 1 has taken an extra hit
+    // somewhere that does not matter to this round's shots.
+    for (const p of [0, 1] as PlayerId[]) {
+      for (const s2 of ms.players[p].ships) s2.hits = s2.cells.map((_, i) => i > 0);
+    }
+    // Player 1's 4-ship has one more cell already gone than player 0's does.
+    ms.players[1].ships[0].hits = [false, true, true, true];
+    ms.players[0].ships[0].hits = [false, false, true, true];
+
+    charge(ms, 0, 'salvo', 2);
+    charge(ms, 1, 'salvo', 2);
+    const mk = (p: PlayerId): Plan => {
+      const uid = card(ms, p, 'salvo').uid;
+      return {
+        ...idle(ms, p),
+        chargeTo: uid,
+        basic: 12,
+        fire: { uid, spec: { shape: 'cells', cells: [0, 1, 6] } },
+      };
+    };
+    const res = run(ms, mk(0), mk(1));
+    // Both fleets are gone, and player 0 walked in with more hull.
+    expect(res.state.players[0].ships.every((x) => x.sunk)).toBe(true);
+    expect(res.state.players[1].ships.every((x) => x.sunk)).toBe(true);
+    expect(res.state.outcome).toEqual({ kind: 'win', winner: 0, reason: 'mutual' });
+  });
+
+  it('still draws a mutual elimination that was level going in', () => {
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    for (const p of [0, 1] as PlayerId[]) {
+      for (const s2 of ms.players[p].ships) s2.hits = s2.cells.map((_, i) => i > 0);
+    }
+    charge(ms, 0, 'salvo', 2);
+    charge(ms, 1, 'salvo', 2);
+    const mk = (p: PlayerId): Plan => {
+      const uid = card(ms, p, 'salvo').uid;
+      return {
+        ...idle(ms, p),
+        chargeTo: uid,
+        basic: 12,
+        fire: { uid, spec: { shape: 'cells', cells: [0, 6, 12] } },
+      };
+    };
+    const res = run(ms, mk(0), mk(1));
+    expect(res.state.outcome).toEqual({ kind: 'draw', reason: 'mutual' });
+  });
+
+  it('lets Kiln turn a zero-charge Ambush into a whole-row answer', () => {
+    let ms = battle({
+      ships: [
+        ['warhead', 'kiln', 'ember'],
+        ['forge', 'beacon', 'pin'],
+      ],
+      hands: [
+        ['ambush', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    const ambushUid = card(ms, 0, 'ambush').uid;
+    const lanceUid = card(ms, 0, 'lance').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: lanceUid,
+      basic: null,
+      ability: {
+        defId: 'kiln',
+        spec: { shape: 'kiln', uid: ambushUid, inner: { shape: 'cell', cell: 20 } },
+      },
+    };
+    // They shoot the cell Ambush named, so the read lands.
+    const res = run(ms, a, { ...idle(ms, 1), basic: 20 });
+    const back = res.events.filter((e) => e.t === 'shot' && e.by === 0 && e.source === 'ambush');
+    // Ambush at 0 + Kiln's 3 clears the three-charge threshold: the whole row.
+    expect(back).toHaveLength(6);
+  });
+
+  it('does not let two Thorns answer each other', () => {
+    // Both players field Thorn, both are one hit from losing it, and both fire
+    // at the other's Thorn. Each mirrors the round's declared salvo once and
+    // the round settles.
+    const shipsA = ['warhead', 'beacon', 'thorn'];
+    const shipsB = ['forge', 'kiln', 'thorn'];
+    let ms = battle({
+      ships: [shipsA, shipsB],
+      place: [rows(shipsA, 0), rows(shipsB, 0)],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    for (const p of [0, 1] as PlayerId[]) {
+      ms.players[p].ships[2].hits = [true, false];
+    }
+    const mk = (p: PlayerId): Plan => ({ ...idle(ms, p), basic: 13 });
+    const res = run(ms, mk(0), mk(1));
+
+    const thornShots = res.events.filter((e) => e.t === 'shot' && e.source === 'thorn');
+    // One mirrored cell each, and no third wave.
+    expect(thornShots).toHaveLength(2);
+    expect(res.state.phase === 'battle' || res.state.phase === 'over').toBe(true);
+  });
+});
+
 describe('control effects', () => {
   it('strips the charges Jam names', () => {
-    let ms = battle({ hands: [['jam', 'lance', 'rake'], ['lance', 'salvo', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['jam', 'lance', 'rake'],
+        ['lance', 'salvo', 'rake'],
+      ],
+    });
     charge(ms, 0, 'jam', 2);
     charge(ms, 1, 'salvo', 5);
     const jamUid = card(ms, 0, 'jam').uid;
@@ -437,7 +705,12 @@ describe('control effects', () => {
   });
 
   it('cannot shrink a card that is already in the air', () => {
-    let ms = battle({ hands: [['jam', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['jam', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'jam', 4);
     charge(ms, 1, 'salvo', 3);
     const jamUid = card(ms, 0, 'jam').uid;
@@ -459,7 +732,12 @@ describe('control effects', () => {
   });
 
   it('moves stolen charges onto the named card', () => {
-    let ms = battle({ hands: [['siphon', 'lance', 'rake'], ['lance', 'salvo', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['siphon', 'lance', 'rake'],
+        ['lance', 'salvo', 'rake'],
+      ],
+    });
     charge(ms, 0, 'siphon', 2);
     charge(ms, 1, 'salvo', 4);
     const siphonUid = card(ms, 0, 'siphon').uid;
@@ -469,7 +747,10 @@ describe('control effects', () => {
       ...idle(ms, 0),
       chargeTo: siphonUid,
       basic: null,
-      fire: { uid: siphonUid, spec: { shape: 'steal', from: [{ uid: src, amount: 3 }], toUid: dest } },
+      fire: {
+        uid: siphonUid,
+        spec: { shape: 'steal', from: [{ uid: src, amount: 3 }], toUid: dest },
+      },
     };
     const res = run(ms, a, idle(ms, 1));
     expect(res.state.players[1].hand.find((c) => c.uid === src)!.charges).toBe(1);
@@ -477,7 +758,12 @@ describe('control effects', () => {
   });
 
   it('never hands out charges that were not there', () => {
-    let ms = battle({ hands: [['siphon', 'jam', 'rake'], ['lance', 'salvo', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['siphon', 'jam', 'rake'],
+        ['lance', 'salvo', 'rake'],
+      ],
+    });
     charge(ms, 0, 'siphon', 5);
     charge(ms, 1, 'salvo', 2);
     const siphonUid = card(ms, 0, 'siphon').uid;
@@ -487,7 +773,10 @@ describe('control effects', () => {
       ...idle(ms, 0),
       chargeTo: siphonUid,
       basic: null,
-      fire: { uid: siphonUid, spec: { shape: 'steal', from: [{ uid: src, amount: 6 }], toUid: dest } },
+      fire: {
+        uid: siphonUid,
+        spec: { shape: 'steal', from: [{ uid: src, amount: 6 }], toUid: dest },
+      },
     };
     const res = run(ms, a, idle(ms, 1));
     expect(res.state.players[1].hand.find((c) => c.uid === src)!.charges).toBe(0);
@@ -498,8 +787,14 @@ describe('control effects', () => {
 describe('ship abilities', () => {
   it('lets Kiln fire a second card at three extra charges', () => {
     let ms = battle({
-      ships: [['warhead', 'kiln', 'ember'], ['forge', 'beacon', 'pin']],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      ships: [
+        ['warhead', 'kiln', 'ember'],
+        ['forge', 'beacon', 'pin'],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     const salvoUid = card(ms, 0, 'salvo').uid;
     const lanceUid = card(ms, 0, 'lance').uid;
@@ -524,23 +819,42 @@ describe('ship abilities', () => {
 
   it('stops a card being fired next round when Pin lands', () => {
     let ms = battle({
-      ships: [['warhead', 'beacon', 'pin'], ['forge', 'kiln', 'ember']],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      ships: [
+        ['warhead', 'beacon', 'pin'],
+        ['forge', 'kiln', 'ember'],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
-    const a: Plan = { ...idle(ms, 0), basic: null, ability: { defId: 'pin', spec: { shape: 'cell', cell: 0 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      basic: null,
+      ability: { defId: 'pin', spec: { shape: 'cell', cell: 0 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.state.players[1].restrictions.noFire).toBe(true);
   });
 
   it('wipes every enemy charge when Spite dies', () => {
     let ms = battle({
-      ships: [['warhead', 'beacon', 'ember'], ['forge', 'kiln', 'spite']],
-      place: [rows(['warhead', 'beacon', 'ember'], 0), [
-        { defId: 'forge', cells: [0, 1, 2, 3] },
-        { defId: 'kiln', cells: [6, 7, 8] },
-        { defId: 'spite', cells: [12, 13] },
-      ]],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      ships: [
+        ['warhead', 'beacon', 'ember'],
+        ['forge', 'kiln', 'spite'],
+      ],
+      place: [
+        rows(['warhead', 'beacon', 'ember'], 0),
+        [
+          { defId: 'forge', cells: [0, 1, 2, 3] },
+          { defId: 'kiln', cells: [6, 7, 8] },
+          { defId: 'spite', cells: [12, 13] },
+        ],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     charge(ms, 0, 'salvo', 1);
     charge(ms, 0, 'rake', 4);
@@ -557,13 +871,22 @@ describe('ship abilities', () => {
 
   it('fires Thorn back along the salvo that killed it', () => {
     let ms = battle({
-      ships: [['warhead', 'beacon', 'ember'], ['forge', 'kiln', 'thorn']],
-      place: [rows(['warhead', 'beacon', 'ember'], 0), [
-        { defId: 'forge', cells: [0, 1, 2, 3] },
-        { defId: 'kiln', cells: [6, 7, 8] },
-        { defId: 'thorn', cells: [12, 13] },
-      ]],
-      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+      ships: [
+        ['warhead', 'beacon', 'ember'],
+        ['forge', 'kiln', 'thorn'],
+      ],
+      place: [
+        rows(['warhead', 'beacon', 'ember'], 0),
+        [
+          { defId: 'forge', cells: [0, 1, 2, 3] },
+          { defId: 'kiln', cells: [6, 7, 8] },
+          { defId: 'thorn', cells: [12, 13] },
+        ],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
     });
     charge(ms, 0, 'salvo', 1);
     const salvoUid = card(ms, 0, 'salvo').uid;
@@ -581,7 +904,12 @@ describe('ship abilities', () => {
 
 describe('intel', () => {
   it('reports whether anything sits beside a Ping miss', () => {
-    let ms = battle({ hands: [['ping', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['ping', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'ping', 1);
     const uid = card(ms, 0, 'ping').uid;
     const a: Plan = {
@@ -596,18 +924,38 @@ describe('intel', () => {
   });
 
   it('withholds Sounding’s column count below two charges', () => {
-    let ms = battle({ hands: [['sounding', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['sounding', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     const uid = card(ms, 0, 'sounding').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cell', cell: 20 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'cell', cell: 20 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.events.filter((e) => e.t === 'intel')).toHaveLength(0);
   });
 
   it('gives row and column at three charges', () => {
-    let ms = battle({ hands: [['sounding', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['sounding', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     charge(ms, 0, 'sounding', 2);
     const uid = card(ms, 0, 'sounding').uid;
-    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cell', cell: 20 } } };
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'cell', cell: 20 } },
+    };
     const res = run(ms, a, idle(ms, 1));
     expect(res.events.filter((e) => e.t === 'intel')).toHaveLength(2);
   });
@@ -615,7 +963,12 @@ describe('intel', () => {
 
 describe('endings', () => {
   it('forfeits after three missed timers', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     for (let i = 0; i < 3; i++) {
       const timed: Plan = { ...idle(ms, 1), timedOut: true };
       ms = run(ms, idle(ms, 0), timed).state;
@@ -624,7 +977,12 @@ describe('endings', () => {
   });
 
   it('decides a round-20 match on remaining hull cells', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms.players[1].ships[0].hits[0] = true;
     ms.round = 20;
     ms = run(ms, { ...idle(ms, 0), basic: null }, { ...idle(ms, 1), basic: null }).state;
@@ -632,7 +990,12 @@ describe('endings', () => {
   });
 
   it('draws a round-20 match with level fleets', () => {
-    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms.round = 20;
     ms = run(ms, { ...idle(ms, 0), basic: null }, { ...idle(ms, 1), basic: null }).state;
     expect(ms.outcome).toEqual({ kind: 'draw', reason: 'cells' });
@@ -642,7 +1005,13 @@ describe('endings', () => {
 describe('determinism and verification', () => {
   it('produces the same match twice from the same seed and inputs', () => {
     const play = () => {
-      let ms = battle({ seed: 'determinism', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+      let ms = battle({
+        seed: 'determinism',
+        hands: [
+          ['salvo', 'lance', 'rake'],
+          ['salvo', 'lance', 'rake'],
+        ],
+      });
       for (let i = 0; i < 6 && ms.phase === 'battle'; i++) {
         const a: Plan = { ...idle(ms, 0), basic: (i * 7) % 36 };
         const b: Plan = { ...idle(ms, 1), basic: (i * 5 + 3) % 36 };
@@ -678,7 +1047,13 @@ describe('determinism and verification', () => {
   });
 
   it('catches a server that lies about the result', () => {
-    let ms = battle({ seed: 'liar', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      seed: 'liar',
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
     const t = transcriptOf(ms, 'match-2', ['keyA', 'keyB']);
     t.reportedOutcome = { kind: 'win', winner: 0, reason: 'fleet' };
@@ -692,7 +1067,13 @@ describe('determinism and verification', () => {
     const keyA = issueSessionKey(0);
     const keyB = issueSessionKey(1);
 
-    let ms = battle({ seed: 'signed', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      seed: 'signed',
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     for (let i = 0; i < 3 && ms.phase === 'battle'; i++) {
       const a: Plan = { ...idle(ms, 0), basic: i };
       const b: Plan = { ...idle(ms, 1), basic: 35 - i };
@@ -721,7 +1102,13 @@ describe('determinism and verification', () => {
   });
 
   it('says so when a transcript publishes no session keys', () => {
-    let ms = battle({ seed: 'unsigned', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      seed: 'unsigned',
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
     const result = verify(transcriptOf(ms, 'm', ['keyA', 'keyB']));
     expect(result.warnings).toHaveLength(2);
@@ -731,7 +1118,13 @@ describe('determinism and verification', () => {
   });
 
   it('catches a tampered deployment commitment', () => {
-    let ms = battle({ seed: 'tamper', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    let ms = battle({
+      seed: 'tamper',
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
     ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
     const t = transcriptOf(ms, 'match-3', ['keyA', 'keyB']);
     t.deployments[0].placements[0].cells = [30, 31, 32, 33];

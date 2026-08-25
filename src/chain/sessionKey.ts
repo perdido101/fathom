@@ -72,11 +72,7 @@ export function verifyPlanSignature(
   commitHash: string,
 ): boolean {
   try {
-    return nacl.sign.detached.verify(
-      utf8(commitHash),
-      unhex(signatureHex),
-      unhex(publicKeyHex),
-    );
+    return nacl.sign.detached.verify(utf8(commitHash), unhex(signatureHex), unhex(publicKeyHex));
   } catch {
     return false;
   }

@@ -25,18 +25,42 @@ export type Cue =
   | 'draw';
 
 export const CUES: { id: Cue; description: string; length: string }[] = [
-  { id: 'charge-placed', description: 'Dry mechanical click as a charge seats onto a card', length: '0.2s' },
+  {
+    id: 'charge-placed',
+    description: 'Dry mechanical click as a charge seats onto a card',
+    length: '0.2s',
+  },
   { id: 'card-fired', description: 'Card burns away, rising whoosh into a crack', length: '0.8s' },
   { id: 'basic-attack', description: 'Light deck gun, thinner than a card shot', length: '0.4s' },
   { id: 'hit', description: 'Wet metallic impact with a low thump', length: '0.6s' },
   { id: 'miss', description: 'Water splash, no metal in it', length: '0.5s' },
   { id: 'ship-sunk', description: 'Groaning hull, sustained, then silence', length: '1.8s' },
-  { id: 'ability-activated', description: 'Ship card flips face up, brass and air', length: '0.7s' },
-  { id: 'react-triggered', description: 'Sharp inhale then a snap, the dead ship answering', length: '1.0s' },
+  {
+    id: 'ability-activated',
+    description: 'Ship card flips face up, brass and air',
+    length: '0.7s',
+  },
+  {
+    id: 'react-triggered',
+    description: 'Sharp inhale then a snap, the dead ship answering',
+    length: '1.0s',
+  },
   { id: 'charges-stolen', description: 'Charges sliding across the table, glassy', length: '0.6s' },
-  { id: 'prediction-triggered', description: 'A single bell, unmistakable, for a read landing', length: '0.9s' },
-  { id: 'round-start', description: 'Two-tone signal, calm, marks the plan window opening', length: '0.5s' },
-  { id: 'timer-warning', description: 'Ticking that speeds up over the last five seconds', length: '1.0s' },
+  {
+    id: 'prediction-triggered',
+    description: 'A single bell, unmistakable, for a read landing',
+    length: '0.9s',
+  },
+  {
+    id: 'round-start',
+    description: 'Two-tone signal, calm, marks the plan window opening',
+    length: '0.5s',
+  },
+  {
+    id: 'timer-warning',
+    description: 'Ticking that speeds up over the last five seconds',
+    length: '1.0s',
+  },
   { id: 'victory', description: 'Short brass sting, resolved', length: '2.5s' },
   { id: 'defeat', description: 'Same motif, unresolved, lower', length: '2.5s' },
   { id: 'draw', description: 'Two notes ending level with each other', length: '2.0s' },

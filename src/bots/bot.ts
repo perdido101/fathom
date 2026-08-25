@@ -48,16 +48,33 @@ export const LEVEL_NAMES: Record<Level, string> = {
 
 /** Rough desirability, used only to break the draft open at low levels. */
 const SHIP_VALUE: Record<string, number> = {
-  warhead: 9, forge: 7, blackout: 7, dreadnought: 6,
-  kiln: 9, beacon: 7, leech: 7, cinder: 5,
-  ember: 8, pin: 6, thorn: 6, spite: 7,
+  warhead: 9,
+  forge: 7,
+  blackout: 7,
+  dreadnought: 6,
+  kiln: 9,
+  beacon: 7,
+  leech: 7,
+  cinder: 5,
+  ember: 8,
+  pin: 6,
+  thorn: 6,
+  spite: 7,
 };
 
 const CARD_VALUE: Record<string, number> = {
-  salvo: 9, burst: 8, breaker: 8, lance: 7, rake: 7,
-  echo: 7, ping: 6, sounding: 5,
-  siphon: 7, jam: 6,
-  ambush: 6, mirror: 5,
+  salvo: 9,
+  burst: 8,
+  breaker: 8,
+  lance: 7,
+  rake: 7,
+  echo: 7,
+  ping: 6,
+  sounding: 5,
+  siphon: 7,
+  jam: 6,
+  ambush: 6,
+  mirror: 5,
 };
 
 export function botShipPick(view: ClientView, level: Level, rng: RngState): [string, RngState] {
@@ -83,9 +100,7 @@ export function botCardPick(view: ClientView, level: Level, rng: RngState): [str
     return [choice ?? pack[0], st];
   }
   const held = new Set(view.me.draftedCards);
-  const ordered = pack
-    .slice()
-    .sort((a, b) => value(b) - value(a));
+  const ordered = pack.slice().sort((a, b) => value(b) - value(a));
   function value(id: string): number {
     let v = CARD_VALUE[id] ?? 5;
     // A second copy of the same trick is worth less than a new one.
@@ -142,7 +157,8 @@ function layoutScore(placements: Placement[]): number {
   let touching = 0;
   for (let i = 0; i < placements.length; i++) {
     for (let j = i + 1; j < placements.length; j++) {
-      if (placements[i].cells.some((a) => placements[j].cells.some((b) => adjacent(a, b)))) touching++;
+      if (placements[i].cells.some((a) => placements[j].cells.some((b) => adjacent(a, b))))
+        touching++;
     }
   }
   score += touching === 1 ? 3 : -2 * touching;
@@ -199,7 +215,7 @@ export function botPlan(view: ClientView, level: Level, rng: RngState): [Plan, R
     return [
       {
         ...plan,
-        chargeTo: view.me.restrictions.noCharge ? null : target?.uid ?? null,
+        chargeTo: view.me.restrictions.noCharge ? null : (target?.uid ?? null),
         bonusTo: target?.uid ?? null,
         basic,
         fire: shoot && spec ? { uid: shoot.uid, spec } : null,
@@ -224,7 +240,9 @@ export function botPlan(view: ClientView, level: Level, rng: RngState): [Plan, R
 
   const growth = scored
     .slice()
-    .sort((a, b) => b.scoreNext - b.scoreNow - (a.scoreNext - a.scoreNow) || a.card.uid - b.card.uid);
+    .sort(
+      (a, b) => b.scoreNext - b.scoreNow - (a.scoreNext - a.scoreNow) || a.card.uid - b.card.uid,
+    );
   const chargeTarget = growth[0]?.card ?? hand[0];
 
   let firing: (typeof scored)[number] | null = null;
@@ -239,7 +257,9 @@ export function botPlan(view: ClientView, level: Level, rng: RngState): [Plan, R
 
   // Charging the card you are about to fire is a free extra charge, so the
   // charge follows the shot whenever there is one.
-  plan.chargeTo = view.me.restrictions.noCharge ? null : (firing?.card.uid ?? chargeTarget?.uid ?? null);
+  plan.chargeTo = view.me.restrictions.noCharge
+    ? null
+    : (firing?.card.uid ?? chargeTarget?.uid ?? null);
   if (plan.chargeTo === null && !view.me.restrictions.noCharge && hand.length) {
     plan.chargeTo = hand[0].uid;
   }
@@ -277,7 +297,10 @@ function lockedOut(view: ClientView, charges: number): boolean {
 function toProbabilities(view: ClientView, weight: number[], alive: number[]): number[] {
   const hitsLanded = Object.values(view.me.marks).filter((m) => m === 'hit').length;
   const sunkCells = view.foe.ships.filter((s) => s.sunk).reduce((n, s) => n + s.length, 0);
-  const remaining = Math.max(0, alive.reduce((n, l) => n + l, 0) - Math.max(0, hitsLanded - sunkCells));
+  const remaining = Math.max(
+    0,
+    alive.reduce((n, l) => n + l, 0) - Math.max(0, hitsLanded - sunkCells),
+  );
   let total = 0;
   for (let c = 0; c < CELLS; c++) if (view.me.marks[c] === undefined) total += weight[c];
   const scale = total > 0 ? remaining / total : 0;
@@ -534,7 +557,10 @@ function chooseAbility(
       case 'beacon': {
         if (view.round <= 4 || o.openClusters.length === 0) {
           const { row, col } = bestReadout(view, prob, level);
-          return { defId: 'beacon', spec: { shape: 'beacon', row, col, cells: ranked.slice(0, 4) } };
+          return {
+            defId: 'beacon',
+            spec: { shape: 'beacon', row, col, cells: ranked.slice(0, 4) },
+          };
         }
         break;
       }

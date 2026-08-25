@@ -7,12 +7,21 @@
  * and a proposed change is a one-line diff rather than a hunt.
  */
 export const BALANCE = {
-  /** Charges granted for landing a hit. See RULINGS.md Q3 — per hit, not per round. */
-  hitBonusPerHit: 1,
+  /**
+   * Charges granted for a round in which you landed at least one hit. Once,
+   * however many cells connected — ruling Q1.
+   */
+  hitBonusPerRound: 1,
   /** Charges placed on a card each round by its owner. */
   chargePerRound: 1,
   /** Mirror's payoff multiplier on a successful read. */
   mirrorGainPerCharge: 2,
+  /**
+   * Mirror cancels the opponent's entire round, so it may not be fished with
+   * cheaply — ruling Q6. Mirrored in CARDS.mirror.minCharges, which is what
+   * the rules actually read.
+   */
+  mirrorMinCharges: 2,
   /** Ember's payoff per hit. */
   emberGainPerHit: 2,
   /** Forge's flat payoff. */

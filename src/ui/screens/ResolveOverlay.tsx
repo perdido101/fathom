@@ -53,7 +53,7 @@ export function ResolveOverlay(): ReactElement | null {
   const you = useStore((s) => s.view()?.you ?? 0);
 
   const current = playback ? playback.events[playback.index] : null;
-  const delay = current ? STEP_MS[current.t] ?? 300 : 0;
+  const delay = current ? (STEP_MS[current.t] ?? 300) : 0;
 
   useEffect(() => {
     if (!playback) return undefined;

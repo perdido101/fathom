@@ -1,7 +1,7 @@
 import type { MatchConfig, MatchState, PlayerId, Plan } from '../engine/types';
 import { commitPlan, createMatch, deploy, pickCard, pickShip, playRound } from '../engine/match';
 import { clientView } from '../engine/view';
-import { seedRng, type RngState } from '../engine/rng';
+import { pick, seedRng, type RngState } from '../engine/rng';
 import { SHIPS } from '../engine/ships';
 import { botCardPick, botDeploy, botPlan, botShipPick, type Level } from '../bots/bot';
 
@@ -21,6 +21,8 @@ export interface MatchOutcomeRecord {
   /** Cards each player drafted and whether they were fired. */
   drafted: [string[], string[]];
   fired: [{ defId: string; charges: number }[], { defId: string; charges: number }[]];
+  /** Every ship drafted, for per-ship win rates. */
+  shipsDrafted: [string[], string[]];
   /** ACTIVE/NERF ships drafted and whether the ability was used. */
   abilityShips: [string[], string[]];
   abilitiesUsed: [string[], string[]];
@@ -34,20 +36,44 @@ export interface MatchOutcomeRecord {
    * had to work with.
    */
   hullBeforeLast: [number, number];
+  /**
+   * Hull cells at the top of round 8 — the midpoint. A match where the player
+   * behind here almost never recovers is a match decided before it ends.
+   */
+  hullAtRound8: [number, number];
+}
+
+export interface RunOptions {
+  config?: Partial<MatchConfig>;
+  /**
+   * Draft uniformly at random instead of by the bot's value table.
+   *
+   * Without this, four of the twelve ships are never drafted at all — the
+   * value table always prefers something else in their pack — so they get no
+   * per-ship win rate and the balance band passes over them in silence. That
+   * makes the harness, not the game, the thing deciding what gets measured.
+   * A random-draft pairing plays the match at full strength but chooses the
+   * pieces blind, which is the only way to price a ship the bot dislikes.
+   */
+  randomDraft?: boolean;
 }
 
 export function playBotMatch(
   seed: string,
   levels: [Level, Level],
-  config: Partial<MatchConfig> = {},
+  options: RunOptions = {},
 ): MatchOutcomeRecord {
+  const config = options.config ?? {};
   let ms = createMatch({ seed, players: [`bot${levels[0]}`, `bot${levels[1]}`], config });
   const rngs: [RngState, RngState] = [seedRng(`${seed}:b0`), seedRng(`${seed}:b1`)];
 
   for (let pack = 0; pack < 3; pack++) {
     const picks: [string, string] = ['', ''];
     for (const p of [0, 1] as PlayerId[]) {
-      const [choice, st] = botShipPick(clientView(ms, p), levels[p], rngs[p]);
+      const pack = ms.shipDraft.packs[ms.shipDraft.index] ?? [];
+      const [choice, st] = options.randomDraft
+        ? pickUniform(rngs[p], pack)
+        : botShipPick(clientView(ms, p), levels[p], rngs[p]);
       rngs[p] = st;
       picks[p] = choice;
     }
@@ -58,7 +84,10 @@ export function playBotMatch(
   for (let pack = 0; pack < 3; pack++) {
     const picks: [string, string] = ['', ''];
     for (const p of [0, 1] as PlayerId[]) {
-      const [choice, st] = botCardPick(clientView(ms, p), levels[p], rngs[p]);
+      const pack = ms.cardDraft.packs[ms.cardDraft.index] ?? [];
+      const [choice, st] = options.randomDraft
+        ? pickUniform(rngs[p], pack)
+        : botCardPick(clientView(ms, p), levels[p], rngs[p]);
       rngs[p] = st;
       picks[p] = choice;
     }
@@ -74,9 +103,11 @@ export function playBotMatch(
 
   let guard = 0;
   let hullBeforeLast: [number, number] = [9, 9];
+  let hullAtRound8: [number, number] = [9, 9];
   while (ms.phase === 'battle' && guard < 64) {
     guard += 1;
     hullBeforeLast = [hullLeft(ms, 0), hullLeft(ms, 1)];
+    if (ms.round === 8) hullAtRound8 = [hullLeft(ms, 0), hullLeft(ms, 1)];
     const plans: [Plan, Plan] = [] as unknown as [Plan, Plan];
     for (const p of [0, 1] as PlayerId[]) {
       const [plan, st] = botPlan(clientView(ms, p), levels[p], rngs[p]);
@@ -88,7 +119,7 @@ export function playBotMatch(
     }).state;
   }
 
-  return summarise(seed, levels, ms, hullBeforeLast);
+  return summarise(seed, levels, ms, hullBeforeLast, hullAtRound8);
 }
 
 function summarise(
@@ -96,6 +127,7 @@ function summarise(
   levels: [Level, Level],
   ms: MatchState,
   hullBeforeLast: [number, number],
+  hullAtRound8: [number, number],
 ): MatchOutcomeRecord {
   const outcome = ms.outcome;
   const result: 'p0' | 'p1' | 'draw' =
@@ -109,9 +141,14 @@ function summarise(
     levels,
     rounds: ms.history.length,
     result,
-    reason: outcome ? (outcome.kind === 'draw' ? `draw:${outcome.reason}` : outcome.reason) : 'unfinished',
+    reason: outcome
+      ? outcome.kind === 'draw'
+        ? `draw:${outcome.reason}`
+        : outcome.reason
+      : 'unfinished',
     drafted: [ms.players[0].draftedCards.slice(), ms.players[1].draftedCards.slice()],
     fired: [ms.players[0].stats.cardsFired.slice(), ms.players[1].stats.cardsFired.slice()],
+    shipsDrafted: [ms.players[0].draftedShips.slice(), ms.players[1].draftedShips.slice()],
     abilityShips,
     abilitiesUsed: [
       ms.players[0].stats.abilitiesUsed.slice(),
@@ -122,7 +159,13 @@ function summarise(
     shots: [ms.players[0].stats.shotsFired, ms.players[1].stats.shotsFired],
     hullLeft: [hullLeft(ms, 0), hullLeft(ms, 1)],
     hullBeforeLast,
+    hullAtRound8,
   };
+}
+
+function pickUniform(rng: RngState, pack: string[]): [string, RngState] {
+  const [choice, st] = pick(rng, pack);
+  return [choice ?? pack[0], st];
 }
 
 function hullLeft(ms: MatchState, p: PlayerId): number {

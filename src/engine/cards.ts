@@ -105,10 +105,10 @@ export const CARD_LIST: CardDef[] = [
   {
     id: 'mirror',
     name: 'Mirror',
-    minCharges: 1,
+    minCharges: 2,
     shape: 'cell',
     role: 'prediction',
-    text: 'Name a cell. If their attack includes it, their entire attack misses and you gain C x 2 charges.',
+    text: 'Needs 2 charges. Name a cell. If their attack includes it, their entire attack misses and you gain C x 2 charges.',
   },
   {
     id: 'ambush',
@@ -120,9 +120,7 @@ export const CARD_LIST: CardDef[] = [
   },
 ];
 
-export const CARDS: Record<string, CardDef> = Object.fromEntries(
-  CARD_LIST.map((c) => [c.id, c]),
-);
+export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
 
 export const CARD_IDS: string[] = CARD_LIST.map((c) => c.id);
 

@@ -136,9 +136,7 @@ export const SHIP_LIST: ShipDef[] = [
   },
 ];
 
-export const SHIPS: Record<string, ShipDef> = Object.fromEntries(
-  SHIP_LIST.map((s) => [s.id, s]),
-);
+export const SHIPS: Record<string, ShipDef> = Object.fromEntries(SHIP_LIST.map((s) => [s.id, s]));
 
 export const SHIP_IDS: string[] = SHIP_LIST.map((s) => s.id);
 

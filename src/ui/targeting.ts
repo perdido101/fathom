@@ -33,7 +33,16 @@ export interface Draft {
 }
 
 export function newDraft(aiming: Aiming): Draft {
-  return { aiming, cells: [], dir: null, from: [], toUid: null, row: null, col: null, innerUid: null };
+  return {
+    aiming,
+    cells: [],
+    dir: null,
+    from: [],
+    toUid: null,
+    row: null,
+    col: null,
+    innerUid: null,
+  };
 }
 
 export function shapeOf(d: Draft, innerDefId?: string): FireSpec['shape'] {
@@ -141,7 +150,9 @@ export function prompt(d: Draft, charges: number, innerDefId?: string): string {
     case 'cell':
       return d.cells.length ? 'ready' : 'tap the cell';
     case 'row':
-      return d.cells.length ? 'ready' : `tap where the ${3 + Math.max(0, charges - 1)}-cell row starts`;
+      return d.cells.length
+        ? 'ready'
+        : `tap where the ${3 + Math.max(0, charges - 1)}-cell row starts`;
     case 'block':
       return d.cells.length ? 'ready' : 'tap the top-left of the block';
     case 'line':

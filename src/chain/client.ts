@@ -74,7 +74,9 @@ class MockChain implements ChainAdapter {
   async connect(): Promise<string> {
     this.wallet = `mock${this.key.publicKeyHex.slice(0, 8)}`;
     this.key = issueSessionKey(Date.now(), 'mock-wallet-authorisation');
-    this.journal.push(`connected as ${this.wallet}; session key ${this.key.publicKeyHex.slice(0, 12)}...`);
+    this.journal.push(
+      `connected as ${this.wallet}; session key ${this.key.publicKeyHex.slice(0, 12)}...`,
+    );
     return this.wallet;
   }
 
@@ -143,8 +145,9 @@ class DevnetChain implements ChainAdapter {
   }
 
   async connect(): Promise<string> {
-    const provider = (globalThis as { solana?: { connect(): Promise<{ publicKey: { toString(): string } }> } })
-      .solana;
+    const provider = (
+      globalThis as { solana?: { connect(): Promise<{ publicKey: { toString(): string } }> } }
+    ).solana;
     if (!provider) throw new Error('no Solana wallet found in this browser');
     const res = await provider.connect();
     this.wallet = res.publicKey.toString();

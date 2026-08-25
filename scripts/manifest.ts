@@ -47,7 +47,7 @@ const ship: Asset[] = SHIP_LIST.flatMap((s) => [
 
 const unknownHull: Asset[] = [4, 3, 2].map((len) => ({
   file: `ships/unknown-${len}.png`,
-    px: '128x128',
+  px: '128x128',
   ratio: '1:1',
   where: 'enemy ship strip before that ship reveals itself',
   note: `Anonymous ${len}-length marker. Identical treatment for all four ships of that length — any distinguishing detail is an information leak.`,
@@ -214,7 +214,10 @@ function sfxAssets(): Asset[] {
 }
 
 function table(assets: Asset[]): string {
-  const lines = ['| File | Size | Ratio | Where it appears | Description |', '| --- | --- | --- | --- | --- |'];
+  const lines = [
+    '| File | Size | Ratio | Where it appears | Description |',
+    '| --- | --- | --- | --- | --- |',
+  ];
   for (const a of assets) {
     lines.push(`| \`${a.file}\` | ${a.px} | ${a.ratio} | ${a.where} | ${a.note} |`);
   }
@@ -268,7 +271,10 @@ correctly at 48px on a phone, because that is the size it will actually be
 seen at.
 
 ${groups
-  .map(([name, assets, blurb]) => `## ${name} — ${assets.length} files\n\n${blurb}\n\n${table(assets)}`)
+  .map(
+    ([name, assets, blurb]) =>
+      `## ${name} — ${assets.length} files\n\n${blurb}\n\n${table(assets)}`,
+  )
   .join('\n\n')}
 
 ## Not needed

@@ -123,7 +123,10 @@ export function pickCard(ms: MatchState, p: PlayerId, defId: string): MatchState
   // packs collided; this is the reading that generalises without ever putting
   // a third copy of a card into circulation.
   const taken = new Set([...s.players[0].draftedCards, ...s.players[1].draftedCards]);
-  const [pile, rng] = shuffle(s.rng, CARD_IDS.filter((id) => !taken.has(id)));
+  const [pile, rng] = shuffle(
+    s.rng,
+    CARD_IDS.filter((id) => !taken.has(id)),
+  );
   s.pile = pile;
   s.rng = rng;
   s.phase = 'deploy';
@@ -181,7 +184,10 @@ export interface SubmittedRound {
  * the timeout plan rather than rejected, so a malformed client can never wedge
  * a match — it just forfeits the round and takes a strike.
  */
-export function playRound(ms: MatchState, submitted: SubmittedRound): {
+export function playRound(
+  ms: MatchState,
+  submitted: SubmittedRound,
+): {
   state: MatchState;
   events: ResolveEvent[];
 } {
@@ -221,7 +227,11 @@ export function playRound(ms: MatchState, submitted: SubmittedRound): {
 }
 
 /** Build a committed plan. The signature is attached by the transport layer. */
-export function commitPlan(plan: Plan, nonce: string, signature: string | null = null): CommittedPlan {
+export function commitPlan(
+  plan: Plan,
+  nonce: string,
+  signature: string | null = null,
+): CommittedPlan {
   return { commitHash: commit(plan, nonce), nonce, plan, signature };
 }
 

@@ -170,7 +170,11 @@ export const useStore = create<Store>((set, get) => ({
   submitDeployment(placements) {
     const ms = get().match;
     if (!ms) return;
-    const [botPlacements, rng] = botDeploy(clientView(ms, 1), get().settings.botLevel, get().botRng);
+    const [botPlacements, rng] = botDeploy(
+      clientView(ms, 1),
+      get().settings.botLevel,
+      get().botRng,
+    );
     let next = deploy(ms, 0, placements, freshSeed());
     next = deploy(next, 1, botPlacements, freshSeed());
     void chain.commitDeployment(get().matchIdOnChain, next.players[0].deployCommit ?? '');

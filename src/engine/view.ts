@@ -84,8 +84,20 @@ export interface ClientView {
   };
 
   /** Packs were shown face up to both players, so they stay public. */
-  shipDraft: { packs: string[][]; index: number; myPicks: (string | null)[]; collisions: boolean[]; done: boolean };
-  cardDraft: { packs: string[][]; index: number; myPicks: (string | null)[]; collisions: boolean[]; done: boolean };
+  shipDraft: {
+    packs: string[][];
+    index: number;
+    myPicks: (string | null)[];
+    collisions: boolean[];
+    done: boolean;
+  };
+  cardDraft: {
+    packs: string[][];
+    index: number;
+    myPicks: (string | null)[];
+    collisions: boolean[];
+    done: boolean;
+  };
 
   /** Count only. The order is the whole secret. */
   pileCount: number;

@@ -50,7 +50,7 @@ export function ShipArt({
 }): ReactElement {
   // An unidentified hull is a slab of the same grey whatever it turns out to
   // be, so the silhouette gives nothing away before the ship reveals itself.
-  const colour = defId && revealed ? SHIP_TINT[defId] ?? '#4a5a75' : '#2a3550';
+  const colour = defId && revealed ? (SHIP_TINT[defId] ?? '#4a5a75') : '#2a3550';
   const w = vertical ? size : size * length;
   const h = vertical ? size * length : size;
   return (

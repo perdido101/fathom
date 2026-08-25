@@ -118,7 +118,10 @@ export function Queue(): ReactElement {
   return (
     <div className="screen">
       <h2>Arena</h2>
-      <p>Winner takes the pot minus {(ARENA_RAKE * 100).toFixed(0)}% rake. A draw returns both stakes with no rake taken.</p>
+      <p>
+        Winner takes the pot minus {(ARENA_RAKE * 100).toFixed(0)}% rake. A draw returns both stakes
+        with no rake taken.
+      </p>
 
       <h3>Stake</h3>
       <div className="grid4">
@@ -281,7 +284,10 @@ export function Season(): ReactElement {
             One entry of {SEASON_ENTRY_SOL} SOL buys unlimited ranked matches for the whole season.
             Entries are pooled and paid out on the curve at season end.
           </p>
-          <button className="btn go" onClick={() => useStore.setState({ profile: { ...profile, seasonEntry: true } })}>
+          <button
+            className="btn go"
+            onClick={() => useStore.setState({ profile: { ...profile, seasonEntry: true } })}
+          >
             Pay {SEASON_ENTRY_SOL} SOL entry
           </button>
         </div>
@@ -297,7 +303,11 @@ export function Season(): ReactElement {
                 width: 46,
                 fontSize: 12,
                 color:
-                  h.result === 'win' ? 'var(--friend)' : h.result === 'draw' ? 'var(--ink-dim)' : 'var(--danger)',
+                  h.result === 'win'
+                    ? 'var(--friend)'
+                    : h.result === 'draw'
+                      ? 'var(--ink-dim)'
+                      : 'var(--danger)',
               }}
             >
               {h.result}
@@ -335,9 +345,7 @@ export function SettingsScreen(): ReactElement {
       <h3>Wallet</h3>
       <div className="card-surface col">
         <span style={{ fontSize: 13 }}>{wallet ?? 'not connected'}</span>
-        <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-          adapter: {chain.kind}
-        </span>
+        <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>adapter: {chain.kind}</span>
         <button
           className="btn"
           onClick={async () => {
@@ -359,11 +367,7 @@ export function SettingsScreen(): ReactElement {
       </div>
 
       <h3>Play</h3>
-      <Toggle
-        label="Sound"
-        on={settings.sound}
-        onChange={(v) => setSettings({ sound: v })}
-      />
+      <Toggle label="Sound" on={settings.sound} onChange={(v) => setSettings({ sound: v })} />
       <Toggle
         label="Skip resolve animation"
         on={settings.fastResolve}
@@ -377,7 +381,9 @@ export function SettingsScreen(): ReactElement {
               key={l}
               className="btn"
               onClick={() => setSettings({ botLevel: l })}
-              style={{ borderColor: settings.botLevel === l ? 'var(--charge)' : 'var(--panel-edge)' }}
+              style={{
+                borderColor: settings.botLevel === l ? 'var(--charge)' : 'var(--panel-edge)',
+              }}
             >
               {['Deckhand', 'Mate', 'Officer', 'Admiral'][l - 1]}
             </button>
@@ -393,13 +399,19 @@ export function SettingsScreen(): ReactElement {
           from.
         </span>
         <span className="log">
-          last cues: {Sound.history.slice(-6).map((h) => h.cue).join(', ') || 'none yet'}
+          last cues:{' '}
+          {Sound.history
+            .slice(-6)
+            .map((h) => h.cue)
+            .join(', ') || 'none yet'}
         </span>
       </div>
 
       <h3>Chain journal</h3>
       <div className="card-surface log scroll" style={{ maxHeight: 120 }}>
-        {chain.journal.length === 0 ? 'nothing yet' : chain.journal.slice(-10).map((l, i) => <div key={i}>{l}</div>)}
+        {chain.journal.length === 0
+          ? 'nothing yet'
+          : chain.journal.slice(-10).map((l, i) => <div key={i}>{l}</div>)}
       </div>
 
       <div className="spacer" />

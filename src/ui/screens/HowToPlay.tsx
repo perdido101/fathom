@@ -28,7 +28,11 @@ export function HowToPlay(): ReactElement {
       <Step />
       <div className="spacer" />
       <div className="row">
-        <button className="btn ghost" style={{ flex: 1 }} onClick={() => (step === 0 ? go('menu') : setStep(step - 1))}>
+        <button
+          className="btn ghost"
+          style={{ flex: 1 }}
+          onClick={() => (step === 0 ? go('menu') : setStep(step - 1))}
+        >
           {step === 0 ? 'back' : 'previous'}
         </button>
         <button
@@ -65,7 +69,9 @@ function Charging(): ReactElement {
         ))}
       </div>
       <p style={{ fontSize: 12 }}>
-        {placed === 0 ? 'Tap a card to charge it.' : `${placed} rounds of charging. Bigger every round you wait.`}
+        {placed === 0
+          ? 'Tap a card to charge it.'
+          : `${placed} rounds of charging. Bigger every round you wait.`}
       </p>
     </div>
   );
@@ -125,7 +131,13 @@ function Simultaneous(): ReactElement {
 }
 
 function Sinks(): ReactElement {
-  const marks: Record<number, 'hit' | 'miss'> = { 8: 'hit', 9: 'hit', 10: 'hit', 3: 'miss', 20: 'miss' };
+  const marks: Record<number, 'hit' | 'miss'> = {
+    8: 'hit',
+    9: 'hit',
+    10: 'hit',
+    3: 'miss',
+    20: 'miss',
+  };
   return (
     <div className="col">
       <h3>A sink tells you a length</h3>
@@ -136,8 +148,8 @@ function Sinks(): ReactElement {
       </p>
       <Board marks={marks} />
       <p style={{ fontSize: 12 }}>
-        Their ships only name themselves by acting. Using an ability flips that ship face up
-        forever — but it never says where it is.
+        Their ships only name themselves by acting. Using an ability flips that ship face up forever
+        — but it never says where it is.
       </p>
     </div>
   );

@@ -59,7 +59,13 @@ export function Battle(): ReactElement | null {
 
   const aimCells = draft ? previewCells(draft, draftCharges, innerDefId) : [];
   const committedAim = [
-    ...(fire ? specCells(fire.spec, view.me.hand.find((c) => c.uid === fire.uid)?.defId ?? '', chargeTo === fire.uid) : []),
+    ...(fire
+      ? specCells(
+          fire.spec,
+          view.me.hand.find((c) => c.uid === fire.uid)?.defId ?? '',
+          chargeTo === fire.uid,
+        )
+      : []),
     ...(ability ? specCells(ability.spec, ability.defId, false) : []),
   ];
 
@@ -118,12 +124,20 @@ export function Battle(): ReactElement | null {
 
   function confirmDraft(): void {
     if (!draft) return;
-    const spec = toSpec(draft, draftCharges, innerDefId, innerSpec(draft, draftCharges, innerDefId));
+    const spec = toSpec(
+      draft,
+      draftCharges,
+      innerDefId,
+      innerSpec(draft, draftCharges, innerDefId),
+    );
     if (draft.aiming.kind === 'card') {
       setFire({ uid: draft.aiming.uid, spec });
       Sound.play('card-fired');
     } else {
-      setAbility({ defId: draft.aiming.defId, spec: wrapAbility(draft, spec, innerDefId, draftCharges) });
+      setAbility({
+        defId: draft.aiming.defId,
+        spec: wrapAbility(draft, spec, innerDefId, draftCharges),
+      });
       Sound.play('ability-activated');
     }
     setDraft(null);
@@ -154,9 +168,7 @@ export function Battle(): ReactElement | null {
           round {view.round}/{view.roundCap}
         </span>
         <span className="pill">{foe.name}</span>
-        <span className="pill mono">
-          bank {foe.hand.reduce((n, c) => n + c.charges, 0)}
-        </span>
+        <span className="pill mono">bank {foe.hand.reduce((n, c) => n + c.charges, 0)}</span>
       </div>
 
       <div className="row" style={{ gap: 6 }}>
@@ -188,7 +200,9 @@ export function Battle(): ReactElement | null {
                 {c.charges}
               </span>
               {allocationFor(draft, c.uid) ? (
-                <span style={{ fontSize: 9, color: 'var(--danger)' }}>-{allocationFor(draft, c.uid)}</span>
+                <span style={{ fontSize: 9, color: 'var(--danger)' }}>
+                  -{allocationFor(draft, c.uid)}
+                </span>
               ) : null}
             </button>
           ))}
@@ -263,7 +277,9 @@ export function Battle(): ReactElement | null {
               {blocked.noCharge && 'Blacked out — no charge this round. '}
               {blocked.noFire && 'Pinned — no card may be fired. '}
               {blocked.chargeLock !== null && `Cards on exactly ${blocked.chargeLock} are locked. `}
-              {basic === null ? 'Tap their water to aim your free shot.' : `Free shot: ${label(basic)}`}
+              {basic === null
+                ? 'Tap their water to aim your free shot.'
+                : `Free shot: ${label(basic)}`}
               {chargeTo === null && !blocked.noCharge ? ' Tap a card to charge it.' : ''}
             </span>
             {fire && (
@@ -430,10 +446,17 @@ function blockCells(anchor: CellIndex, size: number): CellIndex[] {
 function wrapAbility(draft: Draft, spec: FireSpec, innerDefId?: string, charges = 0): FireSpec {
   if (draft.aiming.kind !== 'ability') return spec;
   if (SHIPS[draft.aiming.defId].shape !== 'kiln') return spec;
-  return { shape: 'kiln', uid: draft.innerUid ?? 0, inner: innerSpec(draft, charges, innerDefId) ?? spec };
+  return {
+    shape: 'kiln',
+    uid: draft.innerUid ?? 0,
+    inner: innerSpec(draft, charges, innerDefId) ?? spec,
+  };
 }
 
 function innerSpec(draft: Draft, charges: number, innerDefId?: string): FireSpec | undefined {
   if (!innerDefId) return undefined;
-  return toSpec({ ...draft, aiming: { kind: 'card', uid: draft.innerUid ?? 0, defId: innerDefId, charges } }, charges);
+  return toSpec(
+    { ...draft, aiming: { kind: 'card', uid: draft.innerUid ?? 0, defId: innerDefId, charges } },
+    charges,
+  );
 }

@@ -63,9 +63,7 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
     <div className="screen">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h2>{kind === 'ship' ? 'Ship draft' : 'Card draft'}</h2>
-        <span className="pill">
-          pack {Math.min(packIndex + 1, 3)} of 3
-        </span>
+        <span className="pill">pack {Math.min(packIndex + 1, 3)} of 3</span>
       </div>
       <p>
         {kind === 'ship'
@@ -113,7 +111,9 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
       <div className="spacer" />
       <h3>Taken so far</h3>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-        {picked.length === 0 && <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>nothing yet</span>}
+        {picked.length === 0 && (
+          <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>nothing yet</span>
+        )}
         {picked.map((id, i) => (
           <span key={i} className="pill">
             {kind === 'ship' ? SHIPS[id].name : CARDS[id].name}
