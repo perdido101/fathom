@@ -75,10 +75,10 @@ try {
     // Aiming the free shot rewrites the prompt line, which reflows the buttons
     // underneath it. Let the layout settle before reaching for one.
     await page.waitForTimeout(150);
+    // Note the exact match: card text contains the word "charges", so a
+    // substring match on the accessible name hits the card, not the button.
     await page.getByRole('button', { name: 'charge', exact: true }).first().click();
-    await page.waitForTimeout(120);
-    // Let React flush the charge before reading the commit button's state.
-    await page.waitForTimeout(120);
+    await page.waitForTimeout(150);
     if (round === 0) await shot('06b-planned');
     const commit = page.getByRole('button', { name: /^commit/ });
     if (!(await commit.isVisible())) {
