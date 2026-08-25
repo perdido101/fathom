@@ -1,535 +1,742 @@
-import { describe, it, expect } from 'vitest';
-import { seedRng, nextInt, nextU32, seedName, hashString } from './rng';
-import { generateMap } from './map/generate';
-import { autoPlaceFleet, isLegalPlacement, isStraightLine } from './fleet/placement';
-import { createMatch } from './state';
-import { reduce } from './reduce';
-import { cardUiState } from './resolve/availability';
-import { dealShipDraft, pickShip, cluesFor, clientShipDraftView } from './draft/shipDraft';
-import { dealCardDraft, pickCard, currentPicker, snakeOrder } from './draft/cardDraft';
-import { fleetBelief } from './deduction';
-import { clientMatchView } from './clientView';
-import { voyageRound, VOYAGE_LENGTHS } from '../content/voyage';
-import { PATCHES } from '../content/patches';
-import { MODIFIERS, MODIFIER_IDS } from '../content/modifiers';
-import { SHIPS, SHIP_IDS } from '../content/ships';
-import { TERRAIN } from '../content/terrain';
-import {
-  createTournament,
-  generateBracket,
-  advanceMatch,
-  nextPendingMatch,
-  resolveUntilHuman,
-  humanSeat,
-} from './tournament';
-import type { MatchConfig, MatchState, PlayerId } from './types';
-import { rcCell } from './types';
+import { describe, expect, it } from 'vitest';
+import type { CardInstance, MatchState, Plan, PlayerId } from './types';
+import { cellAt, emptyPlan } from './types';
+import { createMatch, commitPlan, deploy, pickCard, pickShip, playRound } from './match';
+import { currentPack } from './draft';
+import { clientView } from './view';
+import { transcriptOf, verify } from './verify';
+import { CARD_IDS } from './cards';
+import { stableStringify } from './sha256';
+import type { Placement } from './board';
 
-const baseConfig = (seed: string): MatchConfig => ({
-  seed,
-  round: 1,
-  voyageLength: 6,
-  gridW: 8,
-  gridH: 8,
-  patches: 4,
-  baseIncome: 3,
-  secondPlayerComp: 2,
-  hitBonus: 1,
-  firstPlayer: 0,
-  players: [
-    { name: 'Alpha', isAI: false, fleet: ['tender', 'cutter', 'skiff'], tray: ['twin_shot', 'buoy'] },
-    { name: 'Bravo', isAI: false, fleet: ['tender', 'cutter', 'skiff'], tray: ['line_probe', 'ballast'] },
-  ],
-});
+// ---------------------------------------------------------------------------
+// Scaffolding
+// ---------------------------------------------------------------------------
 
-const FULL_FLEET = [
-  'dreadnought', 'leviathan', 'carrier', 'sonarship', 'frigate',
-  'minelayer', 'tender', 'cutter', 'reefrunner', 'skiff',
-];
-
-/** Place both fleets via seeded auto-placement. */
-function placeBoth(ms: MatchState): MatchState {
-  let st = seedRng(ms.seed + ':test-place');
-  let out = ms;
-  for (const p of [0, 1] as const) {
-    const [placements, st2] = autoPlaceFleet(
-      out.players[p].fleetToPlace, out.gridW, out.gridH, out.terrain, st,
-    );
-    st = st2;
-    out = reduce(out, { type: 'PLACE_FLEET', player: p, placements: placements!, mines: [] });
-  }
-  return out;
+interface Setup {
+  seed?: string;
+  ships?: [string[], string[]];
+  place?: [Placement[], Placement[]];
+  hands?: [string[], string[]];
 }
 
-describe('rng', () => {
-  it('is deterministic for a given seed', () => {
-    expect(nextU32(seedRng('hello'))[0]).toBe(nextU32(seedRng('hello'))[0]);
-  });
-  it('produces different streams for different seeds', () => {
-    expect(nextU32(seedRng('a'))[0]).not.toBe(nextU32(seedRng('b'))[0]);
-  });
-  it('nextInt stays in range', () => {
-    let st = seedRng('range');
-    for (let i = 0; i < 200; i++) {
-      let v: number;
-      [v, st] = nextInt(st, 7);
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThan(7);
-    }
-  });
-  it('seed names are stable and human readable', () => {
-    expect(seedName('x')).toBe(seedName('x'));
-    expect(seedName('x')).toMatch(/^[A-Z]+-[A-Z]+-\d{4}$/);
-  });
-  it('hashString is stable across runs (save compatibility)', () => {
-    expect(hashString('fathom')).toBe(hashString('fathom'));
-  });
-});
+const DEFAULT_SHIPS: [string[], string[]] = [
+  ['warhead', 'beacon', 'ember'],
+  ['forge', 'kiln', 'pin'],
+];
 
-describe('patch maps', () => {
-  it('has 20 authored patch designs', () => {
-    expect(PATCHES.length).toBe(20);
-    for (const patch of PATCHES) expect(patch.cells.length).toBe(16);
-  });
-  it('is deterministic and patch-aligned', () => {
-    const a = generateMap('map-seed', 8, 12, FULL_FLEET);
-    const b = generateMap('map-seed', 8, 12, FULL_FLEET);
-    expect(a).toEqual(b);
-    expect(a.length).toBe(96);
-  });
-  it('always admits full-fleet placement', () => {
-    for (const [w, h] of [[8, 8], [8, 12], [12, 12]] as const) {
-      const t = generateMap(`placeable-${w}x${h}`, w, h, FULL_FLEET);
-      let st = seedRng('placement-check');
-      for (let i = 0; i < 20; i++) {
-        let placed;
-        [placed, st] = autoPlaceFleet(FULL_FLEET, w, h, t, st);
-        expect(placed).not.toBeNull();
-      }
-    }
-  });
-  it('rejects non-patch-aligned dimensions', () => {
-    expect(() => generateMap('bad', 10, 10, FULL_FLEET)).toThrow();
-  });
-});
+/** Three ships laid out in tidy rows, so tests can name cells by hand. */
+function rows(ids: string[], startRow: number): Placement[] {
+  const lengths = [4, 3, 2];
+  return ids.map((defId, i) => ({
+    defId,
+    cells: Array.from({ length: lengths[i] }, (_, k) => cellAt(k, startRow + i)),
+  }));
+}
 
-describe('placement legality (diagonals allowed)', () => {
-  const open = new Array(64).fill('OPEN') as import('./types').TerrainId[];
-  it('accepts orthogonal and diagonal lines', () => {
-    expect(isLegalPlacement([0, 1, 2], 3, 8, 8, open, new Set())).toBe(true);
-    expect(isLegalPlacement([0, 8, 16], 3, 8, 8, open, new Set())).toBe(true);
-    expect(isLegalPlacement([0, 9, 18], 3, 8, 8, open, new Set())).toBe(true); // ↘ diagonal
-    expect(isLegalPlacement([2, 9, 16], 3, 8, 8, open, new Set())).toBe(true); // ↙ diagonal
-    expect(isStraightLine([0, 9, 18], 8)).toBe(true);
-  });
-  it('rejects bent shapes, gaps, overlaps and reef', () => {
-    expect(isLegalPlacement([0, 1, 9], 3, 8, 8, open, new Set())).toBe(false);
-    expect(isLegalPlacement([0, 1, 3], 3, 8, 8, open, new Set())).toBe(false);
-    expect(isLegalPlacement([0, 1], 2, 8, 8, open, new Set([1]))).toBe(false);
-    const reefy = open.slice();
-    reefy[1] = 'REEF';
-    expect(isLegalPlacement([0, 1], 2, 8, 8, reefy, new Set())).toBe(false);
-    expect(TERRAIN.REEF.placeable).toBe(false);
-  });
-});
+/** A match sitting at the top of round 1 with exactly the pieces asked for. */
+function battle(opts: Setup = {}): MatchState {
+  const ships = opts.ships ?? DEFAULT_SHIPS;
+  let ms = createMatch({ seed: opts.seed ?? 'test-seed', players: ['A', 'B'] });
 
-describe('voyage configuration', () => {
-  it('derives grids from patches across every voyage length', () => {
-    for (const len of VOYAGE_LENGTHS) {
-      const first = voyageRound(len, 1);
-      const last = voyageRound(len, len);
-      expect(first.gridW).toBe(8);
-      expect(first.gridH).toBe(8);
-      expect(last.gridW).toBe(8);
-      expect(last.gridH).toBe(12);
-      // Fleet sizes are cumulative sums of keeps.
-      let total = 0;
-      for (let r = 1; r <= len; r++) {
-        const cfg = voyageRound(len, r);
-        total += cfg.keeps;
-        expect(cfg.fleetSize).toBe(total);
-      }
-    }
-  });
-  it('every voyage ends at a comparable fleet size (10–12)', () => {
-    for (const len of VOYAGE_LENGTHS) {
-      const final = voyageRound(len, len).fleetSize;
-      expect(final).toBeGreaterThanOrEqual(10);
-      expect(final).toBeLessThanOrEqual(12);
-    }
-  });
-});
+  for (let pack = 0; pack < 3; pack++) {
+    ms = pickShip(ms, 0, ships[0][pack]);
+    ms = pickShip(ms, 1, ships[1][pack]);
+  }
+  for (let pack = 0; pack < 3; pack++) {
+    const options = currentPack(ms.cardDraft);
+    ms = pickCard(ms, 0, options[0]);
+    ms = pickCard(ms, 1, options[1] ?? options[0]);
+  }
 
-describe('ship draft (packs of four)', () => {
-  /** Drive a whole ship draft, always keeping the first two in front. */
-  const runDraft = (ds: ReturnType<typeof dealShipDraft>) => {
-    let cur = ds;
-    let guard = 0;
-    while (!cur.done && guard++ < 60) {
-      const p = cur.toAct!;
-      cur = pickShip(cur, p, cur.current![0].uid, cur.current![1].uid);
-    }
-    return cur;
-  };
+  const place = opts.place ?? [rows(ships[0], 0), rows(ships[1], 0)];
+  ms = deploy(ms, 0, place[0], 'n0');
+  ms = deploy(ms, 1, place[1], 'n1');
 
-  it('deals four at a time and gives each player one hull per pack', () => {
-    const ds = dealShipDraft('draft-1', 5, 1000);
-    expect(ds.current!.length).toBe(4);
-    expect(ds.deck.length).toBe(16);
-    const done = runDraft(ds);
-    expect(done.done).toBe(true);
-    expect(done.keeps[0].length).toBe(5);
-    expect(done.keeps[1].length).toBe(5);
-    expect(done.burns[0].length).toBe(5);
-    expect(done.burns[1].length).toBe(5);
-  });
-
-  it('five packs consume the whole 20-hull deck', () => {
-    const done = runDraft(dealShipDraft('draft-2', 5, 1000));
-    const consumed = [
-      ...done.keeps[0], ...done.keeps[1], ...done.burns[0], ...done.burns[1],
-    ].map((i) => i.id).sort();
-    expect(consumed.length).toBe(20);
-    expect(consumed).toEqual([...SHIP_IDS, ...SHIP_IDS].sort());
-    expect(done.deck.length).toBe(0);
-  });
-
-  it('passes two on, then alternates who opens the next pack', () => {
-    let ds = dealShipDraft('draft-3', 2, 1000, 0);
-    expect(ds.toAct).toBe(0);
-    const opened = ds.current!.map((i) => i.uid);
-    ds = pickShip(ds, 0, opened[0], opened[1]);
-    // The other two pass to player 1.
-    expect(ds.toAct).toBe(1);
-    expect(ds.current!.map((i) => i.uid)).toEqual([opened[2], opened[3]]);
-    ds = pickShip(ds, 1, opened[2], opened[3]);
-    // Fresh pack, and player 1 opens it this time.
-    expect(ds.packIndex).toBe(1);
-    expect(ds.toAct).toBe(1);
-    expect(ds.current!.length).toBe(4);
-  });
-
-  it('rejects picks out of turn or outside the cards in front of you', () => {
-    const ds = dealShipDraft('draft-4', 2, 1000, 0);
-    expect(() => pickShip(ds, 1, ds.current![0].uid, ds.current![1].uid)).toThrow();
-    expect(() => pickShip(ds, 0, ds.current![0].uid, ds.current![0].uid)).toThrow();
-    expect(() => pickShip(ds, 0, ds.current![0].uid, 999999)).toThrow();
-  });
-
-  it('gives an exact pair clue for packs the viewer opened', () => {
-    let ds = dealShipDraft('draft-5', 1, 1000, 0);
-    const opened = ds.current!.slice();
-    ds = pickShip(ds, 0, opened[0].uid, opened[1].uid);
-    const passed = [opened[2].id, opened[3].id];
-    ds = pickShip(ds, 1, opened[2].uid, opened[3].uid);
-    // Player 0 opened the pack, so they know player 1 chose between the two
-    // they passed on.
-    const clues = cluesFor(ds, 0);
-    expect(clues.length).toBe(1);
-    expect(clues[0].options.slice().sort()).toEqual(passed.slice().sort());
-  });
-
-  it('burn pile is absent from every client view', () => {
-    const done = runDraft(dealShipDraft('draft-6', 3, 1000));
+  if (opts.hands) {
     for (const p of [0, 1] as PlayerId[]) {
-      const view = clientShipDraftView(done, p) as Record<string, unknown>;
-      const json = JSON.stringify(view);
-      for (const burned of done.burns[p === 0 ? 1 : 0]) {
-        expect(json.includes(`"uid":${burned.uid}`)).toBe(false);
-      }
-      expect('burns' in view).toBe(false);
-      expect('keeps' in view).toBe(false);
-      expect('deck' in view).toBe(false);
+      ms.players[p].hand = opts.hands[p].map((defId, i) => ({
+        uid: 900 + p * 100 + i,
+        defId,
+        charges: 0,
+      }));
     }
+  }
+  return ms;
+}
+
+function card(ms: MatchState, p: PlayerId, defId: string): CardInstance {
+  const c = ms.players[p].hand.find((x) => x.defId === defId);
+  if (!c) throw new Error(`no ${defId} in hand`);
+  return c;
+}
+
+function charge(ms: MatchState, p: PlayerId, defId: string, n: number): void {
+  card(ms, p, defId).charges = n;
+}
+
+/** A plan that does the minimum the rules demand: place one charge. */
+function idle(ms: MatchState, p: PlayerId): Plan {
+  const first = ms.players[p].hand[0];
+  return { ...emptyPlan(), chargeTo: first?.uid ?? null, bonusTo: first?.uid ?? null };
+}
+
+function run(ms: MatchState, a: Plan, b: Plan) {
+  return playRound(ms, {
+    plans: [commitPlan(a, 'x', 'sig'), commitPlan(b, 'y', 'sig')],
+  });
+}
+
+// ---------------------------------------------------------------------------
+
+describe('content', () => {
+  it('fields twelve cards and twelve ships', async () => {
+    const { CARD_LIST } = await import('./cards');
+    const { SHIP_LIST, PACK_A, PACK_B, PACK_C } = await import('./ships');
+    expect(CARD_LIST).toHaveLength(12);
+    expect(SHIP_LIST).toHaveLength(12);
+    expect(PACK_A).toHaveLength(4);
+    expect(PACK_B).toHaveLength(4);
+    expect(PACK_C).toHaveLength(4);
+    expect(new Set(SHIP_LIST.map((s) => s.id)).size).toBe(12);
+  });
+
+  it('offers 64 possible enemy fleets', async () => {
+    const { FLEET_SPACE } = await import('./ships');
+    expect(FLEET_SPACE).toHaveLength(64);
+  });
+
+  it('lets only Ambush fire from a standing start', async () => {
+    const { CARD_LIST } = await import('./cards');
+    const free = CARD_LIST.filter((c) => c.minCharges === 0).map((c) => c.id);
+    expect(free).toEqual(['ambush']);
   });
 });
 
-describe('card draft (open shared row)', () => {
-  it('snake order is A B B A A B…', () => {
-    expect(snakeOrder(0, 3)).toEqual([0, 1, 1, 0, 0, 1]);
-    expect(snakeOrder(1, 2)).toEqual([1, 0, 0, 1]);
+describe('drafting', () => {
+  it('gives both players the item when they collide', () => {
+    let ms = createMatch({ seed: 'collide', players: ['A', 'B'] });
+    const pack = currentPack(ms.shipDraft);
+    ms = pickShip(ms, 0, pack[0]);
+    ms = pickShip(ms, 1, pack[0]);
+    expect(ms.shipDraft.collisions[0]).toBe(true);
+    expect(ms.shipDraft.picks[0][0]).toBe(pack[0]);
+    expect(ms.shipDraft.picks[1][0]).toBe(pack[0]);
   });
 
-  it('pool size is (picks × 2) + 2, so the row runs short', () => {
-    const ds = dealCardDraft('cards-1', 5, [1, 2], 0);
-    expect(ds.pool.length).toBe(12);
-  });
-
-  it('is fully public and enforces turn order', () => {
-    let ds = dealCardDraft('cards-2', 2, [1], 0);
-    expect(currentPicker(ds)).toBe(0);
-    expect(() => pickCard(ds, 1, ds.pool[0])).toThrow();
-    let guard = 0;
-    while (!ds.done && guard++ < 10) {
-      ds = pickCard(ds, currentPicker(ds)!, ds.pool[0]);
-    }
-    expect(ds.done).toBe(true);
-    expect(ds.keeps[0].length).toBe(2);
-    expect(ds.keeps[1].length).toBe(2);
-  });
-});
-
-describe('fleet deduction', () => {
-  it('narrows the belief when sinks rule branches out', () => {
-    // Two pair clues: {skiff(1) | dreadnought(5)}, {cutter(2) | tender(3)}.
-    const clues = [
-      { options: ['skiff', 'dreadnought'] },
-      { options: ['cutter', 'tender'] },
-    ];
-    const before = fleetBelief(clues, []);
-    expect(before.consistentCount).toBe(4);
-    // A length-5 sink proves the dreadnought was kept, not the skiff.
-    const after = fleetBelief(clues, [5]);
-    expect(after.consistentCount).toBe(2);
-    const [skiffPossible, dreadPossible] = after.possibleOptions[0];
-    expect(dreadPossible).toBe(true);
-    expect(skiffPossible).toBe(false);
-    // And the remaining expectation carries no length-5 mass.
-    expect(after.expectedBySize.get(5) ?? 0).toBe(0);
-  });
-});
-
-describe('match flow', () => {
-  it('placement then battle, income and basic salvo', () => {
-    let ms = createMatch(baseConfig('flow-1'));
-    expect(ms.phase).toBe('placement');
-    expect(MODIFIER_IDS.includes(ms.modifierId)).toBe(true);
-    ms = placeBoth(ms);
-    expect(ms.phase).toBe('battle');
-    expect(ms.current).toBe(0);
-    expect(ms.players[0].energy).toBeGreaterThanOrEqual(3);
-    const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
-    // Fire at open water: a miss costs the salvo and earns nothing back.
-    const occupied = new Set(ms.players[1].ships.flatMap((s) => s.cells));
-    const emptyCell = [...Array(ms.gridW * ms.gridH).keys()].find((c) => !occupied.has(c))!;
-    const before = ms.players[0].energy;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [emptyCell] } });
-    expect(ms.players[0].energy).toBe(before - 1);
-    expect(ms.players[0].shotsFired).toBe(1);
-  });
-
-  it('victory when all ships sunk, and sinks announce length only', () => {
-    let ms = createMatch(baseConfig('flow-4'));
-    ms = placeBoth(ms);
-    const salvo = () => ms.players[ms.current].tray.find((c) => c.typeId === 'basic_salvo')!;
-    let guard = 0;
-    while (ms.phase === 'battle' && guard++ < 800) {
-      const enemy = ms.players[1];
-      const target = enemy.ships.flatMap((s) =>
-        s.sunk ? [] : s.cells.filter((_, i) => !s.destroyed[i]),
-      );
-      if (ms.current !== 0) {
-        ms = reduce(ms, { type: 'END_TURN', player: 1 });
-        continue;
-      }
-      if (ms.players[0].energy < 1 || target.length === 0) {
-        if (target.length === 0) break;
-        ms = reduce(ms, { type: 'END_TURN', player: 0 });
-        continue;
-      }
-      ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo().uid, target: { cells: [target[0]] } });
-    }
-    expect(ms.phase).toBe('over');
-    expect(ms.winner).toBe(0);
-    // No hull name ever appears in sink announcements.
-    for (const entry of ms.log) {
-      if (entry.text.includes('goes down')) {
-        expect(entry.text).toMatch(/A ship of length \d goes down\./);
-      }
+  it('builds a fleet of one 4, one 3 and one 2', () => {
+    const ms = battle();
+    for (const p of [0, 1] as PlayerId[]) {
+      expect(ms.players[p].ships.map((s) => s.length).sort()).toEqual([2, 3, 4]);
     }
   });
 
-  it('a silent-running skiff sinks without announcing its length', () => {
-    let ms = createMatch(baseConfig('flow-5'));
-    ms = placeBoth(ms);
-    const skiff = ms.players[1].ships.find((s) => s.typeId === 'skiff')!;
-    const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [skiff.cells[0]] } });
-    const after = ms.players[1].ships.find((s) => s.typeId === 'skiff')!;
-    // It takes the hit like anything else — no false miss to poison the map.
-    expect(after.sunk).toBe(true);
-    expect(ms.players[0].intel[skiff.cells[0]].mark).toBe('hit');
-    // But nothing is announced, so the hunter learns no length.
-    expect(after.sinkAnnounced).toBe(false);
-    expect(ms.players[0].enemySunkLengths).toEqual([]);
-    expect(ms.log.some((l) => l.text.includes('goes down'))).toBe(false);
-  });
-
-  it('a played card sits out exactly the next turn', () => {
-    let ms = createMatch(baseConfig('flow-6'));
-    ms = placeBoth(ms);
-    const twin = ms.players[0].tray.find((c) => c.typeId === 'twin_shot')!;
-    const t0 = ms.players[1].ships.find((s) => s.typeId === 'tender')!.cells;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: twin.uid, target: { cells: [t0[0], t0[1]] } });
-    const played = ms.players[0].tray.find((c) => c.uid === twin.uid)!;
-    expect(cardUiState(ms, ms.players[0], played)).toBe('unavailable');
-
-    // Next turn: still unavailable.
-    ms = reduce(ms, { type: 'END_TURN', player: 0 });
-    ms = reduce(ms, { type: 'END_TURN', player: 1 });
-    let card = ms.players[0].tray.find((c) => c.uid === twin.uid)!;
-    expect(cardUiState(ms, ms.players[0], card)).toBe('unavailable');
-    expect(() =>
-      reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: twin.uid, target: { cells: [t0[0], t0[1]] } }),
-    ).toThrow();
-
-    // Turn after that: available again.
-    ms = reduce(ms, { type: 'END_TURN', player: 0 });
-    ms = reduce(ms, { type: 'END_TURN', player: 1 });
-    card = ms.players[0].tray.find((c) => c.uid === twin.uid)!;
-    expect(cardUiState(ms, ms.players[0], card)).not.toBe('unavailable');
-  });
-
-  it('basic salvo is never unavailable', () => {
-    let ms = createMatch(baseConfig('flow-8'));
-    ms = placeBoth(ms);
-    const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
-    const target = ms.players[1].ships.find((s) => s.typeId === 'tender')!.cells;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [target[0]] } });
-    const after = ms.players[0].tray.find((c) => c.uid === salvo.uid)!;
-    expect(cardUiState(ms, ms.players[0], after)).not.toBe('unavailable');
-    // And it can be played again immediately, in the same turn.
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [target[1]] } });
-    expect(ms.players[0].shotsFired).toBe(2);
-  });
-
-  it('hit energy lands immediately and is spendable this turn', () => {
-    let ms = createMatch(baseConfig('flow-9'));
-    ms = placeBoth(ms);
-    const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
-    const tender = ms.players[1].ships.find((s) => s.typeId === 'tender')!;
-    const before = ms.players[0].energy;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [tender.cells[0]] } });
-    // Paid 1 for the salvo, earned 1 back for the hit, in the same turn.
-    expect(ms.players[0].energy).toBe(before - 1 + ms.hitBonus);
-  });
-
-  it('rejects illegal actions', () => {
-    let ms = createMatch(baseConfig('flow-7'));
-    ms = placeBoth(ms);
-    expect(() => reduce(ms, { type: 'END_TURN', player: 1 })).toThrow();
-    const salvo = ms.players[0].tray.find((c) => c.typeId === 'basic_salvo')!;
-    expect(() =>
-      reduce(ms, { type: 'PLAY_CARD', player: 0, cardUid: salvo.uid, target: { cells: [] } }),
-    ).toThrow();
+  it('leaves the undrafted cards in a shared pile', () => {
+    const ms = battle();
+    const taken = new Set([...ms.players[0].draftedCards, ...ms.players[1].draftedCards]);
+    expect(ms.pile.length).toBe(CARD_IDS.length - taken.size);
+    for (const id of ms.pile) expect(taken.has(id)).toBe(false);
   });
 });
 
 describe('hidden information', () => {
-  it('opponent unplayed cards never appear in the client view', () => {
-    let ms = createMatch(baseConfig('hide-1'));
-    ms = placeBoth(ms);
-    // Before any play: only basic salvo is public.
-    let view = clientMatchView(ms, 0);
-    expect(view.opponent.revealedTray.map((c) => c.typeId)).toEqual(['basic_salvo']);
-    expect(JSON.stringify(view).includes('line_probe')).toBe(false);
-    // Player 1 plays line_probe → it becomes public with its cooldown.
-    ms = reduce(ms, { type: 'END_TURN', player: 0 });
-    const probe = ms.players[1].tray.find((c) => c.typeId === 'line_probe')!;
-    ms = reduce(ms, { type: 'PLAY_CARD', player: 1, cardUid: probe.uid, target: { cells: [0, 1, 2] } });
-    view = clientMatchView(ms, 0);
-    const revealed = view.opponent.revealedTray.map((c) => c.typeId);
-    expect(revealed).toContain('line_probe');
-    expect(revealed).not.toContain('ballast');
-    expect(view.opponent.revealedTray.every((c) => 'available' in c)).toBe(true);
-  });
+  it('keeps enemy placements, hand identities and pile order out of the view', () => {
+    // The fleets are laid out differently so a coordinate list belonging to
+    // one player can never be mistaken for the other's in the serialised view.
+    const ms = battle({ place: [rows(DEFAULT_SHIPS[0], 0), rows(DEFAULT_SHIPS[1], 3)] });
+    for (const viewer of [0, 1] as PlayerId[]) {
+      const view = clientView(ms, viewer);
+      const json = stableStringify(view);
+      const foe = ms.players[viewer === 0 ? 1 : 0];
 
-  it('opponent ship hulls and positions never appear in the client view', () => {
-    let ms = createMatch(baseConfig('hide-2'));
-    ms = placeBoth(ms);
-    const view = clientMatchView(ms, 0) as unknown as Record<string, unknown>;
-    const opp = view.opponent as Record<string, unknown>;
-    expect(opp.fleetCount).toBe(3);
-    expect('ships' in opp).toBe(false);
-    // The serialised view carries no enemy ship cells.
-    const json = JSON.stringify(view.opponent);
-    expect(json.includes('cells')).toBe(false);
-  });
-});
-
-describe('terrain modifiers', () => {
-  it('has 16 authored modifiers, each tied to one terrain type', () => {
-    expect(MODIFIER_IDS.length).toBe(16);
-    for (const id of MODIFIER_IDS) {
-      expect(MODIFIERS[id].terrain).toBeDefined();
-      expect(MODIFIERS[id].effect.kind).toBeDefined();
+      // No enemy ship ever appears at a coordinate.
+      for (const ship of foe.ships) {
+        expect(json).not.toContain(stableStringify(ship.cells));
+      }
+      // The pile is a count, never a list.
+      expect(json).not.toContain(stableStringify(ms.pile));
+      expect(view.pileCount).toBe(ms.pile.length);
+      // The seed decides the pile order and every random effect to come.
+      expect(view.seed).toBeNull();
+      // Enemy cards show a charge count and nothing else, unless the draft
+      // made the identity public by colliding.
+      const collided = new Set(
+        ms.cardDraft.collisions
+          .map((c, i) => (c ? ms.cardDraft.picks[viewer][i] : null))
+          .filter(Boolean),
+      );
+      for (const c of view.foe.hand) {
+        if (c.defId !== null) expect(collided.has(c.defId)).toBe(true);
+      }
+      // Enemy ship identities stay hidden until they act or die.
+      for (const s of view.foe.ships) expect(s.defId).toBeNull();
     }
   });
-  it('the drawn modifier is deterministic per seed', () => {
-    const a = createMatch(baseConfig('mod-1'));
-    const b = createMatch(baseConfig('mod-1'));
-    expect(a.modifierId).toBe(b.modifierId);
-  });
-});
 
-describe('determinism', () => {
-  it('same seed and action log produce byte-identical states', () => {
-    const run = () => {
-      let ms = createMatch(baseConfig('det-1'));
-      ms = placeBoth(ms);
-      const actions = [
-        { type: 'END_TURN', player: 0 },
-        { type: 'END_TURN', player: 1 },
-      ] as const;
-      for (const a of actions) ms = reduce(ms, structuredClone(a) as never);
-      return ms;
+  it('reveals a ship identity when its ability is used, but not its position', () => {
+    let ms = battle({
+      place: [rows(DEFAULT_SHIPS[0], 0), rows(DEFAULT_SHIPS[1], 3)],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    const a: Plan = {
+      ...idle(ms, 0),
+      ability: { defId: 'ember', spec: { shape: 'cells', cells: [3, 4, 5, 9] } },
     };
-    expect(JSON.stringify(run())).toBe(JSON.stringify(run()));
+    ms = run(ms, a, idle(ms, 1)).state;
+    const view = clientView(ms, 1);
+    const ember = view.foe.ships.find((s) => s.defId === 'ember');
+    expect(ember).toBeDefined();
+    expect(stableStringify(view)).not.toContain(stableStringify(ms.players[0].ships[2].cells));
   });
 
-  it('reduce does not mutate its input', () => {
-    const ms = createMatch(baseConfig('det-2'));
-    const frozen = JSON.stringify(ms);
-    const [placements] = autoPlaceFleet(
-      ms.players[0].fleetToPlace, ms.gridW, ms.gridH, ms.terrain, seedRng('x'),
-    );
-    reduce(ms, { type: 'PLACE_FLEET', player: 0, placements: placements!, mines: [] });
-    expect(JSON.stringify(ms)).toBe(frozen);
+  it('announces a sink by length only', () => {
+    let ms = battle({
+      place: [rows(DEFAULT_SHIPS[0], 0), [
+        { defId: 'forge', cells: [0, 1, 2, 3] },
+        { defId: 'kiln', cells: [6, 7, 8] },
+        { defId: 'pin', cells: [12, 13] },
+      ]],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    charge(ms, 0, 'salvo', 1);
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: card(ms, 0, 'salvo').uid,
+      basic: 12,
+      fire: { uid: card(ms, 0, 'salvo').uid, spec: { shape: 'cells', cells: [13] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    const sinks = res.events.filter((e) => e.t === 'sink');
+    expect(sinks).toHaveLength(1);
+    expect(stableStringify(sinks[0])).not.toContain('pin');
   });
 });
 
-describe('tournament', () => {
-  it('builds valid double-elim brackets for 8/16/32', () => {
-    for (const n of [8, 16, 32]) {
-      const matches = generateBracket(n);
-      expect(matches.filter((m) => m.bracket === 'W' && m.round === 1).length).toBe(n / 2);
-      expect(matches.filter((m) => m.bracket === 'GF').length).toBe(1);
-      for (const m of matches) {
-        if (m.bracket !== 'GF') expect(m.winnerTo).not.toBeNull();
+describe('the charge economy', () => {
+  it('spends every charge and destroys the card', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'salvo', 3);
+    const uid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      fire: { uid, spec: { shape: 'cells', cells: [20, 21, 22, 23] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[0].hand.find((c) => c.uid === uid)).toBeUndefined();
+    expect(res.state.players[0].graveyard.map((g) => g.defId)).toContain('salvo');
+    // Three banked plus this round's one.
+    expect(res.state.players[0].graveyard[0].charges).toBe(4);
+  });
+
+  it('fires one cell per charge and no more', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'salvo', 1);
+    const uid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'cells', cells: [20, 21, 22, 23, 24] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    const shots = res.events.filter((e) => e.t === 'shot' && e.by === 0);
+    expect(shots).toHaveLength(2); // salvo at 2 charges
+  });
+
+  it('does not let charges earned this round be spent this round', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'lance', 2);
+    const lanceUid = card(ms, 0, 'lance').uid;
+    const rakeUid = card(ms, 0, 'rake').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: lanceUid,
+      bonusTo: rakeUid,
+      basic: 0, // a certain hit on their 4-ship
+      fire: { uid: lanceUid, spec: { shape: 'line', origin: 0, dir: [1, 0] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    const rake = res.state.players[0].hand.find((c) => c.uid === rakeUid)!;
+    expect(rake.charges).toBeGreaterThan(0); // bonus landed after firing
+    expect(res.state.players[0].graveyard[0].charges).toBe(3); // lance fired at 2+1
+  });
+
+  it('refuses to fire Burst below two charges', async () => {
+    const { validatePlan } = await import('./resolve');
+    const ms = battle({ hands: [['burst', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    const uid = card(ms, 0, 'burst').uid;
+    const plan: Plan = { ...idle(ms, 0), chargeTo: uid, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    expect(validatePlan(ms, 0, plan)).toMatch(/cannot fire/);
+  });
+
+  it('scales Burst from 2x2 to 3x3 at four charges', () => {
+    let ms = battle({ hands: [['burst', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'burst', 3);
+    const uid = card(ms, 0, 'burst').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 14 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(9);
+  });
+
+  it('grows Rake by one cell per charge above the first', () => {
+    let ms = battle({ hands: [['rake', 'lance', 'salvo'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'rake', 2);
+    const uid = card(ms, 0, 'rake').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'row', origin: 18 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(5);
+  });
+});
+
+describe('simultaneity', () => {
+  it('lets a ship that dies this round still land its shots', () => {
+    // Both fleets are one hit from gone; both fire; both die.
+    let ms = battle({
+      place: [
+        [
+          { defId: 'warhead', cells: [0, 1, 2, 3] },
+          { defId: 'beacon', cells: [6, 7, 8] },
+          { defId: 'ember', cells: [12, 13] },
+        ],
+        [
+          { defId: 'forge', cells: [0, 1, 2, 3] },
+          { defId: 'kiln', cells: [6, 7, 8] },
+          { defId: 'pin', cells: [12, 13] },
+        ],
+      ],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    for (const p of [0, 1] as PlayerId[]) {
+      for (const s of ms.players[p].ships) {
+        s.hits = s.cells.map((_, i) => i > 0);
       }
     }
+    charge(ms, 0, 'salvo', 2);
+    charge(ms, 1, 'salvo', 2);
+    const mk = (p: PlayerId): Plan => {
+      const uid = card(ms, p, 'salvo').uid;
+      return {
+        ...idle(ms, p),
+        chargeTo: uid,
+        basic: 12,
+        fire: { uid, spec: { shape: 'cells', cells: [0, 6, 12] } },
+      };
+    };
+    const res = run(ms, mk(0), mk(1));
+    expect(res.state.outcome).toEqual({ kind: 'draw', reason: 'mutual' });
   });
 
-  it('a full 16-seat tournament resolves to a champion', () => {
-    let ts = createTournament('tourney-1', 'You', 16);
-    let guard = 0;
-    while (!ts.complete && guard++ < 100) {
-      const m = nextPendingMatch(ts);
-      expect(m).not.toBeNull();
-      ts = advanceMatch(ts, m!.id, Math.min(m!.seats[0]!, m!.seats[1]!));
-    }
-    expect(ts.complete).toBe(true);
-    expect(ts.championSeat).not.toBeNull();
-    expect(Math.max(...ts.seats.map((s) => s.losses))).toBeLessThanOrEqual(2);
-    expect(ts.seats.filter((s) => s.eliminated).length).toBe(15);
-  });
-
-  it('resolves AI matches until the human is up, with real drafts', () => {
-    let ts = createTournament('tourney-2', 'You', 16, 6);
-    ts = resolveUntilHuman(ts);
-    expect(humanSeat(ts).isHuman).toBe(true);
-    const played = ts.seats.filter((s) => !s.isHuman && s.matchesPlayed > 0);
-    expect(played.length).toBeGreaterThan(0);
-    for (const s of played) {
-      expect(s.fleet.length).toBe(voyageRound(6, s.matchesPlayed).fleetSize);
-      for (const id of s.fleet) expect(SHIPS[id]).toBeDefined();
-    }
+  it('scores both attacks against the same pre-damage board', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'salvo', 1);
+    charge(ms, 1, 'salvo', 1);
+    const mk = (p: PlayerId): Plan => {
+      const uid = card(ms, p, 'salvo').uid;
+      return { ...idle(ms, p), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cells', cells: [0, 1] } } };
+    };
+    const res = run(ms, mk(0), mk(1));
+    const hits = res.events.filter((e) => e.t === 'shot' && e.hit);
+    expect(hits.length).toBe(4); // two each, nobody pre-empts anybody
   });
 });
 
-describe('grid helpers', () => {
-  it('rectangular indexing round-trips', () => {
-    const w = 8;
-    expect(rcCell(2, 3, w)).toBe(19);
+describe('execute effects', () => {
+  it('sinks a damaged ship outright with Breaker', () => {
+    let ms = battle({ hands: [['breaker', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms.players[1].ships[0].hits[3] = true; // the 4-ship is damaged
+    charge(ms, 0, 'breaker', 2);
+    const uid = card(ms, 0, 'breaker').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].ships[0].sunk).toBe(true);
+  });
+
+  it('leaves an undamaged ship merely damaged', () => {
+    let ms = battle({ hands: [['breaker', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'breaker', 2);
+    const uid = card(ms, 0, 'breaker').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'block', anchor: 0 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].ships[0].sunk).toBe(false);
+    expect(res.state.players[1].ships[0].hits.filter(Boolean).length).toBe(2);
+  });
+});
+
+describe('predictions', () => {
+  it('makes their whole attack miss when Mirror reads it', () => {
+    let ms = battle({ hands: [['mirror', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'mirror', 1);
+    charge(ms, 1, 'salvo', 2);
+    const mirrorUid = card(ms, 0, 'mirror').uid;
+    const salvoUid = card(ms, 1, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: mirrorUid,
+      basic: null,
+      fire: { uid: mirrorUid, spec: { shape: 'cell', cell: 7 } },
+    };
+    const b: Plan = {
+      ...idle(ms, 1),
+      chargeTo: salvoUid,
+      basic: null,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [0, 1, 7] } },
+    };
+    const res = run(ms, a, b);
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 1)).toHaveLength(0);
+    const read = res.events.find((e) => e.t === 'prediction');
+    expect(read && read.t === 'prediction' && read.triggered).toBe(true);
+  });
+
+  it('fires Ambush back from zero charges', () => {
+    let ms = battle({ hands: [['ambush', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    const ambushUid = card(ms, 0, 'ambush').uid;
+    const lanceUid = card(ms, 0, 'lance').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: lanceUid,
+      basic: null,
+      fire: { uid: ambushUid, spec: { shape: 'cell', cell: 20 } },
+    };
+    const b: Plan = { ...idle(ms, 1), basic: 20 };
+    const res = run(ms, a, b);
+    const back = res.events.filter((e) => e.t === 'shot' && e.by === 0 && e.source === 'ambush');
+    expect(back).toHaveLength(1);
+    expect(res.state.players[0].hand.find((c) => c.uid === ambushUid)).toBeUndefined();
+  });
+
+  it('does nothing when the read is wrong', () => {
+    let ms = battle({ hands: [['ambush', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    const ambushUid = card(ms, 0, 'ambush').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: card(ms, 0, 'lance').uid,
+      basic: null,
+      fire: { uid: ambushUid, spec: { shape: 'cell', cell: 35 } },
+    };
+    const res = run(ms, a, { ...idle(ms, 1), basic: 20 });
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(0);
+  });
+});
+
+describe('control effects', () => {
+  it('strips the charges Jam names', () => {
+    let ms = battle({ hands: [['jam', 'lance', 'rake'], ['lance', 'salvo', 'rake']] });
+    charge(ms, 0, 'jam', 2);
+    charge(ms, 1, 'salvo', 5);
+    const jamUid = card(ms, 0, 'jam').uid;
+    const target = card(ms, 1, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: jamUid,
+      basic: null,
+      fire: { uid: jamUid, spec: { shape: 'strip', from: [{ uid: target, amount: 3 }] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].hand.find((c) => c.uid === target)!.charges).toBe(2);
+  });
+
+  it('cannot shrink a card that is already in the air', () => {
+    let ms = battle({ hands: [['jam', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'jam', 4);
+    charge(ms, 1, 'salvo', 3);
+    const jamUid = card(ms, 0, 'jam').uid;
+    const salvoUid = card(ms, 1, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: jamUid,
+      basic: null,
+      fire: { uid: jamUid, spec: { shape: 'strip', from: [{ uid: salvoUid, amount: 5 }] } },
+    };
+    const b: Plan = {
+      ...idle(ms, 1),
+      chargeTo: salvoUid,
+      basic: null,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [20, 21, 22, 23] } },
+    };
+    const res = run(ms, a, b);
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 1)).toHaveLength(4);
+  });
+
+  it('moves stolen charges onto the named card', () => {
+    let ms = battle({ hands: [['siphon', 'lance', 'rake'], ['lance', 'salvo', 'rake']] });
+    charge(ms, 0, 'siphon', 2);
+    charge(ms, 1, 'salvo', 4);
+    const siphonUid = card(ms, 0, 'siphon').uid;
+    const dest = card(ms, 0, 'rake').uid;
+    const src = card(ms, 1, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: siphonUid,
+      basic: null,
+      fire: { uid: siphonUid, spec: { shape: 'steal', from: [{ uid: src, amount: 3 }], toUid: dest } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].hand.find((c) => c.uid === src)!.charges).toBe(1);
+    expect(res.state.players[0].hand.find((c) => c.uid === dest)!.charges).toBe(3);
+  });
+
+  it('never hands out charges that were not there', () => {
+    let ms = battle({ hands: [['siphon', 'jam', 'rake'], ['lance', 'salvo', 'rake']] });
+    charge(ms, 0, 'siphon', 5);
+    charge(ms, 1, 'salvo', 2);
+    const siphonUid = card(ms, 0, 'siphon').uid;
+    const dest = card(ms, 0, 'rake').uid;
+    const src = card(ms, 1, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: siphonUid,
+      basic: null,
+      fire: { uid: siphonUid, spec: { shape: 'steal', from: [{ uid: src, amount: 6 }], toUid: dest } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].hand.find((c) => c.uid === src)!.charges).toBe(0);
+    expect(res.state.players[0].hand.find((c) => c.uid === dest)!.charges).toBe(2);
+  });
+});
+
+describe('ship abilities', () => {
+  it('lets Kiln fire a second card at three extra charges', () => {
+    let ms = battle({
+      ships: [['warhead', 'kiln', 'ember'], ['forge', 'beacon', 'pin']],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const lanceUid = card(ms, 0, 'lance').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: lanceUid,
+      basic: null,
+      fire: { uid: lanceUid, spec: { shape: 'line', origin: 30, dir: [1, 0] } },
+      ability: {
+        defId: 'kiln',
+        spec: { shape: 'kiln', uid: salvoUid, inner: { shape: 'cells', cells: [24, 25, 26] } },
+      },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    // Lance at 1 charge fires one cell; Salvo at 0+3 fires three.
+    expect(res.events.filter((e) => e.t === 'shot' && e.by === 0)).toHaveLength(4);
+    // Two cards gone from three, which trips the draw rule immediately.
+    expect(res.state.players[0].graveyard).toHaveLength(2);
+    expect(res.events.filter((e) => e.t === 'draw' && e.to === 0)).toHaveLength(1);
+    expect(res.state.players[0].hand).toHaveLength(2);
+  });
+
+  it('stops a card being fired next round when Pin lands', () => {
+    let ms = battle({
+      ships: [['warhead', 'beacon', 'pin'], ['forge', 'kiln', 'ember']],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    const a: Plan = { ...idle(ms, 0), basic: null, ability: { defId: 'pin', spec: { shape: 'cell', cell: 0 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[1].restrictions.noFire).toBe(true);
+  });
+
+  it('wipes every enemy charge when Spite dies', () => {
+    let ms = battle({
+      ships: [['warhead', 'beacon', 'ember'], ['forge', 'kiln', 'spite']],
+      place: [rows(['warhead', 'beacon', 'ember'], 0), [
+        { defId: 'forge', cells: [0, 1, 2, 3] },
+        { defId: 'kiln', cells: [6, 7, 8] },
+        { defId: 'spite', cells: [12, 13] },
+      ]],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    charge(ms, 0, 'salvo', 1);
+    charge(ms, 0, 'rake', 4);
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: salvoUid,
+      basic: 12,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [13] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.state.players[0].hand.every((c) => c.charges === 0)).toBe(true);
+  });
+
+  it('fires Thorn back along the salvo that killed it', () => {
+    let ms = battle({
+      ships: [['warhead', 'beacon', 'ember'], ['forge', 'kiln', 'thorn']],
+      place: [rows(['warhead', 'beacon', 'ember'], 0), [
+        { defId: 'forge', cells: [0, 1, 2, 3] },
+        { defId: 'kiln', cells: [6, 7, 8] },
+        { defId: 'thorn', cells: [12, 13] },
+      ]],
+      hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']],
+    });
+    charge(ms, 0, 'salvo', 1);
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: salvoUid,
+      basic: 12,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [13] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    const back = res.events.filter((e) => e.t === 'shot' && e.by === 1 && e.source === 'thorn');
+    expect(back.length).toBeGreaterThan(0);
+  });
+});
+
+describe('intel', () => {
+  it('reports whether anything sits beside a Ping miss', () => {
+    let ms = battle({ hands: [['ping', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'ping', 1);
+    const uid = card(ms, 0, 'ping').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: uid,
+      basic: null,
+      fire: { uid, spec: { shape: 'cells', cells: [6, 30] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    const intel = res.events.filter((e) => e.t === 'intel');
+    expect(intel.length).toBeGreaterThan(0);
+  });
+
+  it('withholds Sounding’s column count below two charges', () => {
+    let ms = battle({ hands: [['sounding', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    const uid = card(ms, 0, 'sounding').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cell', cell: 20 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'intel')).toHaveLength(0);
+  });
+
+  it('gives row and column at three charges', () => {
+    let ms = battle({ hands: [['sounding', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    charge(ms, 0, 'sounding', 2);
+    const uid = card(ms, 0, 'sounding').uid;
+    const a: Plan = { ...idle(ms, 0), chargeTo: uid, basic: null, fire: { uid, spec: { shape: 'cell', cell: 20 } } };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'intel')).toHaveLength(2);
+  });
+});
+
+describe('endings', () => {
+  it('forfeits after three missed timers', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    for (let i = 0; i < 3; i++) {
+      const timed: Plan = { ...idle(ms, 1), timedOut: true };
+      ms = run(ms, idle(ms, 0), timed).state;
+    }
+    expect(ms.outcome).toEqual({ kind: 'win', winner: 0, reason: 'timeout-strikes' });
+  });
+
+  it('decides a round-20 match on remaining hull cells', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms.players[1].ships[0].hits[0] = true;
+    ms.round = 20;
+    ms = run(ms, { ...idle(ms, 0), basic: null }, { ...idle(ms, 1), basic: null }).state;
+    expect(ms.outcome).toEqual({ kind: 'win', winner: 0, reason: 'cells' });
+  });
+
+  it('draws a round-20 match with level fleets', () => {
+    let ms = battle({ hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms.round = 20;
+    ms = run(ms, { ...idle(ms, 0), basic: null }, { ...idle(ms, 1), basic: null }).state;
+    expect(ms.outcome).toEqual({ kind: 'draw', reason: 'cells' });
+  });
+});
+
+describe('determinism and verification', () => {
+  it('produces the same match twice from the same seed and inputs', () => {
+    const play = () => {
+      let ms = battle({ seed: 'determinism', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+      for (let i = 0; i < 6 && ms.phase === 'battle'; i++) {
+        const a: Plan = { ...idle(ms, 0), basic: (i * 7) % 36 };
+        const b: Plan = { ...idle(ms, 1), basic: (i * 5 + 3) % 36 };
+        ms = run(ms, a, b).state;
+      }
+      return ms;
+    };
+    expect(stableStringify(play())).toBe(stableStringify(play()));
+  });
+
+  it('replays a finished match and confirms the reported result', () => {
+    let ms = createMatch({ seed: 'verify-me', players: ['A', 'B'] });
+    for (let pack = 0; pack < 3; pack++) {
+      ms = pickShip(ms, 0, currentPack(ms.shipDraft)[0]);
+      ms = pickShip(ms, 1, currentPack(ms.shipDraft)[1]);
+    }
+    for (let pack = 0; pack < 3; pack++) {
+      ms = pickCard(ms, 0, currentPack(ms.cardDraft)[0]);
+      ms = pickCard(ms, 1, currentPack(ms.cardDraft)[1]);
+    }
+    const p0 = rows(ms.players[0].draftedShips, 0);
+    const p1 = rows(ms.players[1].draftedShips, 3);
+    ms = deploy(ms, 0, p0, 'nonce-a');
+    ms = deploy(ms, 1, p1, 'nonce-b');
+    for (let i = 0; i < 5 && ms.phase === 'battle'; i++) {
+      ms = run(ms, { ...idle(ms, 0), basic: i }, { ...idle(ms, 1), basic: 35 - i }).state;
+    }
+    const t = transcriptOf(ms, 'match-1', ['keyA', 'keyB']);
+    const result = verify(t);
+    expect(result.problems).toEqual([]);
+    expect(result.ok).toBe(true);
+    expect(result.roundsReplayed).toBe(5);
+  });
+
+  it('catches a server that lies about the result', () => {
+    let ms = battle({ seed: 'liar', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
+    const t = transcriptOf(ms, 'match-2', ['keyA', 'keyB']);
+    t.reportedOutcome = { kind: 'win', winner: 0, reason: 'fleet' };
+    const result = verify(t);
+    expect(result.ok).toBe(false);
+    expect(result.problems.join(' ')).toMatch(/does not match the replay/);
+  });
+
+  it('checks round signatures against the published session keys', async () => {
+    const { issueSessionKey, signPlan } = await import('../chain/sessionKey');
+    const keyA = issueSessionKey(0);
+    const keyB = issueSessionKey(1);
+
+    let ms = battle({ seed: 'signed', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    for (let i = 0; i < 3 && ms.phase === 'battle'; i++) {
+      const a: Plan = { ...idle(ms, 0), basic: i };
+      const b: Plan = { ...idle(ms, 1), basic: 35 - i };
+      ms = playRound(ms, {
+        plans: [
+          commitPlan(a, `a${i}`, signPlan(keyA, a, `a${i}`)),
+          commitPlan(b, `b${i}`, signPlan(keyB, b, `b${i}`)),
+        ],
+      }).state;
+    }
+
+    const t = transcriptOf(ms, 'signed-match', [keyA.publicKeyHex, keyB.publicKeyHex]);
+    const good = verify(t);
+    expect(good.problems).toEqual([]);
+    expect(good.warnings).toEqual([]);
+
+    // A plan signed by somebody else's key is not that player's plan.
+    const impostor = issueSessionKey(2);
+    t.rounds[1][0] = {
+      ...t.rounds[1][0],
+      signature: signPlan(impostor, t.rounds[1][0].plan, t.rounds[1][0].nonce),
+    };
+    const bad = verify(t);
+    expect(bad.ok).toBe(false);
+    expect(bad.problems.join(' ')).toMatch(/signature does not match/);
+  });
+
+  it('says so when a transcript publishes no session keys', () => {
+    let ms = battle({ seed: 'unsigned', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
+    const result = verify(transcriptOf(ms, 'm', ['keyA', 'keyB']));
+    expect(result.warnings).toHaveLength(2);
+    expect(result.warnings.join(' ')).toMatch(/signatures unchecked/);
+    // Unchecked is not the same as failed: the replay itself still stands.
+    expect(result.ok).toBe(true);
+  });
+
+  it('catches a tampered deployment commitment', () => {
+    let ms = battle({ seed: 'tamper', hands: [['salvo', 'lance', 'rake'], ['salvo', 'lance', 'rake']] });
+    ms = run(ms, idle(ms, 0), idle(ms, 1)).state;
+    const t = transcriptOf(ms, 'match-3', ['keyA', 'keyB']);
+    t.deployments[0].placements[0].cells = [30, 31, 32, 33];
+    const result = verify(t);
+    expect(result.ok).toBe(false);
+    expect(result.problems.join(' ')).toMatch(/on-chain commitment/);
   });
 });

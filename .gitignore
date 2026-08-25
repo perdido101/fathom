@@ -1,6 +1,7 @@
 node_modules/
 dist/
-dev-dist/
-*.local
 .DS_Store
-dist-standalone/
+*.local
+sim-out/
+dist-single/
+sim-out.log

@@ -1,34 +1,38 @@
 {
-  "name": "fathom",
+  "name": "shadow-armada",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "Shadow Armada \u2014 fast hidden-information naval PvP, wagered on Solana.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:standalone": "vite build && node scripts/build-standalone.mjs",
-    "build:artifact": "vite build && node scripts/build-artifact.mjs",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sim": "tsx src/sim/cli.ts"
+    "sim": "tsx src/sim/cli.ts",
+    "sim:quick": "tsx src/sim/cli.ts --matches 200",
+    "smoke": "node scripts/smoke.mjs",
+    "manifest": "tsx scripts/manifest.ts",
+    "bundle": "node scripts/bundle.mjs"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.98.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tweetnacl": "^1.0.3",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
-    "@types/react": "^18.3.12",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.3.2",
     "playwright": "^1.62.1",
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.1",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11",
-    "vite-plugin-pwa": "^0.21.1",
-    "vitest": "^2.1.8"
+    "vite": "^5.4.9",
+    "vitest": "^2.1.3"
   }
 }

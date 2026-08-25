@@ -1,100 +1,98 @@
-# Fathom
+# Shadow Armada
 
-**Sound the deep. Sink the fleet.**
+A fast, offensive, hidden-information PvP game for the web, wagered on Solana.
+Two players, a 6×6 sea, three ships each, twelve cards, twenty-second rounds,
+both plans resolving at once. Matches run four to twelve minutes.
 
-A 1v1 asynchronous tournament game: naval grid combat crossed with drafting.
-Two players draft hulls and action cards, deploy their fleets in secret, and
-fire at each other's grids until one fleet is gone.
+Ground-up build. Nothing from any earlier project survives in this repository.
 
-Fathom is a game of deduction under fog. Your opponent's fleet is never
-declared — you learn it from what you saw pass through the draft and from
-what sinks.
+```
+npm install
+npm run dev        # play it — no wallet needed, the opponent is a bot
+npm test           # 42 engine tests
+npm run sim        # 20,000 bot matches and the balance bands
+npm run smoke      # a real browser plays a real match end to end
+npm run manifest   # regenerate ASSETS.md from the game's own content
+```
+
+## The game in one paragraph
+
+Both players draft three ships from three packs of four — one length-4, one
+length-3, one length-2 — picking in secret and revealing together. If you both
+reach for the same ship you both get it, and that collision is the only thing
+either of you learns. The same mechanism drafts three action cards from a pool
+of twelve; everything neither player took becomes a shared face-down draw pile.
+Fleets deploy in secret onto a 6×6 grid and the layout is hashed and committed
+before a shot is fired. Then rounds: place exactly one charge on one card, fire
+your free deck gun at one cell, optionally fire one card and trigger one ship
+ability, and commit — both plans resolve simultaneously against the same board,
+so a ship that dies this round still lands every shot it fired. Firing a card
+spends every charge on it and destroys it permanently. Charges are public on
+both sides. A sink announces a length and never a name.
+
+## Layout
+
+```
+src/engine/     the rules. Pure, deterministic, headless, no React and no DOM.
+src/bots/       four opponents, all reading the same client view a human gets.
+src/sim/        the balance harness and its report.
+src/ui/         eleven screens, procedural placeholder art, sound and VFX hooks.
+src/chain/      session keys, seed commit-reveal, mock and devnet adapters.
+src/state/      the client store, rating, modes and season maths.
+chain/program/  the Anchor escrow program (Rust; not built by npm).
+```
+
+### The engine is the product
+
+`src/engine/**` never touches `Math.random`, the wall clock, the DOM or React.
+Every random decision — pack order, pile order, Dreadnought's scatter, a
+timed-out player's shot — is drawn from a seeded generator whose state is
+carried explicitly through the state and advanced by returning a new one. Same
+seed and same inputs give the same match, every time, which is what makes a
+match replayable by a third party and what makes twenty thousand simulated
+matches mean anything.
+
+### Hidden information is enforced, not hoped for
+
+Hiding something in the UI is not hiding it — anyone can open the network tab.
+So the projection happens in the engine: `clientView(match, player)` is the only
+shape a client is ever handed, and a test asserts that an opponent's view
+contains no ship placements, no pile contents, no unrevealed card identities
+and no seed. The bots plan from that same view, which means a bot cannot cheat
+by construction; if the view were insufficient to play well, the bots would be
+the first thing to break.
+
+## Balance
+
+`npm run sim` plays 2,000 seeded matches for each of five bot pairings, twice
+over — once under each reading of the one genuinely ambiguous rule — and
+reports against the bands from the brief. It writes `sim-report.md`.
+
+**Nothing in `src/engine/balance.ts` has been tuned to make a band pass.** Two
+bands currently fail, both are reported with numbers, and both have a proposed
+change waiting on a decision. See `RULINGS.md`.
+
+## Where the open questions live
+
+`RULINGS.md` is the important document. It lists every place the specification
+is ambiguous or self-contradictory, what the code currently does, and which
+ones change how the game plays rather than just how it is written. Four are
+marked **decision needed**.
+
+`docs/SOLANA.md` covers the chain architecture, exactly what the verifiability
+claim does and does not prove, and a VRF recommendation with reasoning — the
+recommendation is deliberately *not* implemented, because that choice was
+reserved.
+
+`ASSETS.md` is the generated manifest: 91 assets with exact dimensions, aspect
+ratios, call sites and descriptions. It is regenerated from the game's content
+lists so it cannot drift.
 
 ## Status
 
-Playable end to end, offline, installable. You can start a run, draft hulls
-and cards, deploy a fleet, fight a full match against the AI, advance or drop
-through a double-elimination bracket, and reach a championship or elimination.
+Playable end to end on placeholders, against four difficulties of bot, with
+mock settlement. Testnet only — the escrow program is written but not deployed,
+and anything that would stake real value fails loudly rather than pretending.
 
-Phase 3 (online play) has not started and needs explicit go-ahead.
-
-## Commands
-
-```sh
-npm install
-npm run dev                       # dev server
-npm test                          # unit tests
-npm run sim                       # balance harness (400 matches, seed 42)
-npm run sim -- --matches 2000 --seed 42 --voyage 6
-npm run build                     # production PWA build
-npm run build:standalone          # single self-contained HTML file
-```
-
-`npm run sim` writes `sim-report.md` and exits non-zero if any balance band
-is out. No balance change lands without it green.
-
-## Architecture
-
-```
-src/
-  engine/          PURE. No React, no DOM, no Math.random, no Date.now.
-    rng.ts         seeded mulberry32; all randomness is explicit state
-    types.ts       state, actions, content shapes
-    state.ts       createMatch
-    reduce.ts      (state, action) => state — the one entry point
-    clientView.ts  the ONLY projection a UI or network layer may render
-    deduction.ts   belief over possible enemy fleets from draft observations
-    resolve/       shot, energy, availability, victory
-    draft/         shipDraft (packs of four), cardDraft (open row)
-    map/           patch assembly + validation
-    fleet/         placement legality, ship abilities
-  content/         all game data — ships, cards, patches, modifiers, voyage
-  ai/              opponent + probability-density heuristics
-  sim/             headless harness, balance bands, report
-  art/             tokens, procedural SVG placeholders, single-swap registry
-  game/            run/save layer and the UI store
-  ui/              screens and components
-```
-
-Determinism is the product: same seed and same action log must produce a
-byte-identical final state. Online play, replays, spectating and server-side
-validation all depend on it, and the harness asserts it.
-
-All content is data. Adding a card means composing an effect in
-`src/content/cards.ts` — never touching engine logic.
-
-## Rules in brief
-
-**The match.** Square or rectangular grid assembled from 4×4 terrain patches.
-Ships are placed in secret along any of four axes — horizontal, vertical, or
-either diagonal. Players alternate turns. You win when every enemy ship is
-fully sunk.
-
-**Energy.** Income at the start of your turn, plus **1 energy the moment you
-hit a cell** — spendable in that same turn, so a cheap probe that lands two
-hits can pay for a card you could not afford when the turn began. Unspent
-energy banks with no cap. Turtling is self-punishing: passing means no hits,
-which means no income beyond the base.
-
-**The tray.** No hand, no deck, no draw. Every card you draft sits in your
-tray permanently. Playing a card makes it unavailable for exactly your next
-turn; it is back the turn after. `basic_salvo` is exempt and undraftable, so
-you can always act.
-
-**Hidden information.** Your opponent sees only the cards you have already
-played. Fleet composition is never declared — a sinking announces the ship's
-**length**, never its name, and hull names are revealed at match end.
-
-**The draft.** Hulls are drafted in passing packs of four: you keep one, burn
-one face down, and pass two on. Burned hulls leave the match permanently and
-are never revealed. Action cards are drafted from a shared, fully visible row
-in snake order. Cards public, ships hidden.
-
-**Terrain.** Reef blocks line effects and cannot be built on; fog hides what
-was struck; trench cells take two hits; shallows betray their neighbours. One
-face-up terrain modifier is drawn per match and twists exactly one of those
-rules for both players.
-
-**Voyages.** A campaign runs 3 to 8 rounds, chosen at creation. Fleets and
-trays persist and grow; the grid grows from 8×8 to 12×12. Double elimination —
-two losses ends a run.
+Not built, per the brief: 2v2, chat, friends, lobbies, cosmetics, NFTs,
+mainnet, native apps, tournaments.

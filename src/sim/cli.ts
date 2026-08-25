@@ -1,65 +1,101 @@
+import { writeFileSync } from "node:fs";
+import { playBotMatch } from "./runner";
+import { analyse, pct, renderMarkdown, type PairingReport } from "./report";
+import type { Level } from "../bots/bot";
+
 /**
- * Headless sim harness CLI: `npm run sim -- --matches 2000 --seed 42`
+ * `npm run sim` — thousands of seeded bot matches, then the bands.
  *
- * Runs AI-vs-AI matches across every round of a voyage (default 6 rounds,
- * override with --voyage 3|4|5|6|8), checks the determinism invariant and
- * the balance bands, writes sim-report.md, and exits non-zero if anything
- * is red. Every balance change lands only if this is green.
+ * Determinism is checked first and separately, because every number that
+ * follows is worthless if the same seed can produce two different matches.
  */
-import { writeFileSync } from 'node:fs';
-import { runMatch } from './harness';
-import { assertBands, summarize } from './assertions';
-import { renderReport } from './report';
-import { VOYAGE_LENGTHS, type VoyageLength } from '../content/voyage';
 
-function arg(name: string, fallback: string): string {
-  const idx = process.argv.indexOf(`--${name}`);
-  if (idx >= 0 && process.argv[idx + 1]) return process.argv[idx + 1];
-  return fallback;
+function arg(name: string, fallback: number): number {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i < 0) return fallback;
+  const v = Number(process.argv[i + 1]);
+  return Number.isFinite(v) ? v : fallback;
 }
 
-const matchesRequested = parseInt(arg('matches', '400'), 10);
-const seed = arg('seed', '42');
-const voyageLength = parseInt(arg('voyage', '6'), 10) as VoyageLength;
-if (!VOYAGE_LENGTHS.includes(voyageLength)) {
-  console.error(`--voyage must be one of ${VOYAGE_LENGTHS.join(', ')}`);
-  process.exit(1);
-}
-const perRound = Math.max(1, Math.floor(matchesRequested / voyageLength));
+const MATCHES = arg("matches", 2000);
 
-console.log(
-  `Fathom sim — ${perRound * voyageLength} matches (${perRound} per round, ${voyageLength}-round voyage), seed ${seed}`,
-);
+/**
+ * The hit bonus is the one number the rules leave genuinely open, and it is
+ * the number the failing bands are most sensitive to, so both readings are
+ * measured every run. Nothing is switched on the strength of the result — the
+ * comparison exists so the choice can be made with the figures in hand.
+ */
+const HIT_BONUS_MODES: ("per-hit" | "per-round")[] = ["per-hit", "per-round"];
+const PAIRINGS: [Level, Level][] = [
+  [4, 4],
+  [3, 3],
+  [4, 3],
+  [2, 2],
+  [4, 1],
+];
 
-// Determinism gate: same seed + same action log ⇒ byte-identical final state.
-{
-  const a = runMatch(`${seed}:determinism`, voyageLength, Math.min(3, voyageLength));
-  const b = runMatch(`${seed}:determinism`, voyageLength, Math.min(3, voyageLength));
+function checkDeterminism(): void {
+  const seed = "determinism-probe";
+  const a = playBotMatch(seed, [4, 4]);
+  const b = playBotMatch(seed, [4, 4]);
   if (JSON.stringify(a) !== JSON.stringify(b)) {
-    console.error('DETERMINISM FAILURE: identical seeds produced different matches.');
+    console.error(
+      "DETERMINISM FAILED: the same seed produced two different matches.",
+    );
     process.exit(1);
   }
-  console.log('Determinism: identical seed reproduces byte-identical results ✅');
+  console.log("determinism: same seed, same match.");
 }
 
-const started = Date.now();
-const records = [];
-for (let round = 1; round <= voyageLength; round++) {
-  for (let i = 0; i < perRound; i++) {
-    records.push(runMatch(`${seed}:r${round}:m${i}`, voyageLength, round));
+function main(): void {
+  checkDeterminism();
+  const reports: PairingReport[] = [];
+  for (const mode of HIT_BONUS_MODES) {
+    console.log(`\n########## hit bonus: ${mode} ##########`);
+    for (const levels of PAIRINGS) {
+      const started = Date.now();
+      const records = [];
+      for (let i = 0; i < MATCHES; i++) {
+        records.push(
+          playBotMatch(`sa-${levels[0]}${levels[1]}-${i}`, levels, {
+            hitBonusMode: mode,
+          }),
+        );
+      }
+      const report = analyse(records, levels);
+      report.pairing = `${report.pairing} [${mode}]`;
+      reports.push(report);
+      const secs = ((Date.now() - started) / 1000).toFixed(1);
+      console.log(
+        `\n=== ${report.pairing} — ${MATCHES} matches in ${secs}s ===`,
+      );
+      for (const band of report.bands) {
+        const mark = band.informational ? "     " : band.ok ? "PASS " : "FAIL ";
+        console.log(`${mark} ${band.name}\n        ${band.detail}`);
+      }
+      console.log(
+        `      win rate P0 ${pct(report.winRate[0])} / P1 ${pct(report.winRate[1])} / draw ${pct(report.drawRate)}`,
+      );
+    }
   }
-  process.stdout.write(`round ${round} done. `);
-}
-console.log(`\nSimulated ${records.length} matches in ${((Date.now() - started) / 1000).toFixed(1)}s`);
 
-const summary = summarize(records);
-const assertions = assertBands(summary);
-const report = renderReport(summary, assertions, { seed, matchesRequested, voyageLength });
-writeFileSync('sim-report.md', report);
+  writeFileSync("sim-report.md", `${renderMarkdown(reports)}\n`, "utf8");
+  console.log("\nwrote sim-report.md");
 
-for (const a of assertions) {
-  console.log(`${a.pass ? '✅' : '❌'} ${a.name}: ${a.detail}`);
+  const failed = reports.flatMap((r) =>
+    r.bands
+      .filter((b) => !b.informational && !b.ok)
+      .map((b) => `${r.pairing}: ${b.name} — ${b.detail}`),
+  );
+  if (failed.length) {
+    console.log(`\n${failed.length} band(s) outside their range:`);
+    for (const f of failed) console.log(`  - ${f}`);
+    console.log(
+      "\nNothing has been tuned. Propose changes before touching src/engine/balance.ts.",
+    );
+  } else {
+    console.log("\nall bands inside their ranges.");
+  }
 }
-const pass = assertions.every((a) => a.pass);
-console.log(pass ? '\nSIM GREEN' : '\nSIM RED — see sim-report.md');
-process.exit(pass ? 0 : 1);
+
+main();

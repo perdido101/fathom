@@ -1,0 +1,38 @@
+/**
+ * Every provisional number in one file.
+ *
+ * The build prompt says all card and ship values are provisional and that
+ * nothing may be changed to make a test pass. Collecting the tunables here
+ * means the sim can print exactly which constants produced a given report,
+ * and a proposed change is a one-line diff rather than a hunt.
+ */
+export const BALANCE = {
+  /** Charges granted for landing a hit. See RULINGS.md Q3 — per hit, not per round. */
+  hitBonusPerHit: 1,
+  /** Charges placed on a card each round by its owner. */
+  chargePerRound: 1,
+  /** Mirror's payoff multiplier on a successful read. */
+  mirrorGainPerCharge: 2,
+  /** Ember's payoff per hit. */
+  emberGainPerHit: 2,
+  /** Forge's flat payoff. */
+  forgeGain: 2,
+  /** Kiln's charge uplift on the card it fires. */
+  kilnUplift: 3,
+  /** Leech's steal size. */
+  leechSteal: 3,
+  /** Blackout's random strip. */
+  blackoutStrip: 2,
+  /** Dreadnought's scatter on death. */
+  dreadnoughtScatter: 4,
+  /** Cinder's scatter on death. */
+  cinderScatter: 2,
+  /** The charge count Cinder locks out for one round. */
+  cinderLock: 2,
+  /**
+   * How many times a REACT chain may fire before the resolver stops. Thorn
+   * shooting back can sink a ship whose REACT shoots back again; without a cap
+   * two facing Thorns would loop forever.
+   */
+  reactCascadeLimit: 4,
+} as const;

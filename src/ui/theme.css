@@ -1,0 +1,385 @@
+/*
+ * One place for every colour, size and duration.
+ *
+ * Nothing below this file hardcodes a hex value. When the real art lands, the
+ * palette moves here and the screens do not change.
+ */
+
+:root {
+  --deep: #05080f;
+  --hull: #0d1522;
+  --hull-raised: #14203150;
+  --panel: #101a2b;
+  --panel-edge: #1d2c44;
+
+  --ink: #e8eef8;
+  --ink-dim: #8fa1bd;
+  --ink-faint: #56657f;
+
+  --charge: #ffc14d;
+  --charge-glow: #ffb01f;
+  --hit: #ff5a4d;
+  --miss: #3b4c67;
+  --intel: #4dd6ff;
+  --friend: #57d998;
+  --danger: #ff4d6d;
+  --sol: #14f195;
+  --sol-2: #9945ff;
+
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+
+  --gap: 10px;
+  --pad: 14px;
+
+  --t-fast: 120ms;
+  --t-med: 260ms;
+  --t-slow: 520ms;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--deep);
+  color: var(--ink);
+  font-family: var(--font);
+  overscroll-behavior: none;
+}
+
+/* The whole game is a 9:16 portrait column, centred on anything wider. */
+.app {
+  position: relative;
+  width: 100%;
+  max-width: min(100vw, calc(100vh * 9 / 16));
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(120% 80% at 50% 0%, #0a1220 0%, var(--deep) 70%);
+  overflow: hidden;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--pad);
+  gap: var(--gap);
+  overflow-y: auto;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 14px;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+p {
+  margin: 0;
+  color: var(--ink-dim);
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 13px 16px;
+  border-radius: var(--r-md);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform var(--t-fast), background var(--t-fast);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #2a3f63, #1b2b45);
+  border-color: #3a5580;
+}
+
+.btn.go {
+  background: linear-gradient(180deg, var(--sol), #0bbf76);
+  color: #04120c;
+  border-color: transparent;
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn[disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  gap: var(--gap);
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.card-surface {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: var(--r-md);
+  padding: var(--pad);
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--hull);
+  border: 1px solid var(--panel-edge);
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- board ------------------------------------------------------------- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  aspect-ratio: 1;
+  width: 100%;
+}
+
+.cell {
+  position: relative;
+  border-radius: var(--r-sm);
+  background: var(--hull);
+  border: 1px solid #16223400;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+
+.cell.pick {
+  outline: 2px solid var(--charge);
+  outline-offset: -2px;
+}
+
+.cell.aim {
+  background: #23324c;
+  outline: 1px solid var(--intel);
+  outline-offset: -1px;
+}
+
+.cell.hit {
+  background: var(--hit);
+}
+
+.cell.miss {
+  background: var(--miss);
+}
+
+.cell.known {
+  background: #2c3f5e;
+  outline: 1px dashed var(--intel);
+  outline-offset: -2px;
+}
+
+.cell.mine {
+  background: #1d3350;
+}
+
+.cell.mine.struck {
+  background: var(--hit);
+}
+
+.cell:active {
+  transform: scale(0.92);
+}
+
+/* --- charge chip -------------------------------------------------------- */
+
+.charges {
+  font-family: var(--mono);
+  font-weight: 800;
+  color: var(--charge);
+  text-shadow: 0 0 14px var(--charge-glow);
+}
+
+/* --- overlay ------------------------------------------------------------ */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 7, 13, 0.86);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  gap: 14px;
+  z-index: 20;
+  animation: fade var(--t-med) ease both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+}
+
+@keyframes flare {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.beat {
+  animation: pop var(--t-med) cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.flare {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: flare var(--t-slow) ease-out both;
+}
+
+.flare.hitfx {
+  background: radial-gradient(circle, var(--hit) 0%, transparent 70%);
+}
+
+.flare.missfx {
+  background: radial-gradient(circle, var(--intel) 0%, transparent 70%);
+}
+
+.shake {
+  animation: shake 160ms ease-in-out 2;
+}
+
+/* --- misc --------------------------------------------------------------- */
+
+.timer-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--panel-edge);
+  overflow: hidden;
+}
+
+.timer-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--charge);
+  transition: width 250ms linear;
+}
+
+.timer-bar.warn > i {
+  background: var(--danger);
+}
+
+.scroll {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.log {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  line-height: 1.6;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap);
+}
