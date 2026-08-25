@@ -5,3 +5,4 @@ dist/
 sim-out/
 dist-single/
 sim-out.log
+chain/program/target/

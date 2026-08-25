@@ -1,21 +1,23 @@
-import { useEffect, useMemo, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 import type { ResolveEvent } from '../../engine/types';
 import { label } from '../../engine/types';
 import { CARDS } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { useStore } from '../../state/store';
+import { Icon } from '../art/Icon';
 
 /**
  * The resolve sequence, in the order the rules resolve it.
  *
- * The whole point of the strict order in the rulebook is that the player can
- * see *why* something happened: the theft landed before the shots, the ship
- * that died still fired, the read triggered before either. So the overlay
- * walks the same event list the engine emitted rather than summarising it, and
- * groups it into the numbered steps.
+ * The whole point of the strict order in the rulebook is that a player can see
+ * *why* something happened: the theft landed before the shots, the ship that
+ * died still fired, the read triggered before either. So the overlay walks the
+ * engine's own event list rather than summarising it, and every beat says in
+ * plain words what it did — "MIRROR TRIGGERED — their whole attack missed",
+ * not "prediction resolved".
  *
- * Total budget is roughly three to four seconds; players who have seen it
- * enough can turn it off in settings.
+ * Total budget is three to four seconds. A player who has seen it enough turns
+ * on fast resolve and gets the same beats in about one.
  */
 
 const STEP_TITLES: Record<string, string> = {
@@ -34,13 +36,13 @@ const STEP_TITLES: Record<string, string> = {
 
 const STEP_MS: Record<string, number> = {
   reveal: 500,
-  nerf: 420,
-  prediction: 520,
+  nerf: 460,
+  prediction: 760,
   shot: 190,
-  sink: 700,
+  sink: 780,
   react: 620,
-  charges: 320,
-  intel: 420,
+  charges: 340,
+  intel: 440,
   draw: 260,
   strike: 400,
   end: 900,
@@ -50,16 +52,31 @@ export function ResolveOverlay(): ReactElement | null {
   const playback = useStore((s) => s.playback);
   const advance = useStore((s) => s.advancePlayback);
   const finish = useStore((s) => s.finishPlayback);
+  const fast = useStore((s) => s.settings.fastResolve);
   const you = useStore((s) => s.view()?.you ?? 0);
+  const frame = useRef<HTMLDivElement>(null);
 
   const current = playback ? playback.events[playback.index] : null;
-  const delay = current ? (STEP_MS[current.t] ?? 300) : 0;
+  // Fast resolve keeps every beat but compresses the whole sequence to about a
+  // second, so nothing is hidden from a player who already knows the rules.
+  const delay = current ? Math.max(40, (STEP_MS[current.t] ?? 300) * (fast ? 0.25 : 1)) : 0;
 
   useEffect(() => {
     if (!playback) return undefined;
     const id = setTimeout(advance, delay);
     return () => clearTimeout(id);
   }, [playback, advance, delay]);
+
+  // A hit shakes the frame, harder for a bigger salvo, capped so a nine-cell
+  // Burst does not throw the screen off the table.
+  useEffect(() => {
+    if (!current || current.t !== 'shot' || !current.hit || !frame.current) return;
+    const el = frame.current;
+    el.style.setProperty('--jolt', '3px');
+    el.classList.remove('jolt');
+    void el.offsetWidth;
+    el.classList.add('jolt');
+  }, [current]);
 
   const shown = useMemo(() => {
     if (!playback) return [];
@@ -70,62 +87,137 @@ export function ResolveOverlay(): ReactElement | null {
   }, [playback, you]);
 
   if (!playback || !current) return null;
+  const bigMoment = current.t === 'prediction' && current.triggered;
+  const sinking = current.t === 'sink';
 
   return (
-    <div className="overlay" onClick={finish}>
+    <div className="overlay" onClick={finish} ref={frame}>
+      {bigMoment && <div className="prediction-wash" />}
       <h3>{STEP_TITLES[current.t] ?? 'resolving'}</h3>
+
+      {sinking && (
+        <div className="banner" style={{ textAlign: 'center', fontSize: 40, color: 'var(--hit)' }}>
+          {current.length} SUNK
+        </div>
+      )}
+
       <div className="col" style={{ gap: 6 }}>
-        {shown.map((e, i) => (
-          <div
-            key={i}
-            className={i === shown.length - 1 ? 'beat' : ''}
-            style={{
-              fontSize: i === shown.length - 1 ? 17 : 13,
-              color: i === shown.length - 1 ? 'var(--ink)' : 'var(--ink-faint)',
-              fontWeight: i === shown.length - 1 ? 700 : 400,
-            }}
-          >
-            {describe(e, you)}
-          </div>
-        ))}
+        {shown.map((e, i) => {
+          const last = i === shown.length - 1;
+          const loud = last && e.t === 'prediction' && e.triggered;
+          return (
+            <div
+              key={i}
+              className={loud ? 'prediction' : last ? 'beat' : ''}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: loud ? 20 : last ? 17 : 13,
+                color: loud ? undefined : last ? 'var(--ink)' : 'var(--ink-faint)',
+                fontWeight: last ? 700 : 400,
+              }}
+            >
+              {iconFor(e) && <Icon name={iconFor(e)!} size={loud ? 22 : 16} />}
+              <span>{describe(e, you)}</span>
+            </div>
+          );
+        })}
       </div>
+
       <div className="spacer" />
       <p style={{ textAlign: 'center', fontSize: 12 }}>tap to skip</p>
     </div>
   );
 }
 
+function iconFor(e: ResolveEvent): string | null {
+  switch (e.t) {
+    case 'shot':
+      return e.hit ? 'ui.hit' : 'ui.miss';
+    case 'sink':
+      return 'ui.sunk';
+    case 'charges':
+      return 'ui.charge';
+    case 'prediction':
+      return e.card === 'mirror' ? 'card.mirror' : 'card.ambush';
+    case 'nerf':
+      return 'ui.locked';
+    case 'intel':
+      return 'ui.contact';
+    case 'react':
+      return `ship.${e.defId}`;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Plain language, always. A player mid-match should never have to work out
+ * what "nullified" meant or which of them "P0" was.
+ */
 function describe(e: ResolveEvent, you: number): string {
-  const side = (p: number) => (p === you ? 'You' : 'They');
+  const yours = (p: number) => p === you;
   switch (e.t) {
     case 'reveal':
       return 'Both plans turn face up.';
     case 'nerf':
-      return `${side(e.by)}: ${e.text}`;
-    case 'prediction':
-      return e.triggered
-        ? `${side(e.by)} read ${label(e.cell)} — ${CARDS[e.card].name} triggers`
-        : `${side(e.by)} guessed ${label(e.cell)} — nothing there`;
-    case 'shot':
-      return `${side(e.by)} ${sourceName(e.source)} at ${label(e.cell)} — ${e.hit ? 'HIT' : 'miss'}`;
+      return yours(e.by) ? `You: ${e.text}` : `They: ${e.text}`;
+    case 'prediction': {
+      const name = CARDS[e.card]?.name.toUpperCase() ?? e.card;
+      if (!e.triggered) {
+        return yours(e.by)
+          ? `You guessed ${label(e.cell)} — nothing came that way`
+          : `They guessed ${label(e.cell)} — nothing came that way`;
+      }
+      if (e.card === 'mirror') {
+        return yours(e.by)
+          ? `${name} TRIGGERED — their whole attack missed`
+          : `${name} TRIGGERED — your whole attack missed`;
+      }
+      return yours(e.by)
+        ? `${name} TRIGGERED — you fire back at ${label(e.cell)}`
+        : `${name} TRIGGERED — they fire back at ${label(e.cell)}`;
+    }
+    case 'shot': {
+      const src = sourceName(e.source);
+      return yours(e.by)
+        ? `Your ${src} at ${label(e.cell)} — ${e.hit ? 'HIT' : 'miss'}`
+        : `Their ${src} at ${label(e.cell)} — ${e.hit ? 'HIT' : 'miss'}`;
+    }
     case 'sink':
-      return `${e.length} SUNK${e.owner === you ? ' (yours)' : ''}`;
-    case 'react':
-      return `${SHIPS[e.defId]?.name ?? e.defId} — ${e.text}`;
+      return yours(e.owner)
+        ? `Your ${e.length}-length ship is gone`
+        : `Their ${e.length}-length ship is gone`;
+    case 'react': {
+      const name = SHIPS[e.defId]?.name.toUpperCase() ?? e.defId;
+      if (e.defId === 'spite') {
+        return yours(e.owner)
+          ? `${name} — all their charges lost`
+          : `${name} — all your charges lost`;
+      }
+      return `${name} — ${e.text}`;
+    }
     case 'charges':
-      return e.amount > 0 ? `${side(e.to)} +${e.amount} charges (${e.reason})` : `${e.reason}`;
+      if (e.amount <= 0) return e.reason;
+      return yours(e.to)
+        ? `You gain ${e.amount} charges (${e.reason})`
+        : `They gain ${e.amount} charges`;
     case 'intel':
       return e.text;
     case 'draw':
-      return `${side(e.to)} draw a card`;
+      return yours(e.to) ? 'You draw a card' : 'They draw a card';
     case 'strike':
-      return `${side(e.who)} missed the timer — strike ${e.total} of 3`;
+      return yours(e.who)
+        ? `You missed the timer — strike ${e.total} of 3`
+        : `They missed the timer — strike ${e.total} of 3`;
     case 'end':
-      return e.outcome.kind === 'draw'
-        ? 'Both fleets gone. Draw.'
-        : e.outcome.winner === you
-          ? 'Their fleet is gone.'
-          : 'Your fleet is gone.';
+      if (e.outcome.kind === 'draw') {
+        return e.outcome.reason === 'mutual'
+          ? 'Both fleets gone, level going in. Draw.'
+          : 'Round twenty, level on hull. Draw.';
+      }
+      return e.outcome.winner === you ? 'Their fleet is gone.' : 'Your fleet is gone.';
     default:
       return '';
   }

@@ -20,6 +20,7 @@ export function MainMenu(): ReactElement {
   const go = useStore((s) => s.go);
   const start = useStore((s) => s.startMatch);
   const profile = useStore((s) => s.profile);
+  const firstRun = useStore((s) => s.firstRun);
   const season = seasonState(profile);
   const [busy, setBusy] = useState(false);
 
@@ -40,7 +41,25 @@ export function MainMenu(): ReactElement {
       </div>
       <p>Three ships. Twelve cards. Both plans resolve at once. Under seven minutes.</p>
 
-      <div className="card-surface row" style={{ justifyContent: 'space-between' }}>
+      {/* Nobody should have to connect a wallet to find out whether they like
+          the game. The first run is one button into a real match; the wallet
+          is not mentioned until there is something to stake on. */}
+      {firstRun && (
+        <div className="col" style={{ gap: 8 }}>
+          <button className="btn go" disabled={busy} onClick={() => play('casual')}>
+            PLAY — no wallet, no signup
+          </button>
+          <button className="btn ghost" onClick={() => go('howto')}>
+            or learn the rules first
+          </button>
+          <div className="spacer" />
+        </div>
+      )}
+
+      <div
+        className="card-surface row"
+        style={{ justifyContent: 'space-between', display: firstRun ? 'none' : undefined }}
+      >
         <div className="col" style={{ gap: 2 }}>
           <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>rating</span>
           <strong className="mono" style={{ fontSize: 22 }}>
@@ -65,7 +84,7 @@ export function MainMenu(): ReactElement {
         </div>
       )}
 
-      <div className="col">
+      <div className="col" style={{ display: firstRun ? 'none' : undefined }}>
         <button className="btn go" disabled={busy} onClick={() => play('casual')}>
           Casual
         </button>
@@ -406,6 +425,11 @@ export function SettingsScreen(): ReactElement {
             .join(', ') || 'none yet'}
         </span>
       </div>
+
+      <h3>Credits</h3>
+      <button className="btn" onClick={() => go('credits')}>
+        Art credits and licences
+      </button>
 
       <h3>Chain journal</h3>
       <div className="card-surface log scroll" style={{ maxHeight: 120 }}>

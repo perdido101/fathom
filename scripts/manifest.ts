@@ -3,6 +3,7 @@ import { SHIP_LIST } from '../src/engine/ships';
 import { CARD_LIST } from '../src/engine/cards';
 import { CUES } from '../src/ui/sfx/SoundManager';
 import { VFX_HOOKS } from '../src/ui/vfx/hooks';
+import { ICON_CREDITS, ICON_LICENCE } from '../src/ui/art/icons';
 
 /**
  * ASSETS.md is generated, not written.
@@ -13,13 +14,30 @@ import { VFX_HOOKS } from '../src/ui/vfx/hooks';
  * added without its art appearing here on the next `npm run manifest`.
  */
 
+/**
+ * Status is the whole point of this document now.
+ *
+ *  SOURCED      — a real, licence-verified asset is in the build.
+ *  PROCEDURAL   — drawn in code, deliberately, and good enough to ship on.
+ *  STILL NEEDED — nothing is in the build; this is the list to generate against.
+ */
+type Status = 'SOURCED' | 'PROCEDURAL' | 'STILL NEEDED';
+
 interface Asset {
   file: string;
   px: string;
   ratio: string;
   where: string;
   note: string;
+  status: Status;
+  /** Credit line, for a sourced asset. */
+  credit?: string;
 }
+
+const creditFor = (slot: string): string | undefined => {
+  const c = ICON_CREDITS.find((x) => x.slot === slot);
+  return c ? `${c.name} by ${c.author}, game-icons.net, ${ICON_LICENCE}` : undefined;
+};
 
 const ship: Asset[] = SHIP_LIST.flatMap((s) => [
   {
@@ -28,20 +46,24 @@ const ship: Asset[] = SHIP_LIST.flatMap((s) => [
     ratio: '1:1',
     where: 'ship draft card, result screen reveal',
     note: `${s.name} at three-quarter view, whole hull in frame, ${s.type} silhouette readable at 120px.`,
+    status: 'STILL NEEDED' as Status,
   },
   {
     file: `ships/${s.id}/token.png`,
     px: `${s.length * 128}x128`,
     ratio: `${s.length}:1`,
     where: 'your own board, laid across the cells it occupies',
-    note: `Top-down ${s.name}, bow at the left edge, transparent background, no shadow baked in.`,
+    note: `Top-down ${s.name}, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset.`,
+    status: 'PROCEDURAL' as Status,
   },
   {
     file: `ships/${s.id}/icon.png`,
     px: '128x128',
     ratio: '1:1',
     where: 'battle screen ship strip, both fleets',
-    note: `${s.name} mark only — must read at 16px and must not hint at length.`,
+    note: `${s.name} mark. Must read at 16px and must not hint at length.`,
+    status: 'SOURCED' as Status,
+    credit: creditFor(`ship.${s.id}`),
   },
 ]);
 
@@ -53,13 +75,25 @@ const unknownHull: Asset[] = [4, 3, 2].map((len) => ({
   note: `Anonymous ${len}-length marker. Identical treatment for all four ships of that length — any distinguishing detail is an information leak.`,
 }));
 
-const card: Asset[] = CARD_LIST.map((c) => ({
-  file: `cards/${c.id}.png`,
-  px: '768x1152',
-  ratio: '2:3',
-  where: 'card draft, battle hand, resolve overlay',
-  note: `${c.name} — ${c.role}. Art fills the top 60%; the bottom 40% is left clear for name, text and the charge number.`,
-}));
+const card: Asset[] = CARD_LIST.flatMap((c) => [
+  {
+    file: `cards/${c.id}-icon.svg`,
+    px: '512x512',
+    ratio: '1:1',
+    where: 'card face, resolve overlay',
+    note: `${c.name} mark, tinted to the ${c.role} colour.`,
+    status: 'SOURCED' as Status,
+    credit: creditFor(`card.${c.id}`),
+  },
+  {
+    file: `cards/${c.id}.png`,
+    px: '768x1152',
+    ratio: '2:3',
+    where: 'card draft, battle hand',
+    note: `${c.name} — ${c.role}. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.`,
+    status: 'STILL NEEDED' as Status,
+  },
+]);
 
 const cardChrome: Asset[] = [
   {
@@ -67,14 +101,16 @@ const cardChrome: Asset[] = [
     px: '768x1152',
     ratio: '2:3',
     where: "opponent's hand, draw pile",
-    note: 'Card back. Must be identical for every card and must tile without a visible seam at 30x40.',
+    note: 'Card back. Must be identical for every card and must tile without a visible seam at 30x40. Currently a diagonal hatch drawn in CSS.',
+    status: 'PROCEDURAL' as Status,
   },
   {
     file: 'cards/frame-attack.png',
     px: '768x1152',
     ratio: '2:3',
     where: 'behind every attack card',
-    note: 'Role frame, transparent centre. One per role: attack, intel, control, prediction.',
+    note: 'Role frame, transparent centre. One per role. Currently a role-tinted gradient.',
+    status: 'PROCEDURAL' as Status,
   },
   {
     file: 'cards/frame-intel.png',
@@ -82,6 +118,7 @@ const cardChrome: Asset[] = [
     ratio: '2:3',
     where: 'behind every intel card',
     note: 'As above, intel palette.',
+    status: 'PROCEDURAL' as Status,
   },
   {
     file: 'cards/frame-control.png',
@@ -89,6 +126,7 @@ const cardChrome: Asset[] = [
     ratio: '2:3',
     where: 'behind every control card',
     note: 'As above, control palette.',
+    status: 'PROCEDURAL' as Status,
   },
   {
     file: 'cards/frame-prediction.png',
@@ -96,6 +134,7 @@ const cardChrome: Asset[] = [
     ratio: '2:3',
     where: 'behind Mirror and Ambush',
     note: 'As above, prediction palette.',
+    status: 'PROCEDURAL' as Status,
   },
 ];
 
@@ -193,13 +232,36 @@ const ui: Asset[] = [
   },
 ];
 
+const UI_STATUS: Record<string, [Status, string | null]> = {
+  'ui/wordmark.svg': ['PROCEDURAL', null],
+  'ui/appicon.png': ['PROCEDURAL', null],
+  'ui/menu-bg.jpg': ['STILL NEEDED', null],
+  'ui/cell-water.png': ['PROCEDURAL', null],
+  'ui/cell-hit.png': ['SOURCED', 'ui.hit'],
+  'ui/cell-miss.png': ['SOURCED', 'ui.miss'],
+  'ui/cell-known.png': ['SOURCED', 'ui.contact'],
+  'ui/charge-chip.png': ['SOURCED', 'ui.charge'],
+  'ui/timer-ring.png': ['SOURCED', 'ui.timer'],
+  'ui/sol-glyph.svg': ['STILL NEEDED', null],
+  'ui/stake-tier.png': ['PROCEDURAL', null],
+  'ui/rank-badge.png': ['SOURCED', 'ui.rank'],
+  'ui/collision-burst.png': ['PROCEDURAL', null],
+};
+
+for (const a of ui) {
+  const entry = UI_STATUS[a.file];
+  a.status = entry ? entry[0] : 'STILL NEEDED';
+  if (entry && entry[1]) a.credit = creditFor(entry[1]);
+}
+
 function vfxAssets(): Asset[] {
   return VFX_HOOKS.map((h) => ({
     file: `vfx/${h.id}.webm`,
     px: h.id === 'sink-sequence' ? '512x512' : '256x256',
     ratio: '1:1',
     where: h.trigger,
-    note: `${h.reads}. Budget ${h.durationMs}ms. Alpha channel required.`,
+    note: `${h.reads}. Budget ${h.durationMs}ms. Alpha channel required. A CSS animation stands in today.`,
+    status: 'PROCEDURAL' as Status,
   }));
 }
 
@@ -210,6 +272,7 @@ function sfxAssets(): Asset[] {
     ratio: 'n/a',
     where: `fires on the ${c.id.replace(/-/g, ' ')} cue`,
     note: c.description,
+    status: 'STILL NEEDED' as Status,
   }));
 }
 
@@ -249,6 +312,9 @@ const groups: [string, Asset[], string][] = [
 ];
 
 const total = groups.reduce((n, g) => n + g[1].length, 0);
+const all = groups.flatMap(([, assets]) => assets);
+const tally = (st: Status): number => all.filter((a) => a.status === st).length;
+const stillNeeded = all.filter((a) => a.status === 'STILL NEEDED');
 
 const doc = `# Shadow Armada — asset manifest
 
@@ -256,9 +322,18 @@ const doc = `# Shadow Armada — asset manifest
 lists, so it cannot fall out of step with the twelve ships, twelve cards,
 ${VFX_HOOKS.length} visual hooks and ${CUES.length} sound cues the build actually ships.
 
-Everything in the game currently runs on procedural placeholders — coloured
-shapes with legible labels at the right sizes and positions. The game is fully
-playable on them, which is the point: nothing below blocks development.
+| Status | Count | Meaning |
+| --- | --- | --- |
+| SOURCED | ${tally('SOURCED')} | A licence-verified asset is in the build. Credit is on the row and in \`ASSETS_CREDITS.md\`. |
+| PROCEDURAL | ${tally('PROCEDURAL')} | Drawn in code, deliberately, and good enough to ship on. |
+| STILL NEEDED | ${tally('STILL NEEDED')} | Nothing in the build. **This is the list to generate against.** |
+
+The game is fully playable today: nothing marked STILL NEEDED blocks anything,
+and nothing anywhere is a grey box.
+
+## What is still needed
+
+${stillNeeded.map((a) => `- \`${a.file}\` — ${a.px}, ${a.note}`).join('\n')}
 
 **Intended style, for sizing and framing only:** stylised 3D, bold readable
 silhouettes, saturated but not neon, slightly exaggerated proportions. Clean

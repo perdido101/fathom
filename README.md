@@ -8,11 +8,13 @@ Ground-up build. Nothing from any earlier project survives in this repository.
 
 ```
 npm install
-npm run dev        # play it — no wallet needed, the opponent is a bot
-npm test           # 42 engine tests
-npm run sim        # 20,000 bot matches and the balance bands
-npm run smoke      # a real browser plays a real match end to end
-npm run manifest   # regenerate ASSETS.md from the game's own content
+npm run dev          # play it — no wallet, no signup, straight into a match
+npm test             # 68 engine and server tests
+npm run sim          # 12,000 bot matches and the balance bands
+npm run smoke        # a real browser plays a real match end to end
+npm run chain:local  # build, deploy and prove the escrow on a real validator
+npm run manifest     # regenerate ASSETS.md from the game's own content
+npm run icons        # re-fetch the icon set and regenerate the credits
 ```
 
 ## The game in one paragraph
@@ -34,13 +36,22 @@ both sides. A sink announces a length and never a name.
 
 ```
 src/engine/     the rules. Pure, deterministic, headless, no React and no DOM.
+src/server/     the authority. Owns every match; the client never asserts state.
 src/bots/       four opponents, all reading the same client view a human gets.
 src/sim/        the balance harness and its report.
-src/ui/         eleven screens, procedural placeholder art, sound and VFX hooks.
-src/chain/      session keys, seed commit-reveal, mock and devnet adapters.
+src/ui/         twelve screens, licensed icon set, sound and VFX hooks.
+src/chain/      session keys, seed commit-reveal, program client, adapters.
 src/state/      the client store, rating, modes and season maths.
-chain/program/  the Anchor escrow program (Rust; not built by npm).
+chain/program/  the native Solana escrow program (Rust, no Anchor).
 ```
+
+### The client is never trusted
+
+`src/server/matchServer.ts` owns the match. It hands out `ClientView`s and
+accepts commands; there is no method that returns state. Both players' plans
+are held until both arrive, so a plan cannot be informed by the opponent's.
+Reconnecting inside the grace period returns a view and the last round's beats,
+never the state. All of that is tested rather than asserted.
 
 ### The engine is the product
 
@@ -90,9 +101,15 @@ lists so it cannot drift.
 
 ## Status
 
-Playable end to end on placeholders, against four difficulties of bot, with
-mock settlement. Testnet only — the escrow program is written but not deployed,
-and anything that would stake real value fails loudly rather than pretending.
+Playable end to end against four difficulties of bot. The escrow program is
+written, deployed and exercised against a real Solana runtime — `npm run
+chain:local` proves it from nothing in one command, with 31 on-chain checks
+moving real lamports. Public devnet deployment is blocked only on faucet
+funding from this environment; see `docs/SOLANA.md`.
+
+Art: 30 assets sourced under a verified licence, 29 drawn procedurally, 41
+still to generate. `ASSETS.md` says which is which; `ASSETS_CREDITS.md` records
+author, source, licence and date for every third-party file.
 
 Not built, per the brief: 2v2, chat, friends, lobbies, cosmetics, NFTs,
 mainnet, native apps, tournaments.

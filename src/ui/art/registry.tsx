@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactElement } from 'react';
 import { SHIPS } from '../../engine/ships';
 import { CARDS } from '../../engine/cards';
+import { Icon, hasIcon } from './Icon';
 
 /**
  * Placeholder art, drawn in code.
@@ -53,36 +54,55 @@ export function ShipArt({
   const colour = defId && revealed ? (SHIP_TINT[defId] ?? '#4a5a75') : '#2a3550';
   const w = vertical ? size : size * length;
   const h = vertical ? size * length : size;
+  const mark = defId && revealed ? `ship.${defId}` : null;
   return (
-    <svg
-      viewBox={`0 0 ${vertical ? 100 : 100 * length} ${vertical ? 100 * length : 100}`}
-      width={w}
-      height={h}
-      role="img"
-      aria-label={defId && revealed ? SHIPS[defId]?.name : `unknown ${length}-hull`}
-    >
-      <rect
-        x="4"
-        y="4"
-        width={(vertical ? 100 : 100 * length) - 8}
-        height={(vertical ? 100 * length : 100) - 8}
-        rx="26"
-        fill={colour}
-        stroke="#0b1220"
-        strokeWidth="6"
-      />
-      <text
-        x={(vertical ? 100 : 100 * length) / 2}
-        y={(vertical ? 100 * length : 100) / 2 + 16}
-        textAnchor="middle"
-        fontSize="44"
-        fontWeight="800"
-        fill="#0b1220"
-        opacity="0.75"
+    <span style={{ position: 'relative', display: 'inline-flex', width: w, height: h }}>
+      <svg
+        viewBox={`0 0 ${vertical ? 100 : 100 * length} ${vertical ? 100 * length : 100}`}
+        width={w}
+        height={h}
+        role="img"
+        aria-label={defId && revealed ? SHIPS[defId]?.name : `unknown ${length}-hull`}
       >
-        {defId && revealed ? SHIPS[defId]?.name.slice(0, 2).toUpperCase() : length}
-      </text>
-    </svg>
+        <rect
+          x="4"
+          y="4"
+          width={(vertical ? 100 : 100 * length) - 8}
+          height={(vertical ? 100 * length : 100) - 8}
+          rx="26"
+          fill={colour}
+          stroke="#0b1220"
+          strokeWidth="6"
+        />
+        <text
+          x={(vertical ? 100 : 100 * length) / 2}
+          y={(vertical ? 100 * length : 100) / 2 + 16}
+          textAnchor="middle"
+          fontSize="44"
+          fontWeight="800"
+          fill="#0b1220"
+          opacity="0.75"
+        >
+          {/* An unidentified hull shows only its length — never a mark that
+            could narrow down which of the four ships it is. */}
+          {defId && revealed ? '' : length}
+        </text>
+      </svg>
+      {mark && hasIcon(mark) && (
+        <Icon
+          name={mark}
+          size={Math.round(size * 0.62)}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#0b1220',
+            opacity: 0.85,
+          }}
+        />
+      )}
+    </span>
   );
 }
 
@@ -140,7 +160,19 @@ export function CardArt({
       >
         {faceDown ? 'hidden' : def?.role}
       </span>
-      <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.15 }}>
+      <span
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          fontSize: 12,
+          fontWeight: 700,
+          lineHeight: 1.15,
+        }}
+      >
+        {!faceDown && def && hasIcon(`card.${def.id}`) && (
+          <Icon name={`card.${def.id}`} size={14} style={{ color: tint }} />
+        )}
         {faceDown ? '???' : def?.name}
       </span>
       {!faceDown && def && (

@@ -67,6 +67,8 @@ export interface ClientView {
     /** Your shot history on their board. */
     marks: Record<CellIndex, 'hit' | 'miss'>;
     knownShipCells: CellIndex[];
+    /** Hull cells you have left. Nine minus what they have landed. */
+    hullRemaining: number;
     counts: { rows: Record<number, number>; cols: Record<number, number> };
     sankLengths: number[];
   };
@@ -80,6 +82,15 @@ export interface ClientView {
     timerStrikes: number;
     /** Their shots on your board. You can see these; they hit your water. */
     marks: Record<CellIndex, 'hit' | 'miss'>;
+    /**
+     * Hull cells they have left. This is not a leak: every fleet is nine
+     * cells and you know which of your own shots landed, so the number is
+     * derivable from what you already hold. Showing it saves the player
+     * arithmetic they would otherwise do on paper.
+     */
+    hullRemaining: number;
+    /** How many cards they are holding. Public — you can see their hand. */
+    cardCount: number;
     connected: boolean;
   };
 
@@ -146,6 +157,7 @@ export function clientView(ms: MatchState, viewer: PlayerId): ClientView {
       draftedCards: me.draftedCards.slice(),
       marks: { ...me.marks },
       knownShipCells: me.knownShipCells.slice(),
+      hullRemaining: me.ships.reduce((n, s) => n + s.hits.filter((h) => !h).length, 0),
       counts: { rows: { ...me.counts.rows }, cols: { ...me.counts.cols } },
       sankLengths: me.sankLengths.slice(),
     },
@@ -167,6 +179,8 @@ export function clientView(ms: MatchState, viewer: PlayerId): ClientView {
       restrictions: { ...foe.restrictions },
       timerStrikes: foe.timerStrikes,
       marks: { ...foe.marks },
+      hullRemaining: 9 - Object.values(me.marks).filter((m) => m === 'hit').length,
+      cardCount: foe.hand.length,
       connected: foe.connected,
     },
 

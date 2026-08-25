@@ -1,0 +1,21 @@
+[package]
+name = "shadow-armada"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+# Collapses the settle window to nothing so the reclaim payout path can be
+# exercised in a test without a time-warped validator. Never enabled in a
+# deployed build; the E2E test deploys a second copy under this feature.
+fast-reclaim = []
+
+[dependencies]
+solana-program = "2.1"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

@@ -116,7 +116,12 @@ document.
 
 ### My recommendation
 
-**Keep commit-reveal for match randomness. Do not add a VRF for it.**
+**Keep commit-reveal for match randomness. Do not add a VRF for it.** Ruled on
+and accepted; this section is kept as the record of why.
+
+**Where a VRF does become relevant, for the avoidance of doubt:** season payout
+tiebreaks, and any pooled draw. Never match state. If the ladder ever has to
+break a tie for a prize band, that is the moment to revisit this table.
 
 The reasoning is that a VRF solves a problem this game does not have. A VRF
 exists so that a party with no adversary *inside the draw* cannot cheat. Here,
@@ -153,6 +158,48 @@ One rating covers ranked and arena. New accounts are provisional for ten rated
 matches: wider matchmaking bands, faster rating movement, and arena access
 limited to the lowest tier — the cheapest available guard against a strong
 player farming beginners from a fresh wallet.
+
+## What has actually been proven, and what has not — Build 2
+
+The program is written, built for SBPF v3, **deployed, and exercised against a
+real Solana runtime**. `npm run chain:local` does the whole thing from nothing:
+builds both variants, starts a validator, deploys, runs the end-to-end test,
+tears down. It is the repeatable proof.
+
+**31 on-chain checks pass**, moving real lamports:
+
+| Scenario | What it proves |
+|---|---|
+| Arena win | Escrow opens with both stakes, both deployment commitments are written, the winner receives the pot minus exactly 5%, the treasury receives exactly the rake, and the transcript hash is pinned on-chain |
+| Draw | Both stakes return in full and **no rake is taken** — verified against a match that genuinely ended in a mutual elimination |
+| Authorisation | A stranger cannot settle; a stranger cannot reclaim; a player cannot reclaim before the window; a deployment commitment cannot be overwritten |
+| Reclaim | An abandoned match returns each player their own stake whoever calls it, closes as a draw, and cannot be reclaimed twice |
+| Session keys | A session key is turned into a Solana signer and rejected from settle, reclaim and setup, while still signing round plans verifiably — and the escrow is untouched afterwards |
+| Replay | The published transcript replays to the reported result with every round signature checked |
+
+**What has not happened: deployment to public devnet.** The program builds and
+deploys fine; the blocker is funding. Devnet's faucet refuses airdrops from
+this environment's egress IP (`airdrop request failed… rate limit`), and a
+deployment needs roughly 1–2 SOL. Nothing in the code stands in the way — the
+same test runs unchanged against devnet:
+
+    solana program deploy chain/program/target/deploy/shadow_armada.so \
+      --url devnet --program-id <keypair>
+    SA_RPC=https://api.devnet.solana.com SA_PROGRAM_ID=<id> npm run e2e:chain
+
+The local validator runs the same Agave 4.2.1 software as devnet, so this is a
+funding gap rather than a behavioural one. **It should not be treated as
+equivalent to a devnet run** — it is one airdrop away, and worth doing from a
+funded wallet before anyone stakes anything.
+
+### One real gap in the client
+
+Opening a staked escrow needs **both players' signatures in one transaction**,
+which a single browser cannot produce. That is a matchmaking-server job. The
+devnet adapter therefore throws on `openMatch` for staked modes with the reason
+spelled out, rather than pretending. Casual mode is unaffected. The server that
+co-signs is the next piece of work on this path, and `src/server/matchServer.ts`
+is where it goes — it already owns the match and holds both plans.
 
 ## Running against devnet
 

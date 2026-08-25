@@ -163,12 +163,23 @@ export function Battle(): ReactElement | null {
   return (
     <div className="screen" style={{ gap: 8, paddingBottom: 8 }}>
       {/* --- their side ---------------------------------------------------- */}
-      <div className="row" style={{ justifyContent: 'space-between' }}>
+      {/* Everything the rules make public about them, in one row. A player
+          should never have to count hits on the board to work out how close
+          the opponent is to going down. */}
+      <div className="row" style={{ justifyContent: 'space-between', gap: 6 }}>
         <span className="pill">
           round {view.round}/{view.roundCap}
         </span>
-        <span className="pill">{foe.name}</span>
-        <span className="pill mono">bank {foe.hand.reduce((n, c) => n + c.charges, 0)}</span>
+        <span className="pill" style={{ flex: 1, textAlign: 'center' }}>
+          {foe.name}
+          {!foe.connected && ' · away'}
+        </span>
+        <span className="pill mono" title="their hull cells left">
+          hull {foe.hullRemaining}/9
+        </span>
+        <span className="pill mono" title="their banked charges">
+          <span className="charges">{foe.hand.reduce((n, c) => n + c.charges, 0)}</span>
+        </span>
       </div>
 
       <div className="row" style={{ gap: 6 }}>
@@ -181,6 +192,7 @@ export function Battle(): ReactElement | null {
           </div>
         ))}
         <div className="spacer" />
+        <span style={{ fontSize: 9, color: 'var(--ink-faint)' }}>{foe.cardCount} cards</span>
         <div className="row" style={{ gap: 4 }}>
           {foe.hand.map((c) => (
             <button
@@ -298,8 +310,11 @@ export function Battle(): ReactElement | null {
 
       {/* --- your side ------------------------------------------------------ */}
       <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
-        <div style={{ width: '42%' }}>
+        <div className="col" style={{ width: '42%', gap: 4 }}>
           <Board marks={foe.marks} hulls={me.ships} compact />
+          <span style={{ fontSize: 10, color: 'var(--ink-dim)', textAlign: 'center' }}>
+            your hull {me.hullRemaining}/9
+          </span>
         </div>
         <div className="col" style={{ flex: 1, gap: 6 }}>
           {me.ships.map((s) => {

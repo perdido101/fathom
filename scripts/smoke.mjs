@@ -36,12 +36,13 @@ try {
   await page.goto('http://localhost:5199/', { waitUntil: 'networkidle' });
   await shot('01-menu');
 
-  await page.getByRole('button', { name: 'How to play' }).click();
+  await page.getByRole('button', { name: /learn the rules first/ }).click();
   for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'next' }).click();
   await shot('02-howto');
   await page.getByRole('button', { name: 'done' }).click();
 
-  await page.getByRole('button', { name: 'Casual' }).click();
+  // First run: one button straight into a match, no wallet.
+  await page.getByRole('button', { name: /^PLAY/ }).click();
   await page.waitForTimeout(300);
   await shot('03-shipdraft');
 
@@ -108,6 +109,7 @@ try {
   if (!verified) errors.push('result screen did not report a verified replay');
 
   await page.getByRole('button', { name: 'menu' }).click();
+  await shot('08b-menu-after-first-match');
   await page.getByRole('button', { name: 'Leaderboard' }).click();
   await shot('09-leaderboard');
   await page.getByRole('button', { name: 'back' }).click();
@@ -116,9 +118,12 @@ try {
   await page.getByRole('button', { name: 'back' }).click();
   await page.getByRole('button', { name: 'Settings' }).click();
   await shot('11-settings');
+  await page.getByRole('button', { name: /Art credits/ }).click();
+  await shot('12-credits');
+  await page.getByRole('button', { name: 'back' }).click();
   await page.getByRole('button', { name: 'back' }).click();
   await page.getByRole('button', { name: 'Arena' }).click();
-  await shot('12-queue');
+  await shot('13-queue');
 } finally {
   const failed = errors.filter((e) => !e.includes('favicon'));
   console.log(`screenshots: ${shots.join(', ')}`);

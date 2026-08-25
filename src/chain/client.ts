@@ -2,7 +2,8 @@ import type { Plan } from '../engine/types';
 import type { Mode, Stake } from '../state/profile';
 import { arenaPayout } from '../state/profile';
 import { issueSessionKey, signPlan, type SessionKey } from './sessionKey';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { DevnetChain } from './devnet';
 
 /**
  * The chain, from the client's side.
@@ -113,86 +114,28 @@ class MockChain implements ChainAdapter {
   }
 }
 
-/**
- * Devnet. Every call here is real except the ones that need the escrow
- * program, which cannot exist until it is deployed — those throw with the
- * reason rather than pretending to succeed, because a silent no-op on a
- * staking path is the worst possible failure mode.
- *
- * The program source and its account layout live in `chain/program/`.
- */
-class DevnetChain implements ChainAdapter {
-  readonly kind = 'devnet' as const;
-  readonly journal: string[] = [];
-  private key: SessionKey = issueSessionKey(Date.now());
-  private wallet: string | null = null;
-
-  constructor(
-    private readonly endpoint: string,
-    private readonly programId: string | null,
-  ) {}
-
-  connected(): boolean {
-    return this.wallet !== null;
-  }
-
-  address(): string | null {
-    return this.wallet;
-  }
-
-  sessionKey(): SessionKey {
-    return this.key;
-  }
-
-  async connect(): Promise<string> {
-    const provider = (
-      globalThis as { solana?: { connect(): Promise<{ publicKey: { toString(): string } }> } }
-    ).solana;
-    if (!provider) throw new Error('no Solana wallet found in this browser');
-    const res = await provider.connect();
-    this.wallet = res.publicKey.toString();
-    this.key = issueSessionKey(Date.now());
-    this.journal.push(`connected ${this.wallet} on ${this.endpoint}`);
-    return this.wallet;
-  }
-
-  private requireProgram(): string {
-    if (!this.programId) {
-      throw new Error(
-        'no escrow program configured: deploy chain/program and set VITE_PROGRAM_ID before staking',
-      );
-    }
-    return this.programId;
-  }
-
-  async openMatch({ mode, seedCommit }: OpenMatchArgs): Promise<OpenMatchResult> {
-    if (mode === 'casual') {
-      return { matchId: `devnet-casual-${seedCommit.slice(0, 8)}`, text: 'casual — identity only' };
-    }
-    this.requireProgram();
-    throw new Error('escrow program not deployed on this cluster');
-  }
-
-  async commitDeployment(): Promise<void> {
-    this.requireProgram();
-    throw new Error('escrow program not deployed on this cluster');
-  }
-
-  async settle(): Promise<void> {
-    this.requireProgram();
-    throw new Error('escrow program not deployed on this cluster');
-  }
-
-  signWithSessionKey(plan: Plan, nonce: string): string {
-    return signPlan(this.key, plan, nonce);
-  }
-}
-
 const env = (import.meta as unknown as { env?: Record<string, string> }).env ?? {};
 const USE_DEVNET = env.VITE_CLUSTER === 'devnet';
 
+function key(value: string | undefined): PublicKey | null {
+  if (!value) return null;
+  try {
+    return new PublicKey(value);
+  } catch {
+    // A malformed key in configuration is not something to paper over on a
+    // staking path; leaving it null makes the adapter throw with the reason.
+    console.error(`ignoring malformed public key in configuration: ${value}`);
+    return null;
+  }
+}
+
 export const chain: ChainAdapter = USE_DEVNET
-  ? new DevnetChain(env.VITE_RPC ?? 'https://api.devnet.solana.com', env.VITE_PROGRAM_ID ?? null)
+  ? new DevnetChain(
+      env.VITE_RPC ?? 'https://api.devnet.solana.com',
+      key(env.VITE_PROGRAM_ID),
+      key(env.VITE_REFEREE),
+      key(env.VITE_TREASURY),
+    )
   : new MockChain();
 
 export { LAMPORTS_PER_SOL };

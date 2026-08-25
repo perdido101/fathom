@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { CellIndex } from '../../engine/types';
 import { BOARD, CELLS, label } from '../../engine/types';
+import { Icon } from '../art/Icon';
 
 /**
  * Both boards are the same component.
@@ -66,8 +67,17 @@ export function Board({
         aria-label={`${label(c)}${mark ? ` ${mark}` : ''}`}
         style={{ fontSize: compact ? 9 : 11, color: 'var(--ink-faint)' }}
       >
-        {mark === undefined && !hull ? label(c) : ''}
-        {hull?.sunk ? <span style={{ color: '#2b0d0d', fontWeight: 800 }}>x</span> : null}
+        {mark === undefined && !hull && <span className="cell-label">{label(c)}</span>}
+        {/* Hit and miss are distinguished by shape as well as colour, so the
+            board still reads for a player who cannot tell the two apart. */}
+        {mark === 'hit' && <Icon name="ui.hit" size={compact ? 12 : 20} title="hit" />}
+        {mark === 'miss' && (
+          <Icon name="ui.miss" size={compact ? 10 : 16} style={{ opacity: 0.55 }} title="miss" />
+        )}
+        {mark === undefined && knownSet.has(c) && (
+          <Icon name="ui.contact" size={compact ? 10 : 16} title="contact" />
+        )}
+        {hull?.sunk && <Icon name="ui.sunk" size={compact ? 11 : 18} title="sunk" />}
         {flashed !== undefined && <i className={`flare ${flashed ? 'hitfx' : 'missfx'}`} />}
       </button>,
     );
