@@ -53,7 +53,7 @@ const ship: Asset[] = SHIP_LIST.flatMap((s) => [
     px: `${s.length * 128}x128`,
     ratio: `${s.length}:1`,
     where: 'your own board, laid across the cells it occupies',
-    note: `Top-down ${s.name}, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset.`,
+    note: `Top-down ${s.name}, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board.`,
     status: 'PROCEDURAL' as Status,
   },
   {
@@ -87,10 +87,10 @@ const card: Asset[] = CARD_LIST.flatMap((c) => [
   },
   {
     file: `cards/${c.id}.png`,
-    px: '768x1152',
-    ratio: '2:3',
-    where: 'card draft, battle hand',
-    note: `${c.name} — ${c.role}. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.`,
+    px: '768x920',
+    ratio: '~5:6',
+    where: 'card draft, battle hand — the art window of the 2:3 card',
+    note: `${c.name} — ${c.role}. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.`,
     status: 'STILL NEEDED' as Status,
   },
 ]);
@@ -101,7 +101,7 @@ const cardChrome: Asset[] = [
     px: '768x1152',
     ratio: '2:3',
     where: "opponent's hand, draw pile",
-    note: 'Card back. Must be identical for every card and must tile without a visible seam at 30x40. Currently a diagonal hatch drawn in CSS.',
+    note: 'Card back. Must be identical for every card and legible down to 44x62 in the opponent strip. Currently a sky-radial with the twin-chevron mark, drawn by CardBack.',
     status: 'PROCEDURAL' as Status,
   },
   {
@@ -109,7 +109,7 @@ const cardChrome: Asset[] = [
     px: '768x1152',
     ratio: '2:3',
     where: 'behind every attack card',
-    note: 'Role frame, transparent centre. One per role. Currently a role-tinted gradient.',
+    note: 'Role frame, transparent centre. One per role. Currently a role-coloured border and banner drawn by GameCard.',
     status: 'PROCEDURAL' as Status,
   },
   {
@@ -155,10 +155,10 @@ const ui: Asset[] = [
   },
   {
     file: 'ui/menu-bg.jpg',
-    px: '1170x2532',
-    ratio: '9:19.5',
-    where: 'main menu backdrop',
-    note: 'Dark sea horizon. Must stay legible under text at 60% opacity overlay.',
+    px: '1920x1080',
+    ratio: '16:9',
+    where: 'main menu backdrop, full-bleed at desktop',
+    note: 'Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists.',
   },
   {
     file: 'ui/cell-water.png',
@@ -342,8 +342,8 @@ stylisation, naval subject. Not photoreal, not pixel art.
 **Two rules that are not stylistic.** Every asset that can appear on the enemy
 side must be information-neutral: an unrevealed hull marker cannot hint at
 which of the four ships of that length it is. And every board asset must read
-correctly at 48px on a phone, because that is the size it will actually be
-seen at.
+correctly at 48px, because that is its size on the compact own-waters board
+even at desktop resolution.
 
 ${groups
   .map(

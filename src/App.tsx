@@ -1,6 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
 import { useStore } from './state/store';
-import { MainMenu, Queue, Leaderboard, Season, SettingsScreen } from './ui/screens/Menus';
+import { MainMenu, Queue, Escrow, Leaderboard, Season, SettingsScreen } from './ui/screens/Menus';
 import { HowToPlay } from './ui/screens/HowToPlay';
 import { Draft } from './ui/screens/Draft';
 import { Deployment } from './ui/screens/Deployment';
@@ -9,17 +9,19 @@ import { Result } from './ui/screens/Result';
 import { ResolveOverlay } from './ui/screens/ResolveOverlay';
 import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
+import { WalletChip, Wordmark } from './ui/components/WalletChip';
 
 /**
- * The whole app is one portrait column and one clock.
+ * The 16:9 shell.
+ *
+ * The game is desktop only: below 1280×720 a polished gate replaces it
+ * entirely, in CSS, so there is no resize listener to get out of sync. The
+ * wallet chip rides the top-right of every screen, because a player staking
+ * SOL should never have to wonder what they are connected as.
  *
  * The clock lives here rather than inside a screen because it has to keep
  * running across the resolve overlay and the phase changes — a timer that
- * pauses whenever a component unmounts is a timer players will learn to abuse.
- *
- * Every screen is wrapped individually rather than the app as a whole, so a
- * crash in the result screen cannot take the battle screen with it, and the
- * boundary can say which screen failed.
+ * pauses whenever a component unmounts is a timer players learn to abuse.
  */
 export function App(): ReactElement {
   const screen = useStore((s) => s.screen);
@@ -34,8 +36,6 @@ export function App(): ReactElement {
     return () => clearInterval(id);
   }, [tick]);
 
-  // A player who closes the tab mid-match has dropped, not quit. The server
-  // holds the seat for the grace period either way; this just tells it sooner.
   useEffect(() => {
     const onHide = (): void => {
       if (document.visibilityState === 'hidden') useStore.getState().noteAway();
@@ -46,37 +46,57 @@ export function App(): ReactElement {
 
   return (
     <div className="app">
-      <ErrorBoundary where={screen} onReset={() => go('menu')}>
-        {error ? (
-          <Failed
-            what={error.what}
-            detail={error.detail}
-            onRetry={error.retry ?? undefined}
-            onBack={() => {
-              clearError();
-              go('menu');
-            }}
-          />
-        ) : busy ? (
-          <Loading what={busy} />
-        ) : (
-          <>
-            {screen === 'menu' && <MainMenu />}
-            {screen === 'howto' && <HowToPlay />}
-            {screen === 'queue' && <Queue />}
-            {screen === 'shipDraft' && <Draft kind="ship" />}
-            {screen === 'cardDraft' && <Draft kind="card" />}
-            {screen === 'deploy' && <Deployment />}
-            {screen === 'battle' && <Battle />}
-            {screen === 'result' && <Result />}
-            {screen === 'leaderboard' && <Leaderboard />}
-            {screen === 'season' && <Season />}
-            {screen === 'settings' && <SettingsScreen />}
-            {screen === 'credits' && <Credits />}
-          </>
-        )}
-      </ErrorBoundary>
-      <ResolveOverlay />
+      {/* The desktop gate. Logo, one line, nothing else. */}
+      <div className="desktop-gate">
+        <Wordmark size={72} />
+        <p
+          style={{
+            color: '#ffffff',
+            fontFamily: 'var(--display)',
+            fontWeight: 700,
+            fontSize: 18,
+            textShadow: '0 2px 0 rgba(18,58,94,0.3)',
+          }}
+        >
+          Shadow Armada is played on desktop — 1280×720 or larger.
+        </p>
+      </div>
+
+      <div className="app-main">
+        <WalletChip />
+        <ErrorBoundary where={screen} onReset={() => go('menu')}>
+          {error ? (
+            <Failed
+              what={error.what}
+              detail={error.detail}
+              onRetry={error.retry ?? undefined}
+              onBack={() => {
+                clearError();
+                go('menu');
+              }}
+            />
+          ) : busy ? (
+            <Loading what={busy} />
+          ) : (
+            <>
+              {screen === 'menu' && <MainMenu />}
+              {screen === 'howto' && <HowToPlay />}
+              {screen === 'queue' && <Queue />}
+              {screen === 'escrow' && <Escrow />}
+              {screen === 'shipDraft' && <Draft kind="ship" />}
+              {screen === 'cardDraft' && <Draft kind="card" />}
+              {screen === 'deploy' && <Deployment />}
+              {screen === 'battle' && <Battle />}
+              {screen === 'result' && <Result />}
+              {screen === 'leaderboard' && <Leaderboard />}
+              {screen === 'season' && <Season />}
+              {screen === 'settings' && <SettingsScreen />}
+              {screen === 'credits' && <Credits />}
+            </>
+          )}
+        </ErrorBoundary>
+        <ResolveOverlay />
+      </div>
     </div>
   );
 }

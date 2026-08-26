@@ -2,23 +2,20 @@ import type { ReactElement } from 'react';
 import { useStore } from '../../state/store';
 import { finalReveal } from '../../engine/view';
 import { SHIPS } from '../../engine/ships';
-import { CARDS } from '../../engine/cards';
 import { Board } from '../components/Board';
+import { GameCard, ShipCard } from '../components/GameCard';
 import { arenaPayout } from '../../state/profile';
 import { transcriptOf, verify } from '../../engine/verify';
 import { chain } from '../../chain/client';
 
 /**
- * The result screen.
+ * The result, as a celebration and a receipt.
  *
- * Both fleets are revealed here and nowhere earlier, which is what makes the
- * whole match worth replaying in your head: you finally learn whether the
- * thing you were chasing in row 4 was the Warhead or the Dreadnought.
- *
- * Rematch and next opponent are both one tap and both the same size. A player
- * who just lost a stake and wants back in should not have to hunt for the
- * button, and a player who wants a different opponent should not have to leave
- * to the menu to find one.
+ * Both fleets are revealed here and nowhere earlier — you finally learn
+ * whether the thing you were chasing in row four was the Warhead or the
+ * Dreadnought. Next to the reveal sits the settlement panel: pot, rake, net,
+ * the transaction signature, and the replay-verified badge, because a game
+ * that holds money owes the player the receipt without being asked.
  */
 export function Result(): ReactElement | null {
   const ms = useStore((s) => s.match);
@@ -29,6 +26,7 @@ export function Result(): ReactElement | null {
   const stake = useStore((s) => s.stake);
   const mode = useStore((s) => s.mode);
   const profile = useStore((s) => s.profile);
+  const lastTx = useStore((s) => s.lastTx);
 
   if (!ms || !view) return null;
   const reveal = finalReveal(ms);
@@ -38,109 +36,188 @@ export function Result(): ReactElement | null {
   const delta = profile.history[0]?.delta ?? 0;
   const payout = arenaPayout(stake);
 
-  // The same check any third party can run, against this match's own
-  // transcript. If it ever comes back false the result on screen is not the
-  // result the rules produce, and the player should know before the operator.
-  // Locally both plans are signed by this client's own session key, so the
-  // same key verifies both sides. On a server the two would differ.
   const key = chain.sessionKey().publicKeyHex;
   const audit = verify(transcriptOf(ms, 'local', [key, key]));
 
   return (
-    <div className="screen">
-      <h1 style={{ color: drew ? 'var(--ink-dim)' : won ? 'var(--friend)' : 'var(--danger)' }}>
-        {drew ? 'DRAW' : won ? 'VICTORY' : 'DEFEAT'}
-      </h1>
-      <p>
-        {outcome?.kind === 'draw' && outcome.reason === 'mutual'
-          ? 'Both fleets went down in the same round. Stakes are returned in full and no rake is taken.'
-          : outcome?.kind === 'draw'
-            ? 'Round twenty, level on hull cells.'
-            : outcome?.reason === 'timeout-strikes'
-              ? 'Three missed timers.'
-              : outcome?.reason === 'cells'
-                ? 'Round twenty — decided on hull cells remaining.'
-                : outcome?.reason === 'disconnect'
-                  ? 'Opponent disconnected.'
-                  : 'Fleet destroyed.'}
-      </p>
-
-      <div className="grid2">
-        <div className="card-surface col" style={{ gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--ink-dim)' }}>rating</span>
-          <strong style={{ fontSize: 20 }}>
-            {profile.rating}{' '}
-            <span style={{ fontSize: 13, color: delta >= 0 ? 'var(--friend)' : 'var(--danger)' }}>
-              {delta >= 0 ? '+' : ''}
-              {delta}
-            </span>
-          </strong>
-        </div>
-        <div className="card-surface col" style={{ gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--ink-dim)' }}>settled</span>
-          <strong style={{ fontSize: 15 }}>
-            {mode !== 'arena'
-              ? 'no stake'
-              : drew
-                ? `${stake} SOL returned`
-                : won
-                  ? `+${payout.toWinner.toFixed(4)} SOL`
-                  : `-${stake} SOL`}
-          </strong>
-        </div>
-      </div>
-
-      <h3>Fleets revealed</h3>
-      <div className="grid2">
-        {([0, 1] as const).map((p) => (
-          <div key={p} className="card-surface col" style={{ gap: 6 }}>
-            <strong style={{ fontSize: 13 }}>{p === 0 ? 'You' : view.foe.name}</strong>
-            <Board
-              marks={{}}
-              hulls={(reveal?.placements[p] ?? []).map((cells, i) => ({
-                cells,
-                hits: ms.players[p].ships[i]?.hits ?? cells.map(() => false),
-                sunk: ms.players[p].ships[i]?.sunk ?? false,
-              }))}
-              compact
-            />
-            <span style={{ fontSize: 11, color: 'var(--ink-dim)' }}>
-              {(reveal?.ships[p] ?? []).map((id) => SHIPS[id].name).join(' · ')}
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-              {(reveal?.cards[p] ?? []).map((id) => CARDS[id].name).join(' · ')}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="card-surface row" style={{ gap: 8 }}>
-        <span style={{ fontSize: 11, color: audit.ok ? 'var(--friend)' : 'var(--danger)' }}>
-          {audit.ok ? 'replay verified' : 'REPLAY MISMATCH'}
-        </span>
-        <span className="log" style={{ flex: 1 }}>
-          {audit.roundsReplayed} rounds re-run from the seed and the signed transcript
-        </span>
-      </div>
-
-      <div className="spacer" />
-      <div className="row">
-        <button className="btn go" style={{ flex: 1 }} onClick={() => void rematch()}>
-          REMATCH
-        </button>
-        <button className="btn primary" style={{ flex: 1 }} onClick={() => void rematch()}>
-          NEXT OPPONENT
-        </button>
-      </div>
-      <button
-        className="btn ghost"
-        onClick={() => {
-          leave();
-          go('menu');
+    <div className="screen" style={{ alignItems: 'center', gap: 16, position: 'relative' }}>
+      {won && <div className="prediction-wash" />}
+      <h1
+        className="banner"
+        style={{
+          fontSize: 72,
+          color: '#ffffff',
+          textShadow: `0 5px 0 ${drew ? 'rgba(18,58,94,0.35)' : won ? 'var(--confirm-deep)' : 'var(--danger)'}, 0 10px 30px rgba(18,58,94,0.4)`,
         }}
       >
-        menu
-      </button>
+        {drew ? 'DRAW' : won ? 'VICTORY' : 'DEFEAT'}
+      </h1>
+      <p style={{ color: 'rgba(255,255,255,0.95)', fontWeight: 800, fontSize: 16 }}>
+        {outcome?.kind === 'draw' && outcome.reason === 'mutual'
+          ? 'Both fleets went down together, level going in. Stakes returned in full, no rake.'
+          : outcome?.kind === 'win' && outcome.reason === 'mutual'
+            ? 'Both fleets went down together — you entered the round with more hull.'
+            : outcome?.kind === 'draw'
+              ? 'Round twenty, level on hull.'
+              : outcome?.reason === 'timeout-strikes'
+                ? 'Three missed timers.'
+                : outcome?.reason === 'cells'
+                  ? 'Round twenty — decided on hull cells remaining.'
+                  : outcome?.reason === 'disconnect'
+                    ? 'Opponent disconnected.'
+                    : 'Fleet destroyed.'}
+      </p>
+
+      <div className="row" style={{ gap: 20, alignItems: 'stretch', width: 'min(1240px, 100%)' }}>
+        {/* Fleets revealed. */}
+        {([0, 1] as const).map((p) => (
+          <div key={p} className="panel" style={{ flex: 1.1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h3>{p === 0 ? 'Your fleet' : `${view.foe.name}'s fleet`}</h3>
+            <div style={{ width: 'min(100%, 240px)', alignSelf: 'center' }}>
+              <Board
+                marks={{}}
+                hulls={(reveal?.placements[p] ?? []).map((cells, i) => ({
+                  cells,
+                  hits: ms.players[p].ships[i]?.hits ?? cells.map(() => false),
+                  sunk: ms.players[p].ships[i]?.sunk ?? false,
+                }))}
+                compact
+              />
+            </div>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {(reveal?.ships[p] ?? []).map((id) => (
+                <ShipCard
+                  key={id}
+                  defId={id}
+                  length={SHIPS[id].length}
+                  size="sm"
+                  sunk={ms.players[p].ships.find((s) => s.defId === id)?.sunk ?? false}
+                />
+              ))}
+            </div>
+            <div className="row" style={{ gap: 6 }}>
+              {(reveal?.cards[p] ?? []).map((id) => (
+                <GameCard key={id} defId={id} charges={0} size="sm" />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* The receipt. */}
+        <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h3>Settlement</h3>
+          <div className="col" style={{ gap: 8 }}>
+            <ReceiptRow label="Rating" value={`${profile.rating} (${delta >= 0 ? '+' : ''}${delta})`} />
+            {mode === 'arena' ? (
+              drew ? (
+                <>
+                  <ReceiptRow label="Pot" value={`◎ ${payout.pot.toFixed(2)}`} />
+                  <ReceiptRow label="Rake" value="none on a draw" />
+                  <ReceiptRow label="Returned to you" value={`◎ ${stake.toFixed(2)}`} gold />
+                </>
+              ) : (
+                <>
+                  <ReceiptRow label="Pot" value={`◎ ${payout.pot.toFixed(2)}`} />
+                  <ReceiptRow label="Rake (5%)" value={`◎ ${payout.rake.toFixed(4)}`} />
+                  <ReceiptRow
+                    label={won ? 'To you' : 'To them'}
+                    value={`◎ ${payout.toWinner.toFixed(4)}`}
+                    gold
+                  />
+                </>
+              )
+            ) : (
+              <ReceiptRow label="Stake" value="none — no chain settlement" />
+            )}
+          </div>
+
+          {lastTx && (
+            <div className="col" style={{ gap: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Transaction
+              </span>
+              {chain.kind === 'devnet' ? (
+                <a
+                  className="mono"
+                  style={{ fontSize: 12, wordBreak: 'break-all' }}
+                  href={`https://explorer.solana.com/tx/${lastTx}?cluster=devnet`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {lastTx.slice(0, 28)}… ↗ devnet explorer
+                </a>
+              ) : (
+                <span className="mono" style={{ fontSize: 12, wordBreak: 'break-all', color: 'var(--ink-dim)' }}>
+                  {lastTx.slice(0, 28)}… (simulated — local settlement)
+                </span>
+              )}
+            </div>
+          )}
+
+          <div
+            className="row"
+            style={{
+              padding: '8px 12px',
+              borderRadius: 12,
+              background: audit.ok ? 'rgba(46,213,115,0.16)' : 'rgba(255,77,94,0.16)',
+              border: `2px solid ${audit.ok ? 'var(--confirm)' : 'var(--danger)'}`,
+            }}
+          >
+            <span style={{ fontWeight: 800, color: audit.ok ? 'var(--confirm-deep)' : 'var(--danger)' }}>
+              {audit.ok ? '✓ Replay verified' : '✕ REPLAY MISMATCH'}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--ink-dim)', fontWeight: 700 }}>
+              {audit.roundsReplayed} rounds re-run from the seed and the signed transcript
+            </span>
+          </div>
+          <button
+            className="btn small ghost"
+            onClick={() => {
+              const t = transcriptOf(ms, 'export', [key, key]);
+              const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'shadow-armada-match.json';
+              a.click();
+            }}
+          >
+            Export match proof (JSON)
+          </button>
+
+          <div className="spacer" />
+          <div className="row">
+            <button className="btn go" style={{ flex: 1, fontSize: 19 }} onClick={() => void rematch()}>
+              REMATCH
+            </button>
+            <button className="btn primary" style={{ flex: 1, fontSize: 19 }} onClick={() => void rematch()}>
+              NEXT OPPONENT
+            </button>
+          </div>
+          <button
+            className="btn ghost small"
+            onClick={() => {
+              leave();
+              go('menu');
+            }}
+          >
+            Menu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReceiptRow({ label, value, gold }: { label: string; value: string; gold?: boolean }): ReactElement {
+  return (
+    <div className="row" style={{ justifyContent: 'space-between' }}>
+      <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 14 }}>{label}</span>
+      <span
+        className={gold ? 'display' : 'mono'}
+        style={{ fontWeight: 800, fontSize: gold ? 20 : 14, color: gold ? 'var(--gold-deep)' : 'var(--ink)' }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

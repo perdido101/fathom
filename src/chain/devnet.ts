@@ -153,6 +153,26 @@ export class DevnetChain implements ChainAdapter {
     return fetchMatch(this.connection, programId, matchIdFrom(matchId));
   }
 
+  private cachedBalance: number | null = null;
+  private cachedTx: string | null = null;
+
+  balanceSol(): number | null {
+    // Refresh in the background; the chip renders the last known value.
+    if (this.wallet) {
+      void this.connection
+        .getBalance(this.wallet, 'confirmed')
+        .then((lamports) => {
+          this.cachedBalance = lamports / 1e9;
+        })
+        .catch(() => undefined);
+    }
+    return this.cachedBalance;
+  }
+
+  lastTxSignature(): string | null {
+    return this.cachedTx;
+  }
+
   signWithSessionKey(plan: Plan, nonce: string): string {
     return signPlan(this.key, plan, nonce);
   }

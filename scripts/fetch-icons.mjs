@@ -172,7 +172,7 @@ ${credits.map((c) => `| \`${c.slot}\` | ${c.name} | ${c.author} | <${c.source}> 
 | --- | --- | --- |
 | Ship hulls, board tiles, card frames, wordmark, all VFX | Drawn procedurally in this repository | Original work, no third-party content |
 | Palette | Defined in \`src/ui/theme.css\` | Original work |
-| Fonts | System font stack only — no font files are bundled or served | n/a |
+| Fonts | Baloo 2, Nunito, JetBrains Mono via Google Fonts | SIL Open Font License 1.1 |
 | Audio | **None shipped.** The cue list exists and fires; no files are bundled | n/a |
 
 ## Verification

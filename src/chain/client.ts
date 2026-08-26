@@ -2,6 +2,7 @@ import type { Plan } from '../engine/types';
 import type { Mode, Stake } from '../state/profile';
 import { arenaPayout } from '../state/profile';
 import { issueSessionKey, signPlan, type SessionKey } from './sessionKey';
+import { sha256 } from '../engine/sha256';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { DevnetChain } from './devnet';
 
@@ -49,6 +50,14 @@ export interface ChainAdapter {
   commitDeployment(matchId: string | null, commitHash: string): Promise<void>;
   settle(matchId: string | null, result: Result, stake: Stake): Promise<void>;
   signWithSessionKey(plan: Plan, nonce: string): string;
+  /**
+   * Spendable balance in SOL, or null while unknown. Sync on purpose — the
+   * UI polls it every render and an async accessor would push loading state
+   * into every screen that shows the wallet chip.
+   */
+  balanceSol(): number | null;
+  /** Signature of the most recent settlement, for the result screen's link. */
+  lastTxSignature(): string | null;
   /** Human-readable trail of everything the adapter did, for the settings screen. */
   readonly journal: string[];
 }
@@ -59,6 +68,13 @@ class MockChain implements ChainAdapter {
   private key: SessionKey = issueSessionKey(Date.now());
   private wallet: string | null = null;
   private counter = 0;
+  /**
+   * A believable devnet balance: enough for the three lower arena tiers and
+   * short of the 0.5 table, so the insufficient-funds path is reachable in
+   * the real UI rather than only in a screenshot mock.
+   */
+  private balance = 0.3;
+  private lastTx: string | null = null;
 
   connected(): boolean {
     return this.wallet !== null;
@@ -99,14 +115,28 @@ class MockChain implements ChainAdapter {
   }
 
   async settle(matchId: string | null, result: Result, stake: Stake): Promise<void> {
+    // A pseudo-signature derived from the match, so the settlement panel has
+    // something stable to show. Clearly labelled simulated in the UI — the
+    // devnet adapter is where a real explorer link comes from.
+    this.lastTx = sha256(`${matchId}:${result}:${stake}`);
     if (result === 'draw') {
       this.journal.push(`${matchId}: draw — ${stake} SOL returned to both, no rake taken`);
       return;
     }
     const { toWinner, rake } = arenaPayout(stake);
+    if (result === 'win') this.balance += toWinner;
+    else this.balance -= stake;
     this.journal.push(
       `${matchId}: ${result} — ${result === 'win' ? `${toWinner.toFixed(4)} SOL paid out` : 'stake forfeited'}, rake ${rake.toFixed(4)}`,
     );
+  }
+
+  balanceSol(): number | null {
+    return this.balance;
+  }
+
+  lastTxSignature(): string | null {
+    return this.lastTx;
   }
 
   signWithSessionKey(plan: Plan, nonce: string): string {

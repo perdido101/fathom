@@ -38,7 +38,8 @@ export type Screen =
   | 'leaderboard'
   | 'season'
   | 'settings'
-  | 'credits';
+  | 'credits'
+  | 'escrow';
 
 export interface Settings {
   sound: boolean;
@@ -71,6 +72,13 @@ interface Store {
   error: { what: string; detail: string | null; retry: (() => void) | null } | null;
   /** True until the player has finished a match, which gates the wallet prompt. */
   firstRun: boolean;
+  /**
+   * The escrow forming, step by step, while an arena match opens. The UI
+   * draws two stacks of gold merging; this is the state it draws from.
+   */
+  escrow: { you: boolean; opponent: boolean; stake: Stake } | null;
+  /** Signature of the last settlement, for the result screen's explorer link. */
+  lastTx: string | null;
 
   go(screen: Screen): void;
   fail(what: string, detail?: unknown, retry?: () => void): void;
@@ -121,6 +129,8 @@ export const useStore = create<Store>((set, get) => ({
   clock: 20,
   matchIdOnChain: null,
   chainNotice: null,
+  escrow: null,
+  lastTx: null,
   busy: null,
   error: null,
   firstRun: true,
@@ -169,6 +179,19 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   async startMatch(mode, stake) {
+    // Money is checked before anything else happens. An arena entry the
+    // wallet cannot cover fails here, with the amounts, not at settlement.
+    if (mode === 'arena') {
+      const balance = chain.balanceSol();
+      if (balance !== null && balance < stake) {
+        get().fail(
+          'Not enough devnet SOL for this table',
+          `This table stakes ${stake} SOL and your wallet holds ${balance.toFixed(3)}. ` +
+            'Top up at the devnet faucet (faucet.solana.com) or pick a lower table.',
+        );
+        return;
+      }
+    }
     set({ busy: 'Finding an opponent' });
     const seed = freshSeed();
     const match = createMatch({ seed, players: [get().profile.name, 'Opponent'] });
@@ -179,19 +202,42 @@ export const useStore = create<Store>((set, get) => ({
       get().fail('Could not open the match', err, () => void get().startMatch(mode, stake));
       return;
     }
-    set({
+    const base = {
       busy: null,
       match,
       mode,
       stake,
       botRng: seedRng(`${seed}:opponent`),
-      screen: 'shipDraft',
       playback: null,
       lastRoundEvents: [],
+      lastTx: null,
       clock: 25,
       matchIdOnChain: notice.matchId,
       chainNotice: notice.text,
-    });
+    };
+    if (mode === 'arena') {
+      // The pot forms in view: your stake lands, theirs follows, then the
+      // draft begins. The delays are theatre, but the states are real — a
+      // devnet escrow walks exactly these steps.
+      set({ ...base, screen: 'escrow', escrow: { you: false, opponent: false, stake } });
+      setTimeout(() => {
+        if (get().screen !== 'escrow') return;
+        set({ escrow: { you: true, opponent: false, stake } });
+        Sound.play('charge-placed');
+      }, 800);
+      setTimeout(() => {
+        if (get().screen !== 'escrow') return;
+        set({ escrow: { you: true, opponent: true, stake } });
+        Sound.play('charge-placed');
+      }, 2200);
+      setTimeout(() => {
+        if (get().screen !== 'escrow') return;
+        set({ screen: 'shipDraft', escrow: null });
+        Sound.play('round-start');
+      }, 3100);
+      return;
+    }
+    set({ ...base, screen: 'shipDraft' });
     Sound.play('round-start');
   },
 
@@ -274,7 +320,10 @@ export const useStore = create<Store>((set, get) => ({
       Sound.play(drew ? 'draw' : won ? 'victory' : 'defeat');
       const profile = get().profile;
       const delta = ratingDelta(profile, result);
-      void chain.settle(get().matchIdOnChain, result, get().stake).catch((err) => {
+      void chain
+        .settle(get().matchIdOnChain, result, get().stake)
+        .then(() => set({ lastTx: chain.lastTxSignature() }))
+        .catch((err) => {
         // A settlement that failed is a settlement the player must be told
         // about; it is their money waiting on the reclaim path.
         get().fail('Settlement did not go through', err);
@@ -328,6 +377,13 @@ export const useStore = create<Store>((set, get) => ({
     set({ match: null, playback: null, screen: 'menu', matchIdOnChain: null });
   },
 }));
+
+// Dev builds expose the store so the screenshot sweep can stage states the
+// happy path cannot reach quickly — an established (non-provisional) profile,
+// for one. Production builds carry no such handle.
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__store = useStore;
+}
 
 /** Fire the sound cue that belongs to a resolve beat. */
 function cue(e: ResolveEvent): void {

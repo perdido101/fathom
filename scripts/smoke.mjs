@@ -1,11 +1,8 @@
 /**
- * A real browser plays a real match.
+ * A real browser plays a real match, at desktop size.
  *
- * Unit tests prove the rules; this proves the app. It clicks through every
- * screen in order — menu, both drafts, deployment, several battle rounds — and
- * fails on any console error along the way, which is the cheapest way to catch
- * the class of bug that only appears once React, the store and the engine are
- * all in the same process.
+ * Clicks through the menu, both drafts, deployment and a full battle to the
+ * result screen, then walks every other screen. Fails on any console error.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -17,7 +14,7 @@ const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox'],
 });
-const page = await browser.newPage({ viewport: { width: 414, height: 896 } });
+const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 
 const errors = [];
 page.on('console', (m) => {
@@ -32,56 +29,52 @@ async function shot(name) {
   shots.push(path);
 }
 
+const click = (name, opts) => page.getByRole('button', { name, ...opts }).click();
+const wait = (ms) => page.waitForTimeout(ms);
+
 try {
   await page.goto('http://localhost:5199/', { waitUntil: 'networkidle' });
+  await wait(500);
   await shot('01-menu');
 
-  await page.getByRole('button', { name: /learn the rules first/ }).click();
-  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'next' }).click();
+  await click('How to play');
+  for (let i = 0; i < 3; i++) await click('Next');
   await shot('02-howto');
-  await page.getByRole('button', { name: 'done' }).click();
+  await click('Done');
+  await wait(300);
 
-  // First run: one button straight into a match, no wallet.
-  await page.getByRole('button', { name: /^PLAY/ }).click();
-  await page.waitForTimeout(300);
+  // Casual: straight into the ship draft.
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await wait(400);
   await shot('03-shipdraft');
 
-  // Three ship packs.
   for (let i = 0; i < 3; i++) {
-    await page.locator('.card-surface.row').first().click();
-    await page.waitForTimeout(400);
+    await page.locator('.draft-pick').first().click();
+    await wait(1600);
   }
-  await page.waitForTimeout(400);
+  await wait(300);
   await shot('04-carddraft');
-
-  // Three card packs.
   for (let i = 0; i < 3; i++) {
-    await page.locator('.grid4 button').first().click();
-    await page.waitForTimeout(400);
+    await page.locator('.draft-pick button, button.gamecard').first().click();
+    await wait(1600);
   }
-  await page.waitForTimeout(400);
+  await wait(300);
   await shot('05-deploy');
 
-  await page.getByRole('button', { name: 'auto' }).click();
-  await page.getByRole('button', { name: 'commit fleet' }).click();
-  await page.waitForTimeout(400);
+  await click('Auto');
+  await click('Commit fleet');
+  await wait(400);
   await shot('06-battle');
 
-  // Play the match out, so the result screen and its replay check are
-  // exercised too, not just the first few rounds.
   for (let round = 0; round < 24; round++) {
     const live = await page.locator('.board .cell').first().isVisible();
     if (!live) break;
-    await page.locator('.board').first().locator('.cell').nth(round * 3 + 1).click();
-    // Aiming the free shot rewrites the prompt line, which reflows the buttons
-    // underneath it. Let the layout settle before reaching for one.
-    await page.waitForTimeout(150);
-    // Note the exact match: card text contains the word "charges", so a
-    // substring match on the accessible name hits the card, not the button.
-    await page.getByRole('button', { name: 'charge', exact: true }).first().click();
-    await page.waitForTimeout(150);
+    await page.locator('.board').first().locator('.cell').nth((round * 3 + 1) % 36).click();
+    await wait(150);
+    await page.getByRole('button', { name: 'Charge', exact: true }).first().click();
+    await wait(150);
     if (round === 0) await shot('06b-planned');
-    const commit = page.getByRole('button', { name: /^commit/ });
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
     if (!(await commit.isVisible())) {
       console.log(`round ${round}: no commit button — stopping`);
       break;
@@ -91,11 +84,10 @@ try {
       break;
     }
     await commit.click();
-    // Walk through the resolve overlay.
-    await page.waitForTimeout(200);
+    await wait(250);
     const overlay = page.locator('.overlay');
     if (await overlay.isVisible()) await overlay.click();
-    await page.waitForTimeout(300);
+    await wait(300);
     if (round === 1) await shot('07-midbattle');
     if (await page.getByRole('button', { name: 'REMATCH' }).isVisible()) {
       console.log(`match ended after ${round + 1} rounds`);
@@ -104,28 +96,32 @@ try {
   }
   await shot('08-result');
 
-  const verified = await page.getByText('replay verified').isVisible().catch(() => false);
+  const verified = await page.getByText('Replay verified').isVisible().catch(() => false);
   console.log(`result screen replay check: ${verified ? 'verified' : 'NOT SHOWN'}`);
   if (!verified) errors.push('result screen did not report a verified replay');
 
-  await page.getByRole('button', { name: 'menu' }).click();
-  await shot('08b-menu-after-first-match');
-  await page.getByRole('button', { name: 'Leaderboard' }).click();
+  await click('Menu');
+  await wait(300);
+  await click('Leaderboard');
   await shot('09-leaderboard');
-  await page.getByRole('button', { name: 'back' }).click();
-  await page.getByRole('button', { name: 'Season' }).click();
+  await click('Back');
+  await click('Season', { exact: true });
   await shot('10-season');
-  await page.getByRole('button', { name: 'back' }).click();
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await click('Back');
+  await click('Settings');
   await shot('11-settings');
-  await page.getByRole('button', { name: /Art credits/ }).click();
+  await click('Art credits and licences');
   await shot('12-credits');
-  await page.getByRole('button', { name: 'back' }).click();
-  await page.getByRole('button', { name: 'back' }).click();
-  await page.getByRole('button', { name: 'Arena' }).click();
-  await shot('13-queue');
+  await click('back');
+  await wait(200);
+  await click('Back');
+  await page.getByRole('button', { name: /Pick a table/ }).click();
+  await wait(300);
+  await shot('13-arena');
+} catch (err) {
+  errors.push(`smoke aborted: ${err instanceof Error ? err.message.split('\n')[0] : err}`);
 } finally {
-  const failed = errors.filter((e) => !e.includes('favicon'));
+  const failed = errors.filter((e) => !e.includes('favicon') && !e.includes('fonts.googleapis'));
   console.log(`screenshots: ${shots.join(', ')}`);
   if (failed.length) {
     console.error(`\n${failed.length} console error(s):`);

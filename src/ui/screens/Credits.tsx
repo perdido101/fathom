@@ -25,13 +25,13 @@ export function Credits(): ReactElement {
     <div className="screen">
       <h2>Credits</h2>
 
-      <div className="card-surface col" style={{ gap: 6 }}>
+      <div className="panel col" style={{ gap: 6 }}>
         <strong style={{ fontSize: 14 }}>Icons — game-icons.net</strong>
         <p style={{ fontSize: 12 }}>
           {ICON_CREDITS.length} icons by {[...byAuthor.keys()].join(' and ')}, used under{' '}
           {ICON_LICENCE} and recoloured to this game&rsquo;s palette. Retrieved {ICON_RETRIEVED}.
         </p>
-        <span className="log" style={{ wordBreak: 'break-all' }}>
+        <span className="mono" style={{ wordBreak: 'break-all' }}>
           {ICON_LICENCE_URL}
         </span>
       </div>
@@ -65,12 +65,12 @@ export function Credits(): ReactElement {
         </div>
       ))}
 
-      <div className="card-surface col" style={{ gap: 6 }}>
+      <div className="panel col" style={{ gap: 6 }}>
         <strong style={{ fontSize: 14 }}>Everything else</strong>
         <p style={{ fontSize: 12 }}>
           Ship hulls, board tiles, card frames, the wordmark and every visual effect are drawn
-          procedurally in this repository. No font files are bundled — the game uses the system
-          stack. No audio ships yet.
+          procedurally in this repository. Type is Baloo 2, Nunito and JetBrains Mono, all under
+          the SIL Open Font License, served from Google Fonts. No audio ships yet.
         </p>
         <p style={{ fontSize: 12 }}>
           No Epic Games asset, model, texture, font or sound is used or referenced anywhere in this

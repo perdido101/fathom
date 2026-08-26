@@ -1,12 +1,11 @@
 /**
- * A screenshot of every screen, at a real phone size.
+ * Every screen at 1920×1080, photographed from the running game.
  *
- * This walks the whole game once and photographs each screen in a state worth
- * looking at — the battle screen with a plan half-built rather than empty, the
- * resolve overlay caught mid-beat rather than after it, the menu both before
- * and after a first match, since they are deliberately different.
- *
- * Output goes to `screens/`, numbered in the order a player meets them.
+ * The sweep walks the real loop — menu, drafts, deployment, a full battle —
+ * and then every betting surface: the tier picker, the escrow forming, the
+ * ranked-join modal, the season page, the insufficient-funds error, the
+ * settlement receipt. Plus the desktop gate and two hover states, because
+ * hover is half the desktop design.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -15,6 +14,9 @@ import { mkdirSync, rmSync } from 'node:fs';
 const OUT = 'screens';
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
+// JPEG copies for the inventory page, which embeds every screen as a data
+// URI — 24 full-size PNGs would put the page past what a browser forgives.
+mkdirSync(`${OUT}/web`, { recursive: true });
 
 const server = await createServer({ server: { port: 5233 } });
 await server.listen();
@@ -23,9 +25,7 @@ const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox'],
 });
-// A common mid-range phone. The layout is built for 9:16 portrait and this is
-// the size the brief asks it to survive.
-const page = await browser.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -37,147 +37,194 @@ const taken = [];
 async function shot(name, note) {
   const file = `${OUT}/${name}.png`;
   await page.screenshot({ path: file });
+  await page.screenshot({ path: `${OUT}/web/${name}.jpg`, type: 'jpeg', quality: 74 });
   taken.push({ file, note });
-  console.log(`  ${file.padEnd(34)} ${note}`);
+  console.log(`  ${file.padEnd(40)} ${note}`);
 }
 
 const click = (name, opts) => page.getByRole('button', { name, ...opts }).click();
 const wait = (ms) => page.waitForTimeout(ms);
 
-try {
-  await page.goto('http://localhost:5233/', { waitUntil: 'networkidle' });
-  await wait(500);
-  await shot('01-menu-first-run', 'first run: one button in, no wallet mentioned');
-
-  await click(/learn the rules first/);
-  await wait(300);
-  await shot('02-howto-charging', 'how to play 1/4 — charging, live cards');
-  await click('next');
-  await wait(250);
-  await shot('03-howto-firing', 'how to play 2/4 — firing destroys the card');
-  await click('next');
-  await wait(250);
-  await shot('04-howto-simultaneous', 'how to play 3/4 — both plans resolve at once');
-  await click('next');
-  await wait(250);
-  await shot('05-howto-sinks', 'how to play 4/4 — a sink announces a length');
-  await click('done');
-  await wait(300);
-
-  await click(/^PLAY/);
-  await wait(600);
-  await shot('06-ship-draft', 'ship draft — pack of four, both players see it');
-
-  // Collide on purpose so the moment gets photographed.
-  const firstShip = page.locator('.card-surface.row').first();
-  await firstShip.click();
-  await wait(160);
-  await shot('07-draft-collision', 'the collision reveal — the only thing a draft leaks');
-  await wait(1400);
-  for (let i = 0; i < 2; i++) {
-    await page.locator('.card-surface.row').first().click();
-    await wait(1600);
-  }
-  await wait(400);
-  await shot('08-card-draft', 'card draft — same mechanism, twelve-card pool');
-
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.grid4 button').first().click();
-    await wait(1600);
-  }
-  await wait(400);
-  await shot('09-deployment', 'deployment — orthogonal only, hulls may touch');
-
-  await click('auto');
-  await wait(200);
-  await shot('10-deployment-placed', 'fleet placed, ready to commit as a hash');
-  await click('commit fleet');
-  await wait(500);
-  await shot('11-battle-empty', 'battle — their water dominant, charges loudest');
-
-  // Build a real plan so the screen is photographed doing something.
-  await page.locator('.board').first().locator('.cell').nth(8).click();
-  await wait(200);
-  await page.getByRole('button', { name: 'charge', exact: true }).first().click();
-  await wait(260);
-  await shot('12-battle-planned', 'a plan half-built: free shot aimed, a card charged');
-
-  // Aim a card, to photograph the targeting state.
-  const fire = page.getByRole('button', { name: 'fire', exact: true }).first();
-  if (await fire.isEnabled().catch(() => false)) {
-    await fire.click();
-    await wait(200);
-    await page.locator('.board').first().locator('.cell').nth(14).click();
-    await wait(200);
-    await shot('13-battle-targeting', 'targeting a card — prompt says what the next tap does');
-    const lock = page.getByRole('button', { name: 'lock in' });
-    if (await lock.isEnabled().catch(() => false)) await lock.click();
-    else await page.getByRole('button', { name: 'cancel' }).click();
-    await wait(200);
-  }
-
-  await page.getByRole('button', { name: /^commit/ }).click();
-  await wait(700);
-  await shot('14-resolve-overlay', 'the resolve sequence, caught mid-beat');
-  await wait(1200);
-  await shot('15-resolve-shots', 'attacks resolving, plain language, hit and miss by shape');
-
-  // Play the match out to reach the result screen.
-  const overlay = page.locator('.overlay');
-  if (await overlay.isVisible().catch(() => false)) await overlay.click();
-  await wait(400);
-  for (let round = 0; round < 24; round++) {
-    if (await page.getByRole('button', { name: 'REMATCH' }).isVisible().catch(() => false)) break;
-    const cell = page.locator('.board').first().locator('.cell').nth((round * 5 + 3) % 36);
-    await cell.click().catch(() => undefined);
+async function playRounds(max) {
+  for (let round = 0; round < max; round++) {
+    if (await page.getByRole('button', { name: 'REMATCH' }).isVisible().catch(() => false)) return true;
+    await page
+      .locator('.board')
+      .first()
+      .locator('.cell')
+      .nth((round * 5 + 3) % 36)
+      .click()
+      .catch(() => undefined);
     await wait(140);
     await page
-      .getByRole('button', { name: 'charge', exact: true })
+      .getByRole('button', { name: 'Charge', exact: true })
       .first()
       .click()
       .catch(() => undefined);
     await wait(140);
-    const commit = page.getByRole('button', { name: /^commit/ });
-    if (!(await commit.isEnabled().catch(() => false))) break;
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) return false;
     await commit.click();
     await wait(250);
+    const overlay = page.locator('.overlay');
     if (await overlay.isVisible().catch(() => false)) await overlay.click();
     await wait(250);
   }
-  await wait(400);
-  await shot('16-result', 'result — both fleets revealed, replay verified, one-tap rematch');
+  return false;
+}
 
-  await click('menu');
-  await wait(400);
-  await shot('17-menu-returning', 'the menu after a first match: modes and rating appear');
+try {
+  await page.goto('http://localhost:5233/', { waitUntil: 'networkidle' });
+  await wait(600);
+  await shot('01-main-menu', 'three mode cards, each wearing its money story');
 
+  // How to play.
+  await click('How to play');
+  await wait(300);
+  await shot('02-howto-charging', 'teach by doing — live cards, click to charge');
+  await click('Next');
+  await wait(250);
+  await shot('03-howto-firing', 'firing destroys the card');
+  await click('Next');
+  await click('Next');
+  await wait(250);
+  await shot('04-howto-sinks', 'a sink announces a length, never a name');
+  await click('Done');
+  await wait(300);
+
+  // Ranked join modal — a betting surface.
+  await page.getByRole('button', { name: /Ranked/ }).click();
+  await wait(300);
+  await shot('05-ranked-join-modal', 'season entry: price, what it buys, pool so far');
+  await page.getByRole('button', { name: 'Not now' }).click();
+  await wait(200);
+
+  // Arena tier picker. Fresh profile first, so the locked tiers show.
+  await page.getByRole('button', { name: /Arena/ }).click();
+  await wait(300);
+  await shot('06-arena-tiers', 'four stake tables, rating band per tier, locked tiers explained');
+
+  // Insufficient funds: graduate the profile (dev store handle) so the 0.5
+  // table unlocks, then sit down at it with a 0.3 balance.
+  await page.evaluate(() => {
+    const store = window.__store;
+    store.setState({ profile: { ...store.getState().profile, provisionalMatches: 10 } });
+  });
+  await page.getByRole('button', { name: 'Back' }).click();
+  await wait(200);
+  await page.getByRole('button', { name: /Arena/ }).click();
+  await wait(300);
+  await page.getByRole('button', { name: /0\.5/ }).first().click();
+  await wait(200);
+  await shot('07-insufficient-funds', 'not enough SOL: the amounts, the faucet, a way down');
+  await page.evaluate(() => {
+    const store = window.__store;
+    store.setState({ profile: { ...store.getState().profile, provisionalMatches: 0 } });
+  });
+  await page.getByRole('button', { name: /0\.05/ }).first().click();
+  await wait(200);
+
+  // The escrow forming.
+  await page.getByRole('button', { name: /Find match/ }).click();
+  await wait(1400);
+  await shot('08-escrow-forming', 'you staked, opponent staking — the pot forming in view');
+  await wait(2200);
+
+  // Ship draft (arena match continues).
+  await shot('09-ship-draft', 'four ships in a row, the whole pack face up');
+  await page.locator('.draft-pick').first().click();
+  await wait(160);
+  await shot('10-draft-collision', 'the collision beat — the only thing a draft leaks');
+  await wait(1500);
+  for (let i = 0; i < 2; i++) {
+    await page.locator('.draft-pick').first().click();
+    await wait(1600);
+  }
+  await wait(300);
+  await shot('11-card-draft', 'four real cards, full rules on their faces');
+
+  // Hover state on a draft card.
+  await page.locator('button.gamecard').first().hover();
+  await wait(300);
+  await shot('12-card-hover', 'hover lifts the card and shows the full rule tooltip');
+
+  for (let i = 0; i < 3; i++) {
+    await page.locator('button.gamecard').first().click();
+    await wait(1600);
+  }
+  await wait(300);
+  await shot('13-deployment', 'board centred large, fleet in the side tray');
+
+  await click('Auto');
+  await wait(200);
+  await shot('14-deployment-placed', 'fleet placed; the layout commits as a hash');
+  await click('Commit fleet');
+  await wait(400);
+  await shot('15-battle', 'enemy water dominant, hand fanned, commit huge and green');
+
+  // Aim the free shot + charge, then photograph the planned state.
+  await page.locator('.board').first().locator('.cell').nth(8).click();
+  await wait(150);
+  await page.getByRole('button', { name: 'Charge', exact: true }).first().click();
+  await wait(250);
+  await shot('16-battle-planned', 'free shot aimed, a card charged, the gem pulsing');
+
+  // Targeting with a hover pattern preview.
+  const fire = page.getByRole('button', { name: 'Fire', exact: true }).first();
+  if (await fire.isEnabled().catch(() => false)) {
+    await fire.click();
+    await wait(200);
+    await page.locator('.board').first().locator('.cell').nth(14).hover();
+    await wait(250);
+    await shot('17-target-hover', 'the pattern about to fire, previewed on hover before locking');
+    await page.locator('.board').first().locator('.cell').nth(14).click();
+    await wait(200);
+    const lock = page.getByRole('button', { name: 'Lock in' });
+    if (await lock.isEnabled().catch(() => false)) await lock.click();
+    else await page.getByRole('button', { name: 'Cancel' }).click();
+    await wait(200);
+  }
+
+  await page.getByRole('button', { name: /^COMMIT/ }).click();
+  await wait(800);
+  await shot('18-resolve', 'the resolve sequence on its own panel, board visible behind');
+  const overlay = page.locator('.overlay');
+  if (await overlay.isVisible().catch(() => false)) await overlay.click();
+  await wait(300);
+
+  // Play the match out to the receipt.
+  await playRounds(24);
+  await wait(400);
+  await shot('19-result-settlement', 'celebration + receipt: pot, rake, net, tx, replay verified');
+
+  await click('Menu');
+  await wait(400);
   await click('Leaderboard');
   await wait(300);
-  await shot('18-leaderboard', 'leaderboard — payout curve and live pot');
-  await click('back');
-  await wait(200);
-
-  await click('Season');
+  await shot('20-leaderboard', 'payout curve drawn, live pool in gold, your row pinned');
+  await click('Back');
+  await click('Season', { exact: true });
   await wait(300);
-  await shot('19-season', 'season — days left, projected payout, match history');
-  await click('back');
-  await wait(200);
-
+  await shot('21-season', 'pool, days left, projected payout at current rank');
+  await click('Back');
   await click('Settings');
   await wait(300);
-  await shot('20-settings', 'settings — wallet, sound, fast resolve, opponent strength');
-
-  await click(/Art credits/);
+  await shot('22-settings', 'wallet, session key, bot strength, chain journal');
+  await click('Art credits and licences');
   await wait(300);
-  await shot('21-credits', 'credits — the attribution the icon licence requires');
+  await shot('23-credits', 'the attribution the icon licence requires');
   await click('back');
   await wait(200);
-  await click('back');
-  await wait(200);
+  await click('Back');
 
-  await click('Arena');
-  await wait(400);
-  await shot('22-queue-arena', 'arena — stake tiers, pot, rake, provisional lock');
+  // The desktop gate.
+  await page.setViewportSize({ width: 1024, height: 640 });
+  await wait(300);
+  await shot('24-desktop-gate', 'below 1280×720: logo, one line, nothing else');
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await wait(200);
+} catch (err) {
+  errors.push(`sweep aborted: ${err instanceof Error ? err.message.split('\n')[0] : err}`);
 } finally {
   const failed = errors.filter((e) => !e.includes('favicon'));
   console.log(`\n${taken.length} screens captured into ${OUT}/`);

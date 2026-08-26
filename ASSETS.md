@@ -27,19 +27,19 @@ and nothing anywhere is a grey box.
 - `ships/ember/hero.png` — 1024x1024, Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
 - `ships/pin/hero.png` — 1024x1024, Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
 - `ships/thorn/hero.png` — 1024x1024, Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px.
-- `cards/salvo.png` — 768x1152, Salvo — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/lance.png` — 768x1152, Lance — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/burst.png` — 768x1152, Burst — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/rake.png` — 768x1152, Rake — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/breaker.png` — 768x1152, Breaker — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/ping.png` — 768x1152, Ping — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/echo.png` — 768x1152, Echo — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/sounding.png` — 768x1152, Sounding — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/jam.png` — 768x1152, Jam — control. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/siphon.png` — 768x1152, Siphon — control. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/mirror.png` — 768x1152, Mirror — prediction. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `cards/ambush.png` — 768x1152, Ambush — prediction. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists.
-- `ui/menu-bg.jpg` — 1170x2532, Dark sea horizon. Must stay legible under text at 60% opacity overlay.
+- `cards/salvo.png` — 768x920, Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/lance.png` — 768x920, Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/burst.png` — 768x920, Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/rake.png` — 768x920, Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/breaker.png` — 768x920, Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/ping.png` — 768x920, Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/echo.png` — 768x920, Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/sounding.png` — 768x920, Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/jam.png` — 768x920, Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/siphon.png` — 768x920, Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/mirror.png` — 768x920, Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `cards/ambush.png` — 768x920, Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
+- `ui/menu-bg.jpg` — 1920x1080, Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists.
 - `ui/sol-glyph.svg` — 64x64, SOL mark. Vector.
 - `sfx/charge-placed.ogg` — 0.2s mono 48kHz, Dry mechanical click as a charge seats onto a card
 - `sfx/card-fired.ogg` — 0.8s mono 48kHz, Card burns away, rising whoosh into a crack
@@ -64,8 +64,8 @@ stylisation, naval subject. Not photoreal, not pixel art.
 **Two rules that are not stylistic.** Every asset that can appear on the enemy
 side must be information-neutral: an unrevealed hull marker cannot hint at
 which of the four ships of that length it is. And every board asset must read
-correctly at 48px on a phone, because that is the size it will actually be
-seen at.
+correctly at 48px, because that is its size on the compact own-waters board
+even at desktop resolution.
 
 ## Ship art — 39 files
 
@@ -74,40 +74,40 @@ Three assets per ship: a hero render for the draft, a top-down token for your ow
 | File | Size | Ratio | Where it appears | Description |
 | --- | --- | --- | --- | --- |
 | `ships/dreadnought/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Dreadnought at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
-| `ships/dreadnought/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Dreadnought, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/dreadnought/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Dreadnought, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/dreadnought/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Dreadnought mark. Must read at 16px and must not hint at length. |
 | `ships/forge/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Forge at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/forge/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Forge, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/forge/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Forge, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/forge/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Forge mark. Must read at 16px and must not hint at length. |
 | `ships/blackout/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Blackout at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. |
-| `ships/blackout/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Blackout, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/blackout/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Blackout, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/blackout/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Blackout mark. Must read at 16px and must not hint at length. |
 | `ships/warhead/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Warhead at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/warhead/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Warhead, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/warhead/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Warhead, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/warhead/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Warhead mark. Must read at 16px and must not hint at length. |
 | `ships/kiln/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Kiln at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/kiln/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Kiln, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/kiln/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Kiln, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/kiln/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Kiln mark. Must read at 16px and must not hint at length. |
 | `ships/leech/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Leech at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. |
-| `ships/leech/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Leech, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/leech/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Leech, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/leech/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Leech mark. Must read at 16px and must not hint at length. |
 | `ships/cinder/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Cinder at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
-| `ships/cinder/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Cinder, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/cinder/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Cinder, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/cinder/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Cinder mark. Must read at 16px and must not hint at length. |
 | `ships/beacon/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Beacon at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/beacon/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Beacon, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/beacon/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Beacon, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/beacon/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Beacon mark. Must read at 16px and must not hint at length. |
 | `ships/spite/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Spite at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
-| `ships/spite/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Spite, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/spite/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Spite, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/spite/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Spite mark. Must read at 16px and must not hint at length. |
 | `ships/ember/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/ember/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Ember, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/ember/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Ember, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/ember/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Ember mark. Must read at 16px and must not hint at length. |
 | `ships/pin/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
-| `ships/pin/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Pin, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/pin/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Pin, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/pin/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Pin mark. Must read at 16px and must not hint at length. |
 | `ships/thorn/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
-| `ships/thorn/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Thorn, bow at the left edge, transparent background, no shadow baked in. Currently a tinted hull drawn in ShipArt with the ship's mark inset. |
+| `ships/thorn/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Thorn, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/thorn/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Thorn mark. Must read at 16px and must not hint at length. |
 | `ships/unknown-4.png` | 128x128 | 1:1 | enemy ship strip before that ship reveals itself | Anonymous 4-length marker. Identical treatment for all four ships of that length — any distinguishing detail is an information leak. |
 | `ships/unknown-3.png` | 128x128 | 1:1 | enemy ship strip before that ship reveals itself | Anonymous 3-length marker. Identical treatment for all four ships of that length — any distinguishing detail is an information leak. |
@@ -120,31 +120,31 @@ One illustration per card plus one frame per role and a single shared back. The 
 | File | Size | Ratio | Where it appears | Description |
 | --- | --- | --- | --- | --- |
 | `cards/salvo-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Salvo mark, tinted to the attack colour. |
-| `cards/salvo.png` | 768x1152 | 2:3 | card draft, battle hand | Salvo — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/salvo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/lance-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Lance mark, tinted to the attack colour. |
-| `cards/lance.png` | 768x1152 | 2:3 | card draft, battle hand | Lance — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/lance.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/burst-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Burst mark, tinted to the attack colour. |
-| `cards/burst.png` | 768x1152 | 2:3 | card draft, battle hand | Burst — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/burst.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/rake-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Rake mark, tinted to the attack colour. |
-| `cards/rake.png` | 768x1152 | 2:3 | card draft, battle hand | Rake — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/rake.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/breaker-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Breaker mark, tinted to the attack colour. |
-| `cards/breaker.png` | 768x1152 | 2:3 | card draft, battle hand | Breaker — attack. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/breaker.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/ping-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Ping mark, tinted to the intel colour. |
-| `cards/ping.png` | 768x1152 | 2:3 | card draft, battle hand | Ping — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/ping.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/echo-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Echo mark, tinted to the intel colour. |
-| `cards/echo.png` | 768x1152 | 2:3 | card draft, battle hand | Echo — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/echo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/sounding-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Sounding mark, tinted to the intel colour. |
-| `cards/sounding.png` | 768x1152 | 2:3 | card draft, battle hand | Sounding — intel. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/sounding.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/jam-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Jam mark, tinted to the control colour. |
-| `cards/jam.png` | 768x1152 | 2:3 | card draft, battle hand | Jam — control. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/jam.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/siphon-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Siphon mark, tinted to the control colour. |
-| `cards/siphon.png` | 768x1152 | 2:3 | card draft, battle hand | Siphon — control. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/siphon.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/mirror-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Mirror mark, tinted to the prediction colour. |
-| `cards/mirror.png` | 768x1152 | 2:3 | card draft, battle hand | Mirror — prediction. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
+| `cards/mirror.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
 | `cards/ambush-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Ambush mark, tinted to the prediction colour. |
-| `cards/ambush.png` | 768x1152 | 2:3 | card draft, battle hand | Ambush — prediction. Full illustration. Art fills the top 60%; the bottom 40% stays clear for name, text and the charge number. The icon above carries the card until this exists. |
-| `cards/back.png` | 768x1152 | 2:3 | opponent's hand, draw pile | Card back. Must be identical for every card and must tile without a visible seam at 30x40. Currently a diagonal hatch drawn in CSS. |
-| `cards/frame-attack.png` | 768x1152 | 2:3 | behind every attack card | Role frame, transparent centre. One per role. Currently a role-tinted gradient. |
+| `cards/ambush.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/back.png` | 768x1152 | 2:3 | opponent's hand, draw pile | Card back. Must be identical for every card and legible down to 44x62 in the opponent strip. Currently a sky-radial with the twin-chevron mark, drawn by CardBack. |
+| `cards/frame-attack.png` | 768x1152 | 2:3 | behind every attack card | Role frame, transparent centre. One per role. Currently a role-coloured border and banner drawn by GameCard. |
 | `cards/frame-intel.png` | 768x1152 | 2:3 | behind every intel card | As above, intel palette. |
 | `cards/frame-control.png` | 768x1152 | 2:3 | behind every control card | As above, control palette. |
 | `cards/frame-prediction.png` | 768x1152 | 2:3 | behind Mirror and Ambush | As above, prediction palette. |
@@ -157,7 +157,7 @@ Board tiles, the charge chip, and the chrome around stakes and ranks.
 | --- | --- | --- | --- | --- |
 | `ui/wordmark.svg` | 512x160 | 16:5 | main menu, splash | SHADOW ARMADA lockup. Vector, must survive being drawn at 120px wide. |
 | `ui/appicon.png` | 1024x1024 | 1:1 | PWA install, browser tab | App mark alone, no wordmark, safe area 10%. |
-| `ui/menu-bg.jpg` | 1170x2532 | 9:19.5 | main menu backdrop | Dark sea horizon. Must stay legible under text at 60% opacity overlay. |
+| `ui/menu-bg.jpg` | 1920x1080 | 16:9 | main menu backdrop, full-bleed at desktop | Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists. |
 | `ui/cell-water.png` | 256x256 | 1:1 | every board cell, both boards | Water tile. Tiles seamlessly on a 6x6 grid; the grid gap is drawn by CSS, not baked in. |
 | `ui/cell-hit.png` | 256x256 | 1:1 | a cell where a shot connected | Burning hull plate. Reads as damage at 48px. |
 | `ui/cell-miss.png` | 256x256 | 1:1 | a cell where a shot found water | Spent splash. Must be clearly *not* a hit at a glance and in monochrome. |

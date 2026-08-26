@@ -23,6 +23,8 @@ export interface BoardProps {
   /** A single highlighted cell, for the basic attack. */
   pick?: CellIndex | null;
   onCell?: (cell: CellIndex) => void;
+  /** Desktop hover: previews land through this before anything locks in. */
+  onHoverCell?: (cell: CellIndex | null) => void;
   /** Cells that flashed this round, for the resolve replay. */
   flash?: { cell: CellIndex; hit: boolean }[];
   /** Cells of a ship that went down this round, pulsed bow to stern. */
@@ -37,6 +39,7 @@ export function Board({
   aim = [],
   pick = null,
   onCell,
+  onHoverCell,
   flash = [],
   sinking = [],
   compact = false,
@@ -72,6 +75,7 @@ export function Board({
         key={c}
         className={classes.join(' ')}
         onClick={onCell ? () => onCell(c) : undefined}
+        onMouseEnter={onHoverCell ? () => onHoverCell(c) : undefined}
         aria-label={`${label(c)}${mark ? ` ${mark}` : ''}`}
         style={{
           fontSize: compact ? 9 : 11,
@@ -97,7 +101,11 @@ export function Board({
   }
 
   return (
-    <div className="board" style={{ gap: compact ? 2 : 3 }}>
+    <div
+      className={`board ${compact ? 'compact' : ''}`}
+      onMouseLeave={onHoverCell ? () => onHoverCell(null) : undefined}
+      style={{ gap: compact ? 3 : 5, padding: compact ? 6 : 10 }}
+    >
       {cells}
     </div>
   );

@@ -57,11 +57,11 @@ export class ErrorBoundary extends Component<Props, State> {
           The match itself is held on the server, not here, so nothing has been lost. Reload and you
           will rejoin where you were — the grace period covers it.
         </p>
-        <div className="card-surface col" style={{ gap: 6 }}>
+        <div className="panel col" style={{ gap: 6 }}>
           <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>where</span>
           <strong style={{ fontSize: 13 }}>{this.props.where}</strong>
           <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>error</span>
-          <span className="log" style={{ color: 'var(--danger)' }}>
+          <span className="mono" style={{ color: 'var(--danger)' }}>
             {error.message}
           </span>
         </div>
@@ -107,8 +107,8 @@ export function Failed({
     <div className="screen">
       <h2 style={{ color: 'var(--danger)' }}>{what}</h2>
       {detail && (
-        <div className="card-surface">
-          <span className="log" style={{ color: 'var(--danger)' }}>
+        <div className="panel">
+          <span className="mono" style={{ color: 'var(--danger)' }}>
             {detail}
           </span>
         </div>

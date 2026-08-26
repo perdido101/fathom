@@ -94,29 +94,28 @@ export function ResolveOverlay(): ReactElement | null {
     <div className="overlay" onClick={finish} ref={frame}>
       {bigMoment && <div className="prediction-wash" />}
       {current.t === 'nerf' && <ChargeTheft />}
-      <h3>{STEP_TITLES[current.t] ?? 'resolving'}</h3>
-      <div className="spacer" />
 
       {sinking && (
-        <div className="banner" style={{ textAlign: 'center', fontSize: 40, color: 'var(--hit)' }}>
+        <div
+          className="banner big-num"
+          style={{ textAlign: 'center', fontSize: 64, color: 'var(--danger)' }}
+        >
           {current.length} SUNK
         </div>
       )}
 
-      {/* The beats sit on their own surface. Reading them straight over the
-          board was legible on a bright cell and not on a dark one, which is
-          the worst of both — the board stays visible behind, but the words
-          never have to compete with it. */}
+      {/* The beats sit on their own light panel, the board still visible
+          behind so the shots land where they are described. */}
       <div
-        className="col"
+        className="panel"
         style={{
-          gap: 6,
-          padding: '14px 16px',
-          borderRadius: 'var(--r-md)',
-          background: 'rgba(8, 13, 23, 0.82)',
-          border: '1px solid var(--panel-edge)',
+          width: 'min(620px, 90%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
         }}
       >
+        <h3>{STEP_TITLES[current.t] ?? 'resolving'}</h3>
         {shown.map((e, i) => {
           const last = i === shown.length - 1;
           const loud = last && e.t === 'prediction' && e.triggered;
@@ -128,9 +127,9 @@ export function ResolveOverlay(): ReactElement | null {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                fontSize: loud ? 20 : last ? 17 : 13,
+                fontSize: loud ? 21 : last ? 17 : 13.5,
                 color: loud ? undefined : last ? 'var(--ink)' : 'var(--ink-faint)',
-                fontWeight: last ? 700 : 400,
+                fontWeight: last ? 800 : 600,
               }}
             >
               {iconFor(e) && <Icon name={iconFor(e)!} size={loud ? 22 : 16} />}
@@ -140,8 +139,9 @@ export function ResolveOverlay(): ReactElement | null {
         })}
       </div>
 
-      <div className="spacer" />
-      <p style={{ textAlign: 'center', fontSize: 12 }}>tap to skip</p>
+      <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
+        click to skip
+      </p>
     </div>
   );
 }
@@ -161,12 +161,12 @@ function ChargeTheft(): ReactElement {
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
-          className="stealing charges"
+          className="stealing gem small"
           style={{
             position: 'absolute',
             left: `${18 + i * 16}%`,
             top: '22%',
-            fontSize: 22,
+            fontSize: 15,
             // Fanned rather than parallel, so five pips read as a handful
             // moving instead of one pip drawn five times.
             ['--dx' as string]: `${(i - 2) * 14}px`,

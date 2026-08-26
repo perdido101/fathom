@@ -6,7 +6,7 @@ import { SHIPS } from '../../engine/ships';
 import { useStore } from '../../state/store';
 import { Board } from '../components/Board';
 import { ChargeNumber } from '../components/ChargeNumber';
-import { CardArt, ShipArt } from '../art/registry';
+import { GameCard, CardBack, ShipCard } from '../components/GameCard';
 import { Sound } from '../sfx/SoundManager';
 import {
   bumpAllocation,
@@ -21,18 +21,23 @@ import {
 } from '../targeting';
 
 /**
- * The battle screen.
+ * The battle screen at 16:9.
  *
- * Layout follows the brief exactly: their water dominant at the top, your
- * water smaller underneath, your cards along the bottom with charge numbers
- * big enough to read at a glance, their cards along the top with theirs. The
- * charges are the loudest thing on the screen because they are the game.
+ * Their water is the biggest single thing on screen, centre-left. Your water
+ * sits lower-right, smaller, showing what has come in. Your hand is three
+ * real cards fanned at the bottom centre; the commit button is huge, green,
+ * and bottom-right, because it is the one control that ends a round. The
+ * stake rides the top bar in gold the whole match.
+ *
+ * Desktop means hover exists: moving over their water previews exactly the
+ * cells the current declaration would strike before anything locks in.
  */
 export function Battle(): ReactElement | null {
   const view = useStore((s) => s.view());
   const clock = useStore((s) => s.clock);
   const submitPlan = useStore((s) => s.submitPlan);
-  const roundSeconds = useStore((s) => s.match?.config.roundSeconds ?? 20);
+  const stake = useStore((s) => s.stake);
+  const mode = useStore((s) => s.mode);
   const lastEvents = useStore((s) => s.lastRoundEvents);
   const playingBack = useStore((s) => s.playback !== null);
 
@@ -42,10 +47,9 @@ export function Battle(): ReactElement | null {
   const [fire, setFire] = useState<{ uid: number; spec: FireSpec } | null>(null);
   const [ability, setAbility] = useState<{ defId: string; spec: FireSpec } | null>(null);
   const [firingUid, setFiringUid] = useState<number | null>(null);
+  const [hoverCell, setHoverCell] = useState<CellIndex | null>(null);
   const [wipe, setWipe] = useState(false);
 
-  // A short wipe between rounds. Without it the board simply changes under the
-  // player's hands and the round boundary is invisible.
   const round = view?.round ?? 0;
   const lastRound = useRef(round);
   useEffect(() => {
@@ -56,8 +60,6 @@ export function Battle(): ReactElement | null {
     return () => clearTimeout(id);
   }, [round]);
 
-  // What resolved last round, taken from the engine's own event list so the
-  // board can only ever animate something that actually happened.
   const shots = useMemo(() => {
     const mine: { cell: CellIndex; hit: boolean }[] = [];
     const theirs: { cell: CellIndex; hit: boolean }[] = [];
@@ -76,6 +78,7 @@ export function Battle(): ReactElement | null {
   if (!view) return null;
   const { me, foe } = view;
   const blocked = me.restrictions;
+  const roundSeconds = 20;
 
   const draftCharges =
     draft?.aiming.kind === 'card'
@@ -89,14 +92,24 @@ export function Battle(): ReactElement | null {
   const aimCells = draft ? previewCells(draft, draftCharges, innerDefId) : [];
   const committedAim = [
     ...(fire
-      ? specCells(
-          fire.spec,
-          view.me.hand.find((c) => c.uid === fire.uid)?.defId ?? '',
-          chargeTo === fire.uid,
-        )
+      ? specCells(fire.spec, view.me.hand.find((c) => c.uid === fire.uid)?.defId ?? '')
       : []),
-    ...(ability ? specCells(ability.spec, ability.defId, false) : []),
+    ...(ability ? specCells(ability.spec, ability.defId) : []),
   ];
+
+  // The hover preview: the exact cells the current declaration would strike
+  // if the next click landed here. Basic aiming previews its single cell via
+  // the cell's own hover ring, so this only fires while a card is aiming.
+  const hoverPreview = useMemo((): CellIndex[] => {
+    if (hoverCell === null || !draft) return [];
+    const shape = shapeOf(draft, innerDefId);
+    if (shape === 'cell' || shape === 'block' || shape === 'row') {
+      return previewCells({ ...draft, cells: [hoverCell] }, draftCharges, innerDefId);
+    }
+    if (shape === 'line' && draft.cells.length === 0) return [hoverCell];
+    if (shape === 'cells' || shape === 'beacon') return [hoverCell];
+    return [];
+  }, [hoverCell, draft, draftCharges, innerDefId]);
 
   function reset(): void {
     setBasic(null);
@@ -104,6 +117,7 @@ export function Battle(): ReactElement | null {
     setDraft(null);
     setFire(null);
     setAbility(null);
+    setHoverCell(null);
   }
 
   function onEnemyCell(cell: CellIndex): void {
@@ -153,12 +167,7 @@ export function Battle(): ReactElement | null {
 
   function confirmDraft(): void {
     if (!draft) return;
-    const spec = toSpec(
-      draft,
-      draftCharges,
-      innerDefId,
-      innerSpec(draft, draftCharges, innerDefId),
-    );
+    const spec = toSpec(draft, draftCharges, innerDefId, innerSpec(draft, draftCharges, innerDefId));
     if (draft.aiming.kind === 'card') {
       setFire({ uid: draft.aiming.uid, spec });
       Sound.play('card-fired');
@@ -189,278 +198,6 @@ export function Battle(): ReactElement | null {
     reset();
   }
 
-  const chargeReady = blocked.noCharge || chargeTo !== null || me.hand.length === 0;
-  const ready = chargeReady && !draft;
-  const warn = clock <= 5;
-
-  return (
-    <div className="screen" style={{ gap: 8, paddingBottom: 8 }}>
-      {/* --- their side ---------------------------------------------------- */}
-      {/* Everything the rules make public about them, in one row. A player
-          should never have to count hits on the board to work out how close
-          the opponent is to going down. */}
-      <div className="row" style={{ justifyContent: 'space-between', gap: 6 }}>
-        <span className="pill">
-          round {view.round}/{view.roundCap}
-        </span>
-        <span className="pill" style={{ flex: 1, textAlign: 'center' }}>
-          {foe.name}
-          {!foe.connected && ' · away'}
-        </span>
-        <span className="pill mono" title="their hull cells left">
-          hull {foe.hullRemaining}/9
-        </span>
-        <span className="pill mono" title="their banked charges">
-          <ChargeNumber value={foe.hand.reduce((n, c) => n + c.charges, 0)} size={15} />
-        </span>
-      </div>
-
-      <div className="row" style={{ gap: 6 }}>
-        {foe.ships.map((s, i) => (
-          <div key={i} className="row" style={{ gap: 4, opacity: s.sunk ? 0.35 : 1 }}>
-            <span className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
-              <ShipArt defId={s.defId} length={s.length} revealed={s.defId !== null} size={16} />
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--ink-faint)' }}>
-              {s.sunk ? 'sunk' : s.defId ? (s.abilityUsed ? 'spent' : SHIPS[s.defId].type) : '?'}
-            </span>
-          </div>
-        ))}
-        <div className="spacer" />
-        <span style={{ fontSize: 9, color: 'var(--ink-faint)' }}>{foe.cardCount} cards</span>
-        <div className="row" style={{ gap: 4 }}>
-          {foe.hand.map((c) => (
-            <button
-              key={c.uid}
-              onClick={() => onEnemyCardTap(c.uid)}
-              style={{
-                width: 30,
-                height: 40,
-                borderRadius: 6,
-                border: `1px solid ${allocationFor(draft, c.uid) ? 'var(--charge)' : 'var(--panel-edge)'}`,
-                background: 'repeating-linear-gradient(135deg,#16233a 0 5px,#1b2a44 5px 10px)',
-                display: 'grid',
-                placeItems: 'center',
-              }}
-            >
-              <ChargeNumber value={c.charges} size={16} />
-              {allocationFor(draft, c.uid) ? (
-                <span style={{ fontSize: 9, color: 'var(--danger)' }}>
-                  -{allocationFor(draft, c.uid)}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Their water is the dominant element, but it still has to leave room
-          for the hand — a charge number you have to scroll to is not public
-          information in any useful sense. */}
-      <div style={{ width: '100%', maxWidth: 320, alignSelf: 'center' }}>
-        <Board
-          marks={me.marks}
-          known={me.knownShipCells}
-          aim={draft ? aimCells : committedAim}
-          pick={basic}
-          onCell={onEnemyCell}
-          flash={playingBack ? shots.mine : []}
-        />
-      </div>
-
-      {/* --- prompt / actions ---------------------------------------------- */}
-      <div className="card-surface" style={{ padding: 10 }}>
-        {draft ? (
-          <div className="col" style={{ gap: 8 }}>
-            <div className="row" style={{ justifyContent: 'space-between' }}>
-              <strong style={{ fontSize: 13 }}>
-                {draft.aiming.kind === 'card'
-                  ? CARDS[draft.aiming.defId].name
-                  : SHIPS[draft.aiming.defId].name}
-              </strong>
-              <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>
-                {prompt(draft, draftCharges, innerDefId)}
-              </span>
-            </div>
-            {shapeOf(draft, innerDefId) === 'line' && draft.cells.length > 0 && (
-              <div className="row">
-                {(
-                  [
-                    ['right', [1, 0]],
-                    ['left', [-1, 0]],
-                    ['down', [0, 1]],
-                    ['up', [0, -1]],
-                  ] as [string, [number, number]][]
-                ).map(([name, dir]) => (
-                  <button
-                    key={name}
-                    className="btn"
-                    style={{ flex: 1, padding: 8, fontSize: 12 }}
-                    onClick={() => setDraft({ ...draft, dir })}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="row">
-              <button className="btn ghost" style={{ flex: 1 }} onClick={() => setDraft(null)}>
-                cancel
-              </button>
-              <button
-                className="btn go"
-                style={{ flex: 2 }}
-                disabled={!isComplete(draft, innerDefId)}
-                onClick={confirmDraft}
-              >
-                lock in
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--ink-dim)', flex: 1 }}>
-              {blocked.noCharge && 'Blacked out — no charge this round. '}
-              {blocked.noFire && 'Pinned — no card may be fired. '}
-              {blocked.chargeLock !== null && `Cards on exactly ${blocked.chargeLock} are locked. `}
-              {basic === null
-                ? 'Tap their water to aim your free shot.'
-                : `Free shot: ${label(basic)}`}
-              {chargeTo === null && !blocked.noCharge ? ' Tap a card to charge it.' : ''}
-            </span>
-            {fire && (
-              <button className="pill" onClick={() => setFire(null)}>
-                firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} x
-              </button>
-            )}
-            {ability && (
-              <button className="pill" onClick={() => setAbility(null)}>
-                {SHIPS[ability.defId].name} x
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* --- your side ------------------------------------------------------ */}
-      <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
-        <div className="col" style={{ width: '42%', gap: 4 }}>
-          <Board
-            marks={foe.marks}
-            hulls={me.ships}
-            compact
-            flash={playingBack ? shots.theirs : []}
-            sinking={playingBack ? me.ships.filter((sh) => sh.sunk).flatMap((sh) => sh.cells) : []}
-          />
-          <span style={{ fontSize: 10, color: 'var(--ink-dim)', textAlign: 'center' }}>
-            your hull {me.hullRemaining}/9
-          </span>
-        </div>
-        <div className="col" style={{ flex: 1, gap: 6 }}>
-          {me.ships.map((s) => {
-            const def = SHIPS[s.defId];
-            const usable = !s.sunk && !s.abilityUsed && def.type !== 'REACT';
-            return (
-              <button
-                key={s.defId}
-                className="row"
-                onClick={() => usable && beginAbility(s.defId)}
-                style={{
-                  gap: 6,
-                  padding: 5,
-                  borderRadius: 8,
-                  border: `1px solid ${ability?.defId === s.defId ? 'var(--charge)' : 'var(--panel-edge)'}`,
-                  opacity: s.sunk ? 0.3 : usable ? 1 : 0.55,
-                  textAlign: 'left',
-                }}
-              >
-                <ShipArt defId={s.defId} length={1} size={16} />
-                <span
-                  className={s.abilityUsed || s.sunk ? 'flip' : undefined}
-                  style={{ fontSize: 11, flex: 1 }}
-                >
-                  {def.name}
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--ink-faint)' }}>
-                  {s.sunk ? 'sunk' : s.abilityUsed ? 'spent' : def.type}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="row" style={{ gap: 6 }}>
-        {me.hand.map((c) => {
-          const withCharge = c.charges + (chargeTo === c.uid ? 1 : 0);
-          const firable =
-            !blocked.noFire &&
-            canFireAt(c.defId, withCharge) &&
-            !(blocked.chargeLock !== null && withCharge === blocked.chargeLock);
-          return (
-            <div key={c.uid} className="col" style={{ flex: 1, gap: 4, minWidth: 0 }}>
-              <CardArt
-                defId={c.defId}
-                charges={withCharge}
-                selected={chargeTo === c.uid || fire?.uid === c.uid || draft?.innerUid === c.uid}
-                onClick={() => onOwnCardTap(c.uid)}
-                compact
-                className={firingUid === c.uid ? 'card-firing' : undefined}
-                style={{
-                  aspectRatio: 'auto',
-                  height: 104,
-                  // A card queued to fire sits proud of the others, so the
-                  // commitment is visible without reading the status line.
-                  transform: fire?.uid === c.uid ? 'translateY(-6px)' : undefined,
-                  boxShadow: fire?.uid === c.uid ? '0 0 18px -2px var(--charge-glow)' : undefined,
-                }}
-              />
-              <div className="row" style={{ gap: 4 }}>
-                <button
-                  className="btn"
-                  style={{ flex: 1, padding: 6, fontSize: 10 }}
-                  disabled={blocked.noCharge}
-                  onClick={() => {
-                    setChargeTo(c.uid);
-                    Sound.play('charge-placed');
-                  }}
-                >
-                  charge
-                </button>
-                <button
-                  className="btn"
-                  style={{ flex: 1, padding: 6, fontSize: 10 }}
-                  disabled={!firable || fire !== null}
-                  onClick={() => beginCard(c.uid, c.defId, c.charges)}
-                >
-                  fire
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className={`timer-bar ${warn ? 'warn' : ''}`}>
-        <i style={{ width: `${Math.max(0, (clock / roundSeconds) * 100)}%` }} />
-      </div>
-      <button className="btn go" disabled={!ready} onClick={commit}>
-        {playingBack ? (
-          <span className="thinking">
-            they are planning <i />
-            <i />
-            <i />
-          </span>
-        ) : (
-          `commit — ${clock}s`
-        )}
-      </button>
-      {wipe && <div className="round-wipe" />}
-    </div>
-  );
-
-  // --- tap handlers that need the closures above ---------------------------
-
   function onOwnCardTap(uid: number): void {
     if (!draft) return;
     const shape = shapeOf(draft, innerDefId);
@@ -482,15 +219,447 @@ export function Battle(): ReactElement | null {
     setDraft({ ...draft, from: bumpAllocation(draft.from, uid, budget, available) });
     Sound.play('charges-stolen');
   }
+
+  const chargeReady = blocked.noCharge || chargeTo !== null || me.hand.length === 0;
+  const ready = chargeReady && !draft;
+  const warn = clock <= 5;
+  const foeBank = foe.hand.reduce((n, c) => n + c.charges, 0);
+
+  const collidedCards = new Set(
+    view.cardDraft.collisions
+      .map((c, i) => (c ? view.cardDraft.myPicks[i] : null))
+      .filter((x): x is string => x !== null),
+  );
+
+  return (
+    <div
+      className="battle-grid"
+      style={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) clamp(360px, 26vw, 470px)',
+        gridTemplateRows: '64px 86px minmax(0, 1fr) clamp(240px, 27vh, 300px)',
+        gridTemplateAreas: `
+          "top top"
+          "foestrip foestrip"
+          "enemy side"
+          "hand commit"
+        `,
+        gap: '10px 16px',
+        padding: '12px 18px 16px',
+        minHeight: 0,
+        position: 'relative',
+      }}
+    >
+      {/* --- top bar: round, hull pips, the big timer, the stake ----------- */}
+      <div
+        className="panel tight"
+        style={{
+          gridArea: 'top',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          paddingRight: 300, // the wallet chip lives above this corner
+        }}
+      >
+        <span className="pill">
+          Round {view.round}/{view.roundCap}
+        </span>
+        <HullPips label="You" value={me.hullRemaining} colour="var(--confirm)" />
+        <div className="spacer" />
+        <span
+          className={`big-num ${warn ? '' : ''}`}
+          style={{ fontSize: 40, color: warn ? 'var(--danger)' : undefined }}
+        >
+          {playingBack ? '—' : `${clock}`}
+        </span>
+        <div className="spacer" />
+        <HullPips label={foe.name} value={foe.hullRemaining} colour="var(--danger)" />
+        {mode === 'arena' ? (
+          <span className="pill gold" style={{ fontSize: 16 }}>
+            ◎ {(stake * 2).toFixed(2)} pot
+          </span>
+        ) : (
+          <span className="pill">{mode}</span>
+        )}
+      </div>
+
+      {/* --- opponent strip: their hand and their fleet, honestly ---------- */}
+      <div
+        className="panel tight"
+        style={{ gridArea: 'foestrip', display: 'flex', alignItems: 'center', gap: 14 }}
+      >
+        <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 15 }}>
+          {foe.name}
+          {!foe.connected && ' · away'}
+        </span>
+        <div className="row" style={{ gap: 8 }}>
+          {foe.ships.map((s, i) => (
+            <span key={i} className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
+              <ShipCard
+                defId={s.defId}
+                length={s.length}
+                revealed={s.defId !== null}
+                sunk={s.sunk}
+                used={s.abilityUsed}
+                size="sm"
+              />
+            </span>
+          ))}
+        </div>
+        <div className="spacer" />
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
+          {foe.cardCount} cards · bank{' '}
+          <ChargeNumber value={foeBank} size={18} style={{ color: 'var(--gold-deep)' }} />
+        </span>
+        <div className="row" style={{ gap: 10 }}>
+          {foe.hand.map((c) => {
+            const known = c.defId !== null && collidedCards.has(c.defId);
+            const taking = draft?.from.find((f) => f.uid === c.uid)?.amount ?? 0;
+            return (
+              <button
+                key={c.uid}
+                onClick={() => onEnemyCardTap(c.uid)}
+                aria-label={known && c.defId ? CARDS[c.defId].name : 'face-down enemy card'}
+                style={{
+                  position: 'relative',
+                  width: 44,
+                  height: 62,
+                  borderRadius: 8,
+                  border: `2px solid ${taking ? 'var(--gold)' : 'rgba(255,255,255,0.7)'}`,
+                  overflow: 'visible',
+                  boxShadow: 'var(--shadow-soft)',
+                  flex: 'none',
+                  padding: 0,
+                }}
+              >
+                {known && c.defId ? (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 6,
+                      background: 'var(--panel)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontSize: 8,
+                      fontWeight: 800,
+                      fontFamily: 'var(--display)',
+                      color: 'var(--ink)',
+                      padding: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {CARDS[c.defId].name}
+                  </span>
+                ) : (
+                  <CardBack />
+                )}
+                <span
+                  className="gem small"
+                  style={{ position: 'absolute', right: -8, bottom: -8, fontSize: 13 }}
+                >
+                  {c.charges}
+                </span>
+                {taking > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -10,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontFamily: 'var(--display)',
+                      fontWeight: 800,
+                      color: 'var(--danger)',
+                      fontSize: 14,
+                    }}
+                  >
+                    −{taking}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* --- their water: the dominant element ----------------------------- */}
+      <div
+        style={{
+          gridArea: 'enemy',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 0,
+        }}
+      >
+        <div style={{ width: 'min(100%, 56vh)', minWidth: 320 }}>
+          <Board
+            marks={me.marks}
+            known={me.knownShipCells}
+            aim={draft ? [...aimCells, ...hoverPreview] : committedAim}
+            pick={basic}
+            onCell={onEnemyCell}
+            onHoverCell={draft ? setHoverCell : undefined}
+            flash={playingBack ? shots.mine : []}
+          />
+        </div>
+      </div>
+
+      {/* --- side column: prompt, your fleet, your water ------------------- */}
+      <div style={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+        <div className="panel tight" style={{ minHeight: 92 }}>
+          {draft ? (
+            <div className="col" style={{ gap: 8 }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <strong style={{ fontFamily: 'var(--display)', fontSize: 16 }}>
+                  {draft.aiming.kind === 'card'
+                    ? CARDS[draft.aiming.defId].name
+                    : SHIPS[draft.aiming.defId].name}
+                </strong>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
+                  {prompt(draft, draftCharges, innerDefId)}
+                </span>
+              </div>
+              {shapeOf(draft, innerDefId) === 'line' && draft.cells.length > 0 && (
+                <div className="row">
+                  {(
+                    [
+                      ['→', [1, 0]],
+                      ['←', [-1, 0]],
+                      ['↓', [0, 1]],
+                      ['↑', [0, -1]],
+                    ] as [string, [number, number]][]
+                  ).map(([name, dir]) => (
+                    <button
+                      key={name}
+                      className="btn small"
+                      style={{ flex: 1 }}
+                      onClick={() => setDraft({ ...draft, dir })}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="row">
+                <button className="btn small ghost" style={{ flex: 1 }} onClick={() => setDraft(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="btn small go"
+                  style={{ flex: 2 }}
+                  disabled={!isComplete(draft, innerDefId)}
+                  onClick={confirmDraft}
+                >
+                  Lock in
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="col" style={{ gap: 6 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-dim)' }}>
+                {blocked.noCharge && 'Blacked out — no charge this round. '}
+                {blocked.noFire && 'Pinned — no card may be fired. '}
+                {blocked.chargeLock !== null && `Cards on exactly ${blocked.chargeLock} are locked. `}
+                {basic === null
+                  ? 'Click their water to aim your free shot.'
+                  : `Free shot: ${label(basic)}.`}
+                {chargeTo === null && !blocked.noCharge ? ' Charge a card below.' : ''}
+              </span>
+              <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                {fire && (
+                  <button className="pill" onClick={() => setFire(null)}>
+                    Firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} ✕
+                  </button>
+                )}
+                {ability && (
+                  <button className="pill" onClick={() => setAbility(null)}>
+                    {SHIPS[ability.defId].name} ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {me.ships.map((s) => {
+            const def = SHIPS[s.defId];
+            const usable = !s.sunk && !s.abilityUsed && def.type !== 'REACT';
+            return (
+              <ShipCard
+                key={s.defId}
+                defId={s.defId}
+                length={s.length}
+                sunk={s.sunk}
+                used={s.abilityUsed}
+                selected={ability?.defId === s.defId}
+                size="sm"
+                onClick={() => usable && beginAbility(s.defId)}
+              />
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', minHeight: 0, flex: 1 }}>
+          <div style={{ width: 'min(100%, 30vh)', marginLeft: 'auto' }}>
+            <Board
+              marks={foe.marks}
+              hulls={me.ships}
+              compact
+              flash={playingBack ? shots.theirs : []}
+              sinking={
+                playingBack ? me.ships.filter((sh) => sh.sunk).flatMap((sh) => sh.cells) : []
+              }
+            />
+            <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, marginTop: 4 }}>
+              Your waters · hull {me.hullRemaining}/9
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* --- your hand: real cards, fanned --------------------------------- */}
+      <div
+        style={{
+          gridArea: 'hand',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          gap: 4,
+          paddingBottom: 6,
+        }}
+      >
+        {me.hand.map((c, i) => {
+          const withCharge = c.charges + (chargeTo === c.uid ? 1 : 0);
+          const firable =
+            !blocked.noFire &&
+            canFireAt(c.defId, withCharge) &&
+            !(blocked.chargeLock !== null && withCharge === blocked.chargeLock);
+          const mid = (me.hand.length - 1) / 2;
+          const angle = (i - mid) * 4;
+          const lift = Math.abs(i - mid) * 10;
+          return (
+            <div
+              key={c.uid}
+              className="hand-slot"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                transform: `rotate(${angle}deg) translateY(${lift}px)`,
+                transition: 'transform var(--t-fast)',
+                zIndex: chargeTo === c.uid || fire?.uid === c.uid ? 2 : 1,
+              }}
+            >
+              <GameCard
+                defId={c.defId}
+                charges={withCharge}
+                size="md"
+                selected={chargeTo === c.uid || fire?.uid === c.uid || draft?.innerUid === c.uid}
+                pulse={chargeTo === c.uid}
+                onClick={() => onOwnCardTap(c.uid)}
+                className={`hand-card ${firingUid === c.uid ? 'card-firing' : ''}`}
+                style={{
+                  transform: fire?.uid === c.uid ? 'translateY(-14px)' : undefined,
+                  boxShadow:
+                    fire?.uid === c.uid
+                      ? '0 0 26px rgba(255,197,49,0.75), var(--shadow-soft)'
+                      : undefined,
+                }}
+              />
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  className="btn small"
+                  disabled={blocked.noCharge}
+                  onClick={() => {
+                    setChargeTo(c.uid);
+                    Sound.play('charge-placed');
+                  }}
+                >
+                  Charge
+                </button>
+                <button
+                  className="btn small gold"
+                  disabled={!firable || fire !== null}
+                  onClick={() => beginCard(c.uid, c.defId, c.charges)}
+                >
+                  Fire
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* --- commit: the most prominent control in the game ---------------- */}
+      <div
+        style={{
+          gridArea: 'commit',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          alignItems: 'stretch',
+          gap: 10,
+          paddingBottom: 6,
+        }}
+      >
+        <div className={`timer-bar ${warn ? 'warn' : ''}`}>
+          <i style={{ width: `${Math.max(0, (clock / roundSeconds) * 100)}%` }} />
+        </div>
+        <button className="btn go huge" disabled={!ready} onClick={commit}>
+          {playingBack ? (
+            <span className="thinking">
+              THEY ARE PLANNING <i />
+              <i />
+              <i />
+            </span>
+          ) : (
+            `COMMIT · ${clock}s`
+          )}
+        </button>
+      </div>
+
+      {wipe && <div className="round-wipe" />}
+    </div>
+  );
 }
 
-function allocationFor(draft: Draft | null, uid: number): number {
-  if (!draft) return 0;
-  return draft.from.find((f) => f.uid === uid)?.amount ?? 0;
+/** Nine hull cells as pips, filled while they stand. */
+function HullPips({
+  label: who,
+  value,
+  colour,
+}: {
+  label: string;
+  value: number;
+  colour: string;
+}): ReactElement {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 14 }}>{who}</span>
+      <span style={{ display: 'flex', gap: 3 }}>
+        {Array.from({ length: 9 }, (_, i) => (
+          <i
+            key={i}
+            style={{
+              width: 10,
+              height: 14,
+              borderRadius: 3,
+              background: i < value ? colour : 'rgba(18,58,94,0.15)',
+              border: '2px solid rgba(255,255,255,0.7)',
+            }}
+          />
+        ))}
+      </span>
+    </span>
+  );
 }
 
 /** Cells a locked-in declaration covers, for the confirmed-aim overlay. */
-function specCells(spec: FireSpec, defId: string, _charged: boolean): CellIndex[] {
+function specCells(spec: FireSpec, defId: string): CellIndex[] {
   switch (spec.shape) {
     case 'cells':
       return spec.cells;
