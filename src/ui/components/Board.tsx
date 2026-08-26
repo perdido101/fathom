@@ -25,6 +25,8 @@ export interface BoardProps {
   onCell?: (cell: CellIndex) => void;
   /** Cells that flashed this round, for the resolve replay. */
   flash?: { cell: CellIndex; hit: boolean }[];
+  /** Cells of a ship that went down this round, pulsed bow to stern. */
+  sinking?: CellIndex[];
   compact?: boolean;
 }
 
@@ -36,6 +38,7 @@ export function Board({
   pick = null,
   onCell,
   flash = [],
+  sinking = [],
   compact = false,
 }: BoardProps): ReactElement {
   const aimSet = new Set(aim);
@@ -45,6 +48,9 @@ export function Board({
     h.cells.forEach((c, i) => hullCell.set(c, { struck: h.hits[i], sunk: h.sunk }));
   }
   const flashMap = new Map(flash.map((f) => [f.cell, f.hit]));
+  // Bow to stern, so a four-length hull reads as one ship going down rather
+  // than four cells changing colour at once.
+  const sinkOrder = new Map(sinking.map((c, i) => [c, i]));
 
   const cells: ReactElement[] = [];
   for (let c = 0; c < CELLS; c++) {
@@ -59,13 +65,19 @@ export function Board({
     if (aimSet.has(c)) classes.push('aim');
     if (pick === c) classes.push('pick');
     const flashed = flashMap.get(c);
+    const sinkIndex = sinkOrder.get(c);
+    if (sinkIndex !== undefined) classes.push('sinking');
     cells.push(
       <button
         key={c}
         className={classes.join(' ')}
         onClick={onCell ? () => onCell(c) : undefined}
         aria-label={`${label(c)}${mark ? ` ${mark}` : ''}`}
-        style={{ fontSize: compact ? 9 : 11, color: 'var(--ink-faint)' }}
+        style={{
+          fontSize: compact ? 9 : 11,
+          color: 'var(--ink-faint)',
+          animationDelay: sinkIndex !== undefined ? `${sinkIndex * 90}ms` : undefined,
+        }}
       >
         {mark === undefined && !hull && <span className="cell-label">{label(c)}</span>}
         {/* Hit and miss are distinguished by shape as well as colour, so the
@@ -79,6 +91,7 @@ export function Board({
         )}
         {hull?.sunk && <Icon name="ui.sunk" size={compact ? 11 : 18} title="sunk" />}
         {flashed !== undefined && <i className={`flare ${flashed ? 'hitfx' : 'missfx'}`} />}
+        {flashed === true && <i className="shockwave" />}
       </button>,
     );
   }

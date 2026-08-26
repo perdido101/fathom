@@ -2,6 +2,7 @@ import type { CSSProperties, ReactElement } from 'react';
 import { SHIPS } from '../../engine/ships';
 import { CARDS } from '../../engine/cards';
 import { Icon, hasIcon } from './Icon';
+import { ChargeNumber } from '../components/ChargeNumber';
 
 /**
  * Placeholder art, drawn in code.
@@ -115,6 +116,8 @@ export function CardArt({
   disabled = false,
   onClick,
   style,
+  className,
+  compact = false,
 }: {
   defId: string | null;
   charges: number;
@@ -123,6 +126,9 @@ export function CardArt({
   disabled?: boolean;
   onClick?: () => void;
   style?: CSSProperties;
+  className?: string;
+  /** The battle hand, where three cards share a phone and text must fit. */
+  compact?: boolean;
 }): ReactElement {
   const def = defId ? CARDS[defId] : null;
   const tint = def ? ROLE_TINT[def.role] : '#243349';
@@ -130,6 +136,7 @@ export function CardArt({
     <button
       onClick={onClick}
       disabled={disabled}
+      className={className}
       style={{
         position: 'relative',
         aspectRatio: '2 / 3',
@@ -178,19 +185,17 @@ export function CardArt({
       {!faceDown && def && (
         <span
           style={{
-            fontSize: 9,
+            fontSize: compact ? 8.5 : 9,
             color: 'var(--ink-faint)',
             lineHeight: 1.3,
             flex: 1,
             overflow: 'hidden',
           }}
         >
-          {def.text}
+          {compact ? def.short : def.text}
         </span>
       )}
-      <span className="charges" style={{ fontSize: 26, lineHeight: 1, alignSelf: 'flex-end' }}>
-        {charges}
-      </span>
+      <ChargeNumber value={charges} size={26} style={{ alignSelf: 'flex-end' }} />
     </button>
   );
 }

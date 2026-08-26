@@ -271,7 +271,10 @@ button {
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(4, 7, 13, 0.86);
+  /* Dark enough to read against, light enough that the board behind still
+     shows the shots landing — the sequence is explaining that board. */
+  background: rgba(4, 7, 13, 0.72);
+  backdrop-filter: blur(2px);
   display: flex;
   flex-direction: column;
   justify-content: center;

@@ -93,7 +93,9 @@ export function ResolveOverlay(): ReactElement | null {
   return (
     <div className="overlay" onClick={finish} ref={frame}>
       {bigMoment && <div className="prediction-wash" />}
+      {current.t === 'nerf' && <ChargeTheft />}
       <h3>{STEP_TITLES[current.t] ?? 'resolving'}</h3>
+      <div className="spacer" />
 
       {sinking && (
         <div className="banner" style={{ textAlign: 'center', fontSize: 40, color: 'var(--hit)' }}>
@@ -101,7 +103,20 @@ export function ResolveOverlay(): ReactElement | null {
         </div>
       )}
 
-      <div className="col" style={{ gap: 6 }}>
+      {/* The beats sit on their own surface. Reading them straight over the
+          board was legible on a bright cell and not on a dark one, which is
+          the worst of both — the board stays visible behind, but the words
+          never have to compete with it. */}
+      <div
+        className="col"
+        style={{
+          gap: 6,
+          padding: '14px 16px',
+          borderRadius: 'var(--r-md)',
+          background: 'rgba(8, 13, 23, 0.82)',
+          border: '1px solid var(--panel-edge)',
+        }}
+      >
         {shown.map((e, i) => {
           const last = i === shown.length - 1;
           const loud = last && e.t === 'prediction' && e.triggered;
@@ -127,6 +142,41 @@ export function ResolveOverlay(): ReactElement | null {
 
       <div className="spacer" />
       <p style={{ textAlign: 'center', fontSize: 12 }}>tap to skip</p>
+    </div>
+  );
+}
+
+/**
+ * Charges changing hands, shown as charges changing hands.
+ *
+ * Jam, Siphon, Leech and Blackout all move the same resource, and in a game
+ * where that resource is the whole economy, "your bank went down by three" is
+ * not something a player should have to notice by comparing two numbers
+ * between rounds. The pips arc from the top of the screen to the bottom, which
+ * is the direction the charges actually travel on the battle screen.
+ */
+function ChargeTheft(): ReactElement {
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className="stealing charges"
+          style={{
+            position: 'absolute',
+            left: `${18 + i * 16}%`,
+            top: '22%',
+            fontSize: 22,
+            // Fanned rather than parallel, so five pips read as a handful
+            // moving instead of one pip drawn five times.
+            ['--dx' as string]: `${(i - 2) * 14}px`,
+            ['--dy' as string]: '210px',
+            animationDelay: `${i * 55}ms`,
+          }}
+        >
+          +
+        </span>
+      ))}
     </div>
   );
 }

@@ -6,3 +6,8 @@ sim-out/
 dist-single/
 sim-out.log
 chain/program/target/
+
+# The full-resolution captures are regenerable with `npm run screens`; only
+# the web-sized set is worth keeping in the repository.
+screens/*.png
+ui-inventory.html

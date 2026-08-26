@@ -19,7 +19,9 @@
     "icons": "node scripts/fetch-icons.mjs",
     "chain:build": "cd chain/program && cargo-build-sbf --arch v3",
     "chain:local": "bash scripts/chain-local.sh",
-    "e2e:chain": "tsx scripts/e2e-chain.ts"
+    "e2e:chain": "tsx scripts/e2e-chain.ts",
+    "screens": "node scripts/screens.mjs",
+    "inventory": "tsx scripts/ui-inventory.ts"
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.4",

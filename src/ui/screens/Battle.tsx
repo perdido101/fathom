@@ -1,10 +1,11 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { CellIndex, FireSpec, Plan } from '../../engine/types';
 import { BOARD, emptyPlan, label, xy } from '../../engine/types';
 import { CARDS, canFireAt } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { useStore } from '../../state/store';
 import { Board } from '../components/Board';
+import { ChargeNumber } from '../components/ChargeNumber';
 import { CardArt, ShipArt } from '../art/registry';
 import { Sound } from '../sfx/SoundManager';
 import {
@@ -32,12 +33,40 @@ export function Battle(): ReactElement | null {
   const clock = useStore((s) => s.clock);
   const submitPlan = useStore((s) => s.submitPlan);
   const roundSeconds = useStore((s) => s.match?.config.roundSeconds ?? 20);
+  const lastEvents = useStore((s) => s.lastRoundEvents);
+  const playingBack = useStore((s) => s.playback !== null);
 
   const [basic, setBasic] = useState<CellIndex | null>(null);
   const [chargeTo, setChargeTo] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [fire, setFire] = useState<{ uid: number; spec: FireSpec } | null>(null);
   const [ability, setAbility] = useState<{ defId: string; spec: FireSpec } | null>(null);
+  const [firingUid, setFiringUid] = useState<number | null>(null);
+  const [wipe, setWipe] = useState(false);
+
+  // A short wipe between rounds. Without it the board simply changes under the
+  // player's hands and the round boundary is invisible.
+  const round = view?.round ?? 0;
+  const lastRound = useRef(round);
+  useEffect(() => {
+    if (round === lastRound.current) return undefined;
+    lastRound.current = round;
+    setWipe(true);
+    const id = setTimeout(() => setWipe(false), 520);
+    return () => clearTimeout(id);
+  }, [round]);
+
+  // What resolved last round, taken from the engine's own event list so the
+  // board can only ever animate something that actually happened.
+  const shots = useMemo(() => {
+    const mine: { cell: CellIndex; hit: boolean }[] = [];
+    const theirs: { cell: CellIndex; hit: boolean }[] = [];
+    for (const e of lastEvents) {
+      if (e.t !== 'shot') continue;
+      (e.by === (view?.you ?? 0) ? mine : theirs).push({ cell: e.cell, hit: e.hit });
+    }
+    return { mine, theirs };
+  }, [lastEvents, view?.you]);
 
   const innerDefId = useMemo(() => {
     if (!draft || draft.innerUid === null || !view) return undefined;
@@ -144,6 +173,10 @@ export function Battle(): ReactElement | null {
   }
 
   function commit(): void {
+    if (fire) {
+      setFiringUid(fire.uid);
+      setTimeout(() => setFiringUid(null), 520);
+    }
     const plan: Plan = {
       ...emptyPlan(),
       chargeTo: blocked.noCharge ? null : chargeTo,
@@ -178,14 +211,16 @@ export function Battle(): ReactElement | null {
           hull {foe.hullRemaining}/9
         </span>
         <span className="pill mono" title="their banked charges">
-          <span className="charges">{foe.hand.reduce((n, c) => n + c.charges, 0)}</span>
+          <ChargeNumber value={foe.hand.reduce((n, c) => n + c.charges, 0)} size={15} />
         </span>
       </div>
 
       <div className="row" style={{ gap: 6 }}>
         {foe.ships.map((s, i) => (
           <div key={i} className="row" style={{ gap: 4, opacity: s.sunk ? 0.35 : 1 }}>
-            <ShipArt defId={s.defId} length={s.length} revealed={s.defId !== null} size={16} />
+            <span className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
+              <ShipArt defId={s.defId} length={s.length} revealed={s.defId !== null} size={16} />
+            </span>
             <span style={{ fontSize: 10, color: 'var(--ink-faint)' }}>
               {s.sunk ? 'sunk' : s.defId ? (s.abilityUsed ? 'spent' : SHIPS[s.defId].type) : '?'}
             </span>
@@ -208,9 +243,7 @@ export function Battle(): ReactElement | null {
                 placeItems: 'center',
               }}
             >
-              <span className="charges" style={{ fontSize: 16 }}>
-                {c.charges}
-              </span>
+              <ChargeNumber value={c.charges} size={16} />
               {allocationFor(draft, c.uid) ? (
                 <span style={{ fontSize: 9, color: 'var(--danger)' }}>
                   -{allocationFor(draft, c.uid)}
@@ -231,6 +264,7 @@ export function Battle(): ReactElement | null {
           aim={draft ? aimCells : committedAim}
           pick={basic}
           onCell={onEnemyCell}
+          flash={playingBack ? shots.mine : []}
         />
       </div>
 
@@ -311,7 +345,13 @@ export function Battle(): ReactElement | null {
       {/* --- your side ------------------------------------------------------ */}
       <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
         <div className="col" style={{ width: '42%', gap: 4 }}>
-          <Board marks={foe.marks} hulls={me.ships} compact />
+          <Board
+            marks={foe.marks}
+            hulls={me.ships}
+            compact
+            flash={playingBack ? shots.theirs : []}
+            sinking={playingBack ? me.ships.filter((sh) => sh.sunk).flatMap((sh) => sh.cells) : []}
+          />
           <span style={{ fontSize: 10, color: 'var(--ink-dim)', textAlign: 'center' }}>
             your hull {me.hullRemaining}/9
           </span>
@@ -335,7 +375,12 @@ export function Battle(): ReactElement | null {
                 }}
               >
                 <ShipArt defId={s.defId} length={1} size={16} />
-                <span style={{ fontSize: 11, flex: 1 }}>{def.name}</span>
+                <span
+                  className={s.abilityUsed || s.sunk ? 'flip' : undefined}
+                  style={{ fontSize: 11, flex: 1 }}
+                >
+                  {def.name}
+                </span>
                 <span style={{ fontSize: 9, color: 'var(--ink-faint)' }}>
                   {s.sunk ? 'sunk' : s.abilityUsed ? 'spent' : def.type}
                 </span>
@@ -359,7 +404,16 @@ export function Battle(): ReactElement | null {
                 charges={withCharge}
                 selected={chargeTo === c.uid || fire?.uid === c.uid || draft?.innerUid === c.uid}
                 onClick={() => onOwnCardTap(c.uid)}
-                style={{ aspectRatio: 'auto', height: 104 }}
+                compact
+                className={firingUid === c.uid ? 'card-firing' : undefined}
+                style={{
+                  aspectRatio: 'auto',
+                  height: 104,
+                  // A card queued to fire sits proud of the others, so the
+                  // commitment is visible without reading the status line.
+                  transform: fire?.uid === c.uid ? 'translateY(-6px)' : undefined,
+                  boxShadow: fire?.uid === c.uid ? '0 0 18px -2px var(--charge-glow)' : undefined,
+                }}
               />
               <div className="row" style={{ gap: 4 }}>
                 <button
@@ -391,8 +445,17 @@ export function Battle(): ReactElement | null {
         <i style={{ width: `${Math.max(0, (clock / roundSeconds) * 100)}%` }} />
       </div>
       <button className="btn go" disabled={!ready} onClick={commit}>
-        commit — {clock}s
+        {playingBack ? (
+          <span className="thinking">
+            they are planning <i />
+            <i />
+            <i />
+          </span>
+        ) : (
+          `commit — ${clock}s`
+        )}
       </button>
+      {wipe && <div className="round-wipe" />}
     </div>
   );
 
