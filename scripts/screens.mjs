@@ -217,10 +217,56 @@ try {
   await wait(200);
   await click('Back');
 
+  // Tournaments: the tier picker, the bracket forming, and the bracket live.
+  await page.getByRole('button', { name: /Tournament/ }).click();
+  await wait(300);
+  await shot('24-tournament-tiers', 'eight seats a bracket, the whole curve priced before entry');
+  await page.getByRole('button', { name: /Take a seat/ }).click();
+  await wait(1100);
+  await shot('25-bracket-forming', 'seats staking in view — a bracket only starts full');
+  await wait(2400);
+  await shot('26-bracket-live', 'eight seats, three rounds, your path in gold, pot always visible');
+
+  // The champion moment, staged through the dev store handle: the real path
+  // (three straight wins) is proven by audit-ui; the screenshot only needs
+  // the state, not the forty minutes.
+  await page.evaluate(() => {
+    const store = window.__store;
+    const t = store.getState().tournament;
+    if (!t) return;
+    let b = t.bracket;
+    const report = (idx, winner) => {
+      const m = b.matches[idx];
+      const w = m.seats.includes(winner) ? winner : m.seats[0];
+      b = window.__bracketReport ? window.__bracketReport(b, idx, w) : b;
+    };
+    void report;
+    // Walk the bracket with seat 0 winning throughout.
+    const feeds = (i) => (i < 4 ? [4 + (i >> 1), i & 1] : i < 6 ? [6, i - 4] : null);
+    for (let i = 0; i < 7; i++) {
+      const m = b.matches[i];
+      const winner = m.seats.includes(0) ? 0 : m.seats[0];
+      b = {
+        ...b,
+        matches: b.matches.map((x, j) => (j === i ? { ...x, winner } : { ...x })),
+      };
+      const to = feeds(i);
+      if (to) b.matches[to[0]].seats[to[1]] = winner;
+    }
+    store.setState({
+      tournament: { ...t, bracket: b, yourPlace: 'champion', settled: true },
+      lastTx: 'staged-for-screenshot',
+    });
+  });
+  await wait(600);
+  await shot('27-champion', 'the loudest screen in the game — 55% of the pot');
+  await page.evaluate(() => window.__store.getState().leaveMatch());
+  await wait(400);
+
   // The desktop gate.
   await page.setViewportSize({ width: 1024, height: 640 });
   await wait(300);
-  await shot('24-desktop-gate', 'below 1280×720: logo, one line, nothing else');
+  await shot('28-desktop-gate', 'below 1280×720: logo, one line, nothing else');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await wait(200);
 } catch (err) {

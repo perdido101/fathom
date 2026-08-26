@@ -108,7 +108,23 @@ const SCREEN_NOTES: Record<string, { phase: string; note: string }> = {
     phase: 'Ladder',
     note: 'The icon set is CC BY, which requires attribution. That is a licence condition rather than a courtesy, so the screen ships with the game.',
   },
-  '24-desktop-gate': {
+  '24-tournament-tiers': {
+    phase: 'Tournament',
+    note: 'Eight seats a bracket at the arena stakes, with the whole payout curve priced before entry: 5% rake, then 55% to the champion, 25% to the runner-up, 10% to each losing semifinalist. Quarter-final losers take nothing — the curve is the reason to enter.',
+  },
+  '25-bracket-forming': {
+    phase: 'Tournament',
+    note: 'Seats staking in view. A bracket only ever starts full — byes cannot exist — and if it never fills, every stake reclaims after ten minutes, no rake.',
+  },
+  '26-bracket-live': {
+    phase: 'Tournament',
+    note: 'The bracket as scoreboard: quarters, semis, final, your path picked out in gold, the pot and its split never off screen.',
+  },
+  '27-champion': {
+    phase: 'Tournament',
+    note: 'The champion moment — the loudest screen in the game, and the mode’s reason to exist: 55% of an eight-stake pot, settled on-chain with the bracket’s transcript root pinned beside it.',
+  },
+  '28-desktop-gate': {
     phase: 'Arrival',
     note: 'Below 1280×720 the game does not attempt a squeezed layout: the logo, one sentence, nothing else.',
   },
@@ -162,7 +178,17 @@ const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // --- screens, grouped in the order a player meets them ---------------------
-const PHASE_ORDER = ['Arrival', 'Betting', 'Draft', 'Deploy', 'Battle', 'Resolve', 'After', 'Ladder'];
+const PHASE_ORDER = [
+  'Arrival',
+  'Betting',
+  'Draft',
+  'Deploy',
+  'Battle',
+  'Resolve',
+  'After',
+  'Tournament',
+  'Ladder',
+];
 const phases: { phase: string; items: { key: string; html: string }[] }[] = [];
 for (const file of files) {
   const key = file.replace('.jpg', '');
@@ -416,9 +442,9 @@ const html = `<title>Shadow Armada UI Inventory</title>
 
 <div class="wrap">
   <header class="hero">
-    <p class="eyebrow">Shadow Armada · build 3</p>
+    <p class="eyebrow">Shadow Armada · build 4</p>
     <h1>Every screen, and<br>every <em>asset</em> behind it.</h1>
-    <p class="lede">Twenty-four screens photographed at 1920×1080 — the shape the game is now built for — and a complete accounting of what is drawn, what is licensed, and what is still to be made.</p>
+    <p class="lede">Twenty-eight screens photographed at 1920×1080 — tournaments included — and a complete accounting of what is drawn, what is licensed, what now has real audio, and what is still to be made.</p>
     <div class="stats">
       <div class="stat"><b>${files.length}</b><span>Screens</span></div>
       <div class="stat"><b>${ICON_CREDITS.length}</b><span>Licensed icons</span></div>
@@ -526,8 +552,8 @@ const html = `<title>Shadow Armada UI Inventory</title>
     <h2>Still to be made</h2>
     <p>Two groups, and nothing in either blocks play. The game is complete and shippable on what exists today.</p>
 
-    <div class="phase"><h3>Sound · ${CUES.length} cues, none recorded</h3></div>
-    <p>Every cue below already fires from the SoundManager with no audio attached, so dropping files in is the whole integration. Mono, 48kHz.</p>
+    <div class="phase"><h3>Sound · ${CUES.length} cues, all sourced</h3></div>
+    <p>Every cue is a real file from Kenney's CC0 packs, fetched and credited by <code class="mono">npm run audio</code> — the same single-writer discipline as the icons. The charge click rises in pitch with the count; the last five seconds of the timer tick faster each second.</p>
     <div class="tablewrap"><table>
       <thead><tr><th>Cue</th><th>Length</th><th>Description</th><th>Status</th></tr></thead>
       <tbody>
@@ -536,13 +562,14 @@ const html = `<title>Shadow Armada UI Inventory</title>
           <td class="mono">${esc(c.id)}</td>
           <td class="mono dim">${esc(c.length)}</td>
           <td>${esc(c.description)}</td>
-          <td><span class="status s-need">Needed</span></td>
+          <td><span class="status s-proc">Sourced · CC0</span></td>
         </tr>`,
         ).join('')}
       </tbody>
     </table></div>
 
-    <div class="phase"><h3>Illustration · 26 pieces</h3></div>
+    <div class="phase"><h3>Illustration · 26 pieces — the drop-in pipeline is live</h3></div>
+    <p>Generate against <code class="mono">GEMINI_ASSETS.md</code> (exact files, dimensions, prompts) and drop each image at its path under <code class="mono">src/ui/art/drop/</code> — it appears in the game on the next build, procedural fallback until then.</p>
     <div class="cols">
       <div>
         <h3>Ship heroes — 12</h3>
@@ -576,7 +603,7 @@ const html = `<title>Shadow Armada UI Inventory</title>
     <ul>
       <li><strong>Icons</strong> — game-icons.net, ${ICON_LICENCE}. Commercial use permitted, attribution required and provided.</li>
       <li><strong>Fonts</strong> — Baloo 2, Nunito and JetBrains Mono, bundled from the @fontsource packages under the SIL Open Font License 1.1.</li>
-      <li><strong>Audio</strong> — none shipped.</li>
+      <li><strong>Audio</strong> — 15 cues from Kenney's Interface, Impact, Sci-Fi and Digital Audio packs, all CC0 1.0 (public domain), recorded per-file in ASSETS_CREDITS.md.</li>
       <li><strong>Everything else</strong> — original work in this repository.</li>
       <li><strong>No Epic Games asset</strong>, model, texture, font or sound is used or referenced anywhere. The style references are targets, not sources.</li>
     </ul>
