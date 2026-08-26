@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { SHIP_LIST } from '../src/engine/ships';
 import { CARD_LIST } from '../src/engine/cards';
 import { CUES } from '../src/ui/sfx/SoundManager';
@@ -45,7 +45,7 @@ const ship: Asset[] = SHIP_LIST.flatMap((s) => [
     px: '1024x1024',
     ratio: '1:1',
     where: 'ship draft card, result screen reveal',
-    note: `${s.name} at three-quarter view, whole hull in frame, ${s.type} silhouette readable at 120px.`,
+    note: `${s.name} at three-quarter view, whole hull in frame, ${s.type} silhouette readable at 120px. Drop at src/ui/art/drop/ships/${s.id}/hero.png — prompt in GEMINI_ASSETS.md.`,
     status: 'STILL NEEDED' as Status,
   },
   {
@@ -90,7 +90,7 @@ const card: Asset[] = CARD_LIST.flatMap((c) => [
     px: '768x920',
     ratio: '~5:6',
     where: 'card draft, battle hand — the art window of the 2:3 card',
-    note: `${c.name} — ${c.role}. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.`,
+    note: `${c.name} — ${c.role}. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/${c.id}.png — prompt in GEMINI_ASSETS.md.`,
     status: 'STILL NEEDED' as Status,
   },
 ]);
@@ -158,7 +158,7 @@ const ui: Asset[] = [
     px: '1920x1080',
     ratio: '16:9',
     where: 'main menu backdrop, full-bleed at desktop',
-    note: 'Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists.',
+    note: 'Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists. Drop at src/ui/art/drop/ui/menu-bg.jpg — prompt in GEMINI_ASSETS.md.',
   },
   {
     file: 'ui/cell-water.png',
@@ -266,14 +266,28 @@ function vfxAssets(): Asset[] {
 }
 
 function sfxAssets(): Asset[] {
-  return CUES.map((c) => ({
-    file: `sfx/${c.id}.ogg`,
-    px: `${c.length} mono 48kHz`,
-    ratio: 'n/a',
-    where: `fires on the ${c.id.replace(/-/g, ' ')} cue`,
-    note: c.description,
-    status: 'STILL NEEDED' as Status,
-  }));
+  // Audio landed in Build 4: every cue has a real CC0 file, fetched and
+  // credited by scripts/fetch-audio.mjs.
+  let audio: { credits: { cue: string; pack: string; original: string }[] } | null = null;
+  try {
+    audio = JSON.parse(readFileSync('src/ui/sfx/audio-credits.json', 'utf8'));
+  } catch {
+    audio = null;
+  }
+  return CUES.map((c) => {
+    const hit = audio?.credits.find((a) => a.cue === c.id);
+    return {
+      file: `src/ui/sfx/files/${c.id}.ogg`,
+      px: `${c.length} mono`,
+      ratio: 'n/a',
+      where: `fires on the ${c.id.replace(/-/g, ' ')} cue`,
+      note: hit
+        ? `${c.description}. ${hit.original} from Kenney's ${hit.pack} pack.`
+        : c.description,
+      status: (hit ? 'SOURCED' : 'STILL NEEDED') as Status,
+      credit: hit ? `Kenney (kenney.nl), ${hit.pack}, CC0 1.0` : undefined,
+    };
+  });
 }
 
 function table(assets: Asset[]): string {

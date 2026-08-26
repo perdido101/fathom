@@ -6,56 +6,41 @@ lists, so it cannot fall out of step with the twelve ships, twelve cards,
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| SOURCED | 30 | A licence-verified asset is in the build. Credit is on the row and in `ASSETS_CREDITS.md`. |
+| SOURCED | 45 | A licence-verified asset is in the build. Credit is on the row and in `ASSETS_CREDITS.md`. |
 | PROCEDURAL | 29 | Drawn in code, deliberately, and good enough to ship on. |
-| STILL NEEDED | 41 | Nothing in the build. **This is the list to generate against.** |
+| STILL NEEDED | 26 | Nothing in the build. **This is the list to generate against.** |
 
 The game is fully playable today: nothing marked STILL NEEDED blocks anything,
 and nothing anywhere is a grey box.
 
 ## What is still needed
 
-- `ships/dreadnought/hero.png` — 1024x1024, Dreadnought at three-quarter view, whole hull in frame, REACT silhouette readable at 120px.
-- `ships/forge/hero.png` — 1024x1024, Forge at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/blackout/hero.png` — 1024x1024, Blackout at three-quarter view, whole hull in frame, NERF silhouette readable at 120px.
-- `ships/warhead/hero.png` — 1024x1024, Warhead at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/kiln/hero.png` — 1024x1024, Kiln at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/leech/hero.png` — 1024x1024, Leech at three-quarter view, whole hull in frame, NERF silhouette readable at 120px.
-- `ships/cinder/hero.png` — 1024x1024, Cinder at three-quarter view, whole hull in frame, REACT silhouette readable at 120px.
-- `ships/beacon/hero.png` — 1024x1024, Beacon at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/spite/hero.png` — 1024x1024, Spite at three-quarter view, whole hull in frame, REACT silhouette readable at 120px.
-- `ships/ember/hero.png` — 1024x1024, Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/pin/hero.png` — 1024x1024, Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px.
-- `ships/thorn/hero.png` — 1024x1024, Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px.
-- `cards/salvo.png` — 768x920, Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/lance.png` — 768x920, Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/burst.png` — 768x920, Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/rake.png` — 768x920, Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/breaker.png` — 768x920, Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/ping.png` — 768x920, Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/echo.png` — 768x920, Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/sounding.png` — 768x920, Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/jam.png` — 768x920, Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/siphon.png` — 768x920, Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/mirror.png` — 768x920, Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `cards/ambush.png` — 768x920, Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists.
-- `ui/menu-bg.jpg` — 1920x1080, Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists.
+- `ships/dreadnought/hero.png` — 1024x1024, Dreadnought at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/dreadnought/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/forge/hero.png` — 1024x1024, Forge at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/forge/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/blackout/hero.png` — 1024x1024, Blackout at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. Drop at src/ui/art/drop/ships/blackout/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/warhead/hero.png` — 1024x1024, Warhead at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/warhead/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/kiln/hero.png` — 1024x1024, Kiln at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/kiln/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/leech/hero.png` — 1024x1024, Leech at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. Drop at src/ui/art/drop/ships/leech/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/cinder/hero.png` — 1024x1024, Cinder at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/cinder/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/beacon/hero.png` — 1024x1024, Beacon at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/beacon/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/spite/hero.png` — 1024x1024, Spite at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/spite/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/ember/hero.png` — 1024x1024, Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/ember/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/pin/hero.png` — 1024x1024, Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/pin/hero.png — prompt in GEMINI_ASSETS.md.
+- `ships/thorn/hero.png` — 1024x1024, Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/thorn/hero.png — prompt in GEMINI_ASSETS.md.
+- `cards/salvo.png` — 768x920, Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/salvo.png — prompt in GEMINI_ASSETS.md.
+- `cards/lance.png` — 768x920, Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/lance.png — prompt in GEMINI_ASSETS.md.
+- `cards/burst.png` — 768x920, Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/burst.png — prompt in GEMINI_ASSETS.md.
+- `cards/rake.png` — 768x920, Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/rake.png — prompt in GEMINI_ASSETS.md.
+- `cards/breaker.png` — 768x920, Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/breaker.png — prompt in GEMINI_ASSETS.md.
+- `cards/ping.png` — 768x920, Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/ping.png — prompt in GEMINI_ASSETS.md.
+- `cards/echo.png` — 768x920, Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/echo.png — prompt in GEMINI_ASSETS.md.
+- `cards/sounding.png` — 768x920, Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/sounding.png — prompt in GEMINI_ASSETS.md.
+- `cards/jam.png` — 768x920, Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/jam.png — prompt in GEMINI_ASSETS.md.
+- `cards/siphon.png` — 768x920, Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/siphon.png — prompt in GEMINI_ASSETS.md.
+- `cards/mirror.png` — 768x920, Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/mirror.png — prompt in GEMINI_ASSETS.md.
+- `cards/ambush.png` — 768x920, Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/ambush.png — prompt in GEMINI_ASSETS.md.
+- `ui/menu-bg.jpg` — 1920x1080, Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists. Drop at src/ui/art/drop/ui/menu-bg.jpg — prompt in GEMINI_ASSETS.md.
 - `ui/sol-glyph.svg` — 64x64, SOL mark. Vector.
-- `sfx/charge-placed.ogg` — 0.2s mono 48kHz, Dry mechanical click as a charge seats onto a card
-- `sfx/card-fired.ogg` — 0.8s mono 48kHz, Card burns away, rising whoosh into a crack
-- `sfx/basic-attack.ogg` — 0.4s mono 48kHz, Light deck gun, thinner than a card shot
-- `sfx/hit.ogg` — 0.6s mono 48kHz, Wet metallic impact with a low thump
-- `sfx/miss.ogg` — 0.5s mono 48kHz, Water splash, no metal in it
-- `sfx/ship-sunk.ogg` — 1.8s mono 48kHz, Groaning hull, sustained, then silence
-- `sfx/ability-activated.ogg` — 0.7s mono 48kHz, Ship card flips face up, brass and air
-- `sfx/react-triggered.ogg` — 1.0s mono 48kHz, Sharp inhale then a snap, the dead ship answering
-- `sfx/charges-stolen.ogg` — 0.6s mono 48kHz, Charges sliding across the table, glassy
-- `sfx/prediction-triggered.ogg` — 0.9s mono 48kHz, A single bell, unmistakable, for a read landing
-- `sfx/round-start.ogg` — 0.5s mono 48kHz, Two-tone signal, calm, marks the plan window opening
-- `sfx/timer-warning.ogg` — 1.0s mono 48kHz, Ticking that speeds up over the last five seconds
-- `sfx/victory.ogg` — 2.5s mono 48kHz, Short brass sting, resolved
-- `sfx/defeat.ogg` — 2.5s mono 48kHz, Same motif, unresolved, lower
-- `sfx/draw.ogg` — 2.0s mono 48kHz, Two notes ending level with each other
 
 **Intended style, for sizing and framing only:** stylised 3D, bold readable
 silhouettes, saturated but not neon, slightly exaggerated proportions. Clean
@@ -73,40 +58,40 @@ Three assets per ship: a hero render for the draft, a top-down token for your ow
 
 | File | Size | Ratio | Where it appears | Description |
 | --- | --- | --- | --- | --- |
-| `ships/dreadnought/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Dreadnought at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
+| `ships/dreadnought/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Dreadnought at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/dreadnought/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/dreadnought/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Dreadnought, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/dreadnought/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Dreadnought mark. Must read at 16px and must not hint at length. |
-| `ships/forge/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Forge at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/forge/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Forge at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/forge/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/forge/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Forge, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/forge/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Forge mark. Must read at 16px and must not hint at length. |
-| `ships/blackout/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Blackout at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. |
+| `ships/blackout/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Blackout at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. Drop at src/ui/art/drop/ships/blackout/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/blackout/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Blackout, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/blackout/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Blackout mark. Must read at 16px and must not hint at length. |
-| `ships/warhead/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Warhead at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/warhead/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Warhead at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/warhead/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/warhead/token.png` | 512x128 | 4:1 | your own board, laid across the cells it occupies | Top-down Warhead, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/warhead/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Warhead mark. Must read at 16px and must not hint at length. |
-| `ships/kiln/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Kiln at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/kiln/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Kiln at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/kiln/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/kiln/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Kiln, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/kiln/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Kiln mark. Must read at 16px and must not hint at length. |
-| `ships/leech/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Leech at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. |
+| `ships/leech/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Leech at three-quarter view, whole hull in frame, NERF silhouette readable at 120px. Drop at src/ui/art/drop/ships/leech/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/leech/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Leech, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/leech/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Leech mark. Must read at 16px and must not hint at length. |
-| `ships/cinder/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Cinder at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
+| `ships/cinder/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Cinder at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/cinder/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/cinder/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Cinder, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/cinder/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Cinder mark. Must read at 16px and must not hint at length. |
-| `ships/beacon/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Beacon at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/beacon/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Beacon at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/beacon/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/beacon/token.png` | 384x128 | 3:1 | your own board, laid across the cells it occupies | Top-down Beacon, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/beacon/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Beacon mark. Must read at 16px and must not hint at length. |
-| `ships/spite/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Spite at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
+| `ships/spite/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Spite at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/spite/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/spite/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Spite, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/spite/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Spite mark. Must read at 16px and must not hint at length. |
-| `ships/ember/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/ember/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Ember at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/ember/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/ember/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Ember, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/ember/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Ember mark. Must read at 16px and must not hint at length. |
-| `ships/pin/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. |
+| `ships/pin/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Pin at three-quarter view, whole hull in frame, ACTIVE silhouette readable at 120px. Drop at src/ui/art/drop/ships/pin/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/pin/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Pin, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/pin/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Pin mark. Must read at 16px and must not hint at length. |
-| `ships/thorn/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. |
+| `ships/thorn/hero.png` | 1024x1024 | 1:1 | ship draft card, result screen reveal | Thorn at three-quarter view, whole hull in frame, REACT silhouette readable at 120px. Drop at src/ui/art/drop/ships/thorn/hero.png — prompt in GEMINI_ASSETS.md. |
 | `ships/thorn/token.png` | 256x128 | 2:1 | your own board, laid across the cells it occupies | Top-down Thorn, bow at the left edge, transparent background, no shadow baked in. Currently steel-tinted cells on the owner's board. |
 | `ships/thorn/icon.png` | 128x128 | 1:1 | battle screen ship strip, both fleets | Thorn mark. Must read at 16px and must not hint at length. |
 | `ships/unknown-4.png` | 128x128 | 1:1 | enemy ship strip before that ship reveals itself | Anonymous 4-length marker. Identical treatment for all four ships of that length — any distinguishing detail is an information leak. |
@@ -120,29 +105,29 @@ One illustration per card plus one frame per role and a single shared back. The 
 | File | Size | Ratio | Where it appears | Description |
 | --- | --- | --- | --- | --- |
 | `cards/salvo-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Salvo mark, tinted to the attack colour. |
-| `cards/salvo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/salvo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Salvo — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/salvo.png — prompt in GEMINI_ASSETS.md. |
 | `cards/lance-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Lance mark, tinted to the attack colour. |
-| `cards/lance.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/lance.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Lance — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/lance.png — prompt in GEMINI_ASSETS.md. |
 | `cards/burst-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Burst mark, tinted to the attack colour. |
-| `cards/burst.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/burst.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Burst — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/burst.png — prompt in GEMINI_ASSETS.md. |
 | `cards/rake-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Rake mark, tinted to the attack colour. |
-| `cards/rake.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/rake.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Rake — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/rake.png — prompt in GEMINI_ASSETS.md. |
 | `cards/breaker-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Breaker mark, tinted to the attack colour. |
-| `cards/breaker.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/breaker.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Breaker — attack. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/breaker.png — prompt in GEMINI_ASSETS.md. |
 | `cards/ping-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Ping mark, tinted to the intel colour. |
-| `cards/ping.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/ping.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ping — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/ping.png — prompt in GEMINI_ASSETS.md. |
 | `cards/echo-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Echo mark, tinted to the intel colour. |
-| `cards/echo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/echo.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Echo — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/echo.png — prompt in GEMINI_ASSETS.md. |
 | `cards/sounding-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Sounding mark, tinted to the intel colour. |
-| `cards/sounding.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/sounding.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Sounding — intel. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/sounding.png — prompt in GEMINI_ASSETS.md. |
 | `cards/jam-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Jam mark, tinted to the control colour. |
-| `cards/jam.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/jam.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Jam — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/jam.png — prompt in GEMINI_ASSETS.md. |
 | `cards/siphon-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Siphon mark, tinted to the control colour. |
-| `cards/siphon.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/siphon.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Siphon — control. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/siphon.png — prompt in GEMINI_ASSETS.md. |
 | `cards/mirror-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Mirror mark, tinted to the prediction colour. |
-| `cards/mirror.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/mirror.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Mirror — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/mirror.png — prompt in GEMINI_ASSETS.md. |
 | `cards/ambush-icon.svg` | 512x512 | 1:1 | card face, resolve overlay | Ambush mark, tinted to the prediction colour. |
-| `cards/ambush.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. A role gradient with the glyph carries the window until this exists. |
+| `cards/ambush.png` | 768x920 | ~5:6 | card draft, battle hand — the art window of the 2:3 card | Ambush — prediction. Illustration for the art window only (the top 60% of the card); the GameCard component draws the frame, name banner, rule text and charge gem below it. Drop at src/ui/art/drop/cards/ambush.png — prompt in GEMINI_ASSETS.md. |
 | `cards/back.png` | 768x1152 | 2:3 | opponent's hand, draw pile | Card back. Must be identical for every card and legible down to 44x62 in the opponent strip. Currently a sky-radial with the twin-chevron mark, drawn by CardBack. |
 | `cards/frame-attack.png` | 768x1152 | 2:3 | behind every attack card | Role frame, transparent centre. One per role. Currently a role-coloured border and banner drawn by GameCard. |
 | `cards/frame-intel.png` | 768x1152 | 2:3 | behind every intel card | As above, intel palette. |
@@ -157,7 +142,7 @@ Board tiles, the charge chip, and the chrome around stakes and ranks.
 | --- | --- | --- | --- | --- |
 | `ui/wordmark.svg` | 512x160 | 16:5 | main menu, splash | SHADOW ARMADA lockup. Vector, must survive being drawn at 120px wide. |
 | `ui/appicon.png` | 1024x1024 | 1:1 | PWA install, browser tab | App mark alone, no wordmark, safe area 10%. |
-| `ui/menu-bg.jpg` | 1920x1080 | 16:9 | main menu backdrop, full-bleed at desktop | Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists. |
+| `ui/menu-bg.jpg` | 1920x1080 | 16:9 | main menu backdrop, full-bleed at desktop | Bright sky-to-sea horizon in the arcade palette. Must stay legible under the near-white mode cards; the CSS sky gradient and drifting clouds carry it until this exists. Drop at src/ui/art/drop/ui/menu-bg.jpg — prompt in GEMINI_ASSETS.md. |
 | `ui/cell-water.png` | 256x256 | 1:1 | every board cell, both boards | Water tile. Tiles seamlessly on a 6x6 grid; the grid gap is drawn by CSS, not baked in. |
 | `ui/cell-hit.png` | 256x256 | 1:1 | a cell where a shot connected | Burning hull plate. Reads as damage at 48px. |
 | `ui/cell-miss.png` | 256x256 | 1:1 | a cell where a shot found water | Spent splash. Must be clearly *not* a hit at a glance and in monochrome. |
@@ -189,21 +174,21 @@ The complete cue list. Every one of these already fires from `SoundManager` with
 
 | File | Size | Ratio | Where it appears | Description |
 | --- | --- | --- | --- | --- |
-| `sfx/charge-placed.ogg` | 0.2s mono 48kHz | n/a | fires on the charge placed cue | Dry mechanical click as a charge seats onto a card |
-| `sfx/card-fired.ogg` | 0.8s mono 48kHz | n/a | fires on the card fired cue | Card burns away, rising whoosh into a crack |
-| `sfx/basic-attack.ogg` | 0.4s mono 48kHz | n/a | fires on the basic attack cue | Light deck gun, thinner than a card shot |
-| `sfx/hit.ogg` | 0.6s mono 48kHz | n/a | fires on the hit cue | Wet metallic impact with a low thump |
-| `sfx/miss.ogg` | 0.5s mono 48kHz | n/a | fires on the miss cue | Water splash, no metal in it |
-| `sfx/ship-sunk.ogg` | 1.8s mono 48kHz | n/a | fires on the ship sunk cue | Groaning hull, sustained, then silence |
-| `sfx/ability-activated.ogg` | 0.7s mono 48kHz | n/a | fires on the ability activated cue | Ship card flips face up, brass and air |
-| `sfx/react-triggered.ogg` | 1.0s mono 48kHz | n/a | fires on the react triggered cue | Sharp inhale then a snap, the dead ship answering |
-| `sfx/charges-stolen.ogg` | 0.6s mono 48kHz | n/a | fires on the charges stolen cue | Charges sliding across the table, glassy |
-| `sfx/prediction-triggered.ogg` | 0.9s mono 48kHz | n/a | fires on the prediction triggered cue | A single bell, unmistakable, for a read landing |
-| `sfx/round-start.ogg` | 0.5s mono 48kHz | n/a | fires on the round start cue | Two-tone signal, calm, marks the plan window opening |
-| `sfx/timer-warning.ogg` | 1.0s mono 48kHz | n/a | fires on the timer warning cue | Ticking that speeds up over the last five seconds |
-| `sfx/victory.ogg` | 2.5s mono 48kHz | n/a | fires on the victory cue | Short brass sting, resolved |
-| `sfx/defeat.ogg` | 2.5s mono 48kHz | n/a | fires on the defeat cue | Same motif, unresolved, lower |
-| `sfx/draw.ogg` | 2.0s mono 48kHz | n/a | fires on the draw cue | Two notes ending level with each other |
+| `src/ui/sfx/files/charge-placed.ogg` | 0.2s mono | n/a | fires on the charge placed cue | Dry mechanical click as a charge seats onto a card. click_002.ogg from Kenney's Interface Sounds pack. |
+| `src/ui/sfx/files/card-fired.ogg` | 0.8s mono | n/a | fires on the card fired cue | Card burns away, rising whoosh into a crack. laserLarge_001.ogg from Kenney's Sci-Fi Sounds pack. |
+| `src/ui/sfx/files/basic-attack.ogg` | 0.4s mono | n/a | fires on the basic attack cue | Light deck gun, thinner than a card shot. laserRetro_001.ogg from Kenney's Sci-Fi Sounds pack. |
+| `src/ui/sfx/files/hit.ogg` | 0.6s mono | n/a | fires on the hit cue | Wet metallic impact with a low thump. impactMetal_002.ogg from Kenney's Sci-Fi Sounds pack. |
+| `src/ui/sfx/files/miss.ogg` | 0.5s mono | n/a | fires on the miss cue | Water splash, no metal in it. impactSoft_heavy_001.ogg from Kenney's Impact Sounds pack. |
+| `src/ui/sfx/files/ship-sunk.ogg` | 1.8s mono | n/a | fires on the ship sunk cue | Groaning hull, sustained, then silence. explosionCrunch_002.ogg from Kenney's Sci-Fi Sounds pack. |
+| `src/ui/sfx/files/ability-activated.ogg` | 0.7s mono | n/a | fires on the ability activated cue | Ship card flips face up, brass and air. phaseJump1.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/react-triggered.ogg` | 1.0s mono | n/a | fires on the react triggered cue | Sharp inhale then a snap, the dead ship answering. zap1.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/charges-stolen.ogg` | 0.6s mono | n/a | fires on the charges stolen cue | Charges sliding across the table, glassy. phaserDown2.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/prediction-triggered.ogg` | 0.9s mono | n/a | fires on the prediction triggered cue | A single bell, unmistakable, for a read landing. impactBell_heavy_002.ogg from Kenney's Impact Sounds pack. |
+| `src/ui/sfx/files/round-start.ogg` | 0.5s mono | n/a | fires on the round start cue | Two-tone signal, calm, marks the plan window opening. twoTone1.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/timer-warning.ogg` | 1.0s mono | n/a | fires on the timer warning cue | Ticking that speeds up over the last five seconds. click_005.ogg from Kenney's Interface Sounds pack. |
+| `src/ui/sfx/files/victory.ogg` | 2.5s mono | n/a | fires on the victory cue | Short brass sting, resolved. powerUp1.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/defeat.ogg` | 2.5s mono | n/a | fires on the defeat cue | Same motif, unresolved, lower. lowDown.ogg from Kenney's Digital Audio pack. |
+| `src/ui/sfx/files/draw.ogg` | 2.0s mono | n/a | fires on the draw cue | Two notes ending level with each other. twoTone2.ogg from Kenney's Digital Audio pack. |
 
 ## Not needed
 

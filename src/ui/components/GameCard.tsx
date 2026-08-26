@@ -2,6 +2,7 @@ import type { CSSProperties, ReactElement } from 'react';
 import { CARDS } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { Icon, hasIcon } from '../art/Icon';
+import { artUrl } from '../art/dropin';
 import { ChargeNumber } from './ChargeNumber';
 
 /**
@@ -94,8 +95,9 @@ export function GameCard({
         <CardBack />
       ) : (
         <>
-          {/* Art window: top 60%. A composed treatment, not a grey box — the
-              role gradient, a watermark of the glyph, and the glyph itself. */}
+          {/* Art window: top 60%. Real art when a file has been dropped in;
+              otherwise a composed treatment, not a grey box — the role
+              gradient, a watermark of the glyph, and the glyph itself. */}
           <div
             style={{
               position: 'relative',
@@ -107,8 +109,21 @@ export function GameCard({
               placeItems: 'center',
             }}
           >
+            {def && artUrl(`cards/${def.id}`) && (
+              <img
+                src={artUrl(`cards/${def.id}`) ?? undefined}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            )}
             <span style={{ position: 'absolute', inset: 0, background: 'var(--gloss)' }} />
-            {def && hasIcon(`card.${def.id}`) && (
+            {def && !artUrl(`cards/${def.id}`) && hasIcon(`card.${def.id}`) && (
               <>
                 <Icon
                   name={`card.${def.id}`}

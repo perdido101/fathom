@@ -4,6 +4,7 @@ import { CARDS } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { GameCard, ShipCard } from '../components/GameCard';
 import { Sound } from '../sfx/SoundManager';
+import { artUrl } from '../art/dropin';
 
 /**
  * Both drafts, one screen shape: four large cards in a row, centre screen.
@@ -100,6 +101,19 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
                 transition: 'transform var(--t-fast), box-shadow var(--t-fast)',
               }}
             >
+              {artUrl(`ships/${id}/hero`) && (
+                <img
+                  src={artUrl(`ships/${id}/hero`) ?? undefined}
+                  alt=""
+                  style={{
+                    width: 170,
+                    height: 170,
+                    objectFit: 'cover',
+                    borderRadius: 14,
+                    boxShadow: 'var(--shadow-soft)',
+                  }}
+                />
+              )}
               <ShipCard defId={id} length={SHIPS[id].length} size="md" />
               <p style={{ fontSize: 13.5, fontWeight: 700, minHeight: 70 }}>{SHIPS[id].text}</p>
               <span className="pill">

@@ -47,6 +47,8 @@ export interface ChainAdapter {
   address(): string | null;
   sessionKey(): SessionKey;
   connect(): Promise<string>;
+  /** Forget the wallet. Session keys die with it; the game itself plays on. */
+  disconnect(): void;
   openMatch(args: OpenMatchArgs): Promise<OpenMatchResult>;
   commitDeployment(matchId: string | null, commitHash: string): Promise<void>;
   settle(matchId: string | null, result: Result, stake: Stake): Promise<void>;
@@ -106,6 +108,13 @@ class MockChain implements ChainAdapter {
       `connected as ${this.wallet}; session key ${this.key.publicKeyHex.slice(0, 12)}...`,
     );
     return this.wallet;
+  }
+
+  disconnect(): void {
+    if (!this.wallet) return;
+    this.journal.push(`disconnected ${this.wallet}; session key revoked`);
+    this.wallet = null;
+    this.key = issueSessionKey(Date.now());
   }
 
   async openMatch({ mode, stake, seedCommit }: OpenMatchArgs): Promise<OpenMatchResult> {

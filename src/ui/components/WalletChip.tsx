@@ -46,9 +46,18 @@ export function WalletChip(): ReactElement {
     >
       {address ? (
         <>
-          <span className="pill dark" title={address}>
+          <button
+            className="pill dark"
+            title={`${address} — click to disconnect`}
+            style={{ border: 'none', cursor: 'pointer', font: 'inherit' }}
+            onClick={() => {
+              chain.disconnect();
+              setAddress(chain.address());
+              setBalance(chain.balanceSol());
+            }}
+          >
             {address.slice(0, 4)}…{address.slice(-4)}
-          </span>
+          </button>
           <span className="pill gold" title="devnet balance">
             ◎ {balance === null ? '—' : balance.toFixed(3)}
           </span>

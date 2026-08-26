@@ -94,6 +94,14 @@ export class DevnetChain implements ChainAdapter {
     return this.wallet.toBase58();
   }
 
+  disconnect(): void {
+    if (!this.wallet) return;
+    this.journal.push(`disconnected ${this.wallet.toBase58()}; session key revoked`);
+    this.wallet = null;
+    this.key = issueSessionKey(Date.now());
+    this.cachedBalance = null;
+  }
+
   private async submit(ixs: TransactionInstruction[]): Promise<string> {
     const provider = this.provider();
     const wallet = this.requireWallet();

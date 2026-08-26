@@ -13,6 +13,7 @@ import {
 } from '../../state/profile';
 import { Wordmark } from '../components/WalletChip';
 import { bracketPayoutSol } from '../../tournament/bracket';
+import { artUrl } from '../art/dropin';
 import { chain } from '../../chain/client';
 import { CUES, Sound } from '../sfx/SoundManager';
 import { VFX_HOOKS } from '../vfx/hooks';
@@ -50,8 +51,23 @@ export function MainMenu(): ReactElement {
     else void start('ranked', 0);
   }
 
+  const backdrop = artUrl('ui/menu-bg');
   return (
-    <div className="screen centered" style={{ position: 'relative', overflow: 'hidden', gap: 30 }}>
+    <div
+      className="screen centered"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        gap: 30,
+        ...(backdrop
+          ? {
+              backgroundImage: `url(${backdrop})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : {}),
+      }}
+    >
       <Clouds />
       <Wordmark size={84} />
       <p
