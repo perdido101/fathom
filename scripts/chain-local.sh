@@ -60,3 +60,7 @@ echo "    program $MAIN"
 echo "==> end-to-end"
 SA_RPC="$RPC" SA_PROGRAM_ID="$MAIN" SA_FAST_PROGRAM_ID="$FAST" SA_PAYER="$WORK/payer.json" \
   npx tsx scripts/e2e-chain.ts
+
+echo "==> network acceptance: two clients, then eight, over a real WebSocket"
+SA_RPC="$RPC" SA_PROGRAM_ID="$MAIN" SA_PAYER="$WORK/payer.json" \
+  npx tsx scripts/e2e-net.ts

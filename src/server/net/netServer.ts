@@ -1068,15 +1068,17 @@ export class NetServer {
           this.log({ at: this.now(), type: 'chain-error', matchId: room.matchId, err: String(err) }),
         );
     }
-    if (room.tournamentId) this.reportTournamentResult(room, outcome);
-    // Seats are free again; the room stays for rejoin-to-read and disputes.
+    // Seats are freed BEFORE the bracket advances: advancing may seat these
+    // same connections into their next match, and a clear after that would
+    // silently unseat them from it.
     for (const seat of [0, 1] as PlayerId[]) {
       const conn = room.conns[seat];
-      if (conn) {
+      if (conn && conn.matchId === room.matchId) {
         conn.matchId = null;
         conn.seat = null;
       }
     }
+    if (room.tournamentId) this.reportTournamentResult(room, outcome);
   }
 
   // --- tournaments -----------------------------------------------------------

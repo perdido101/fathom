@@ -17,6 +17,7 @@ import {
   type Bracket,
 } from '../tournament/bracket';
 import { playBotMatch } from '../sim/runner';
+import * as net from './net';
 import { Sound } from '../ui/sfx/SoundManager';
 import {
   type MatchHistoryEntry,
@@ -52,7 +53,8 @@ export type Screen =
   | 'credits'
   | 'escrow'
   | 'bracket'
-  | 'tqueue';
+  | 'tqueue'
+  | 'netResult';
 
 export interface Settings {
   sound: boolean;
@@ -92,6 +94,12 @@ interface Store {
   escrow: { you: boolean; opponent: boolean; stake: Stake } | null;
   /** Signature of the last settlement, for the result screen's explorer link. */
   lastTx: string | null;
+  /** Connection posture when a real server is configured. */
+  net: net.NetState;
+  /** The server's latest view of the match, when playing over the wire. */
+  remoteView: ClientView | null;
+  /** Server-authoritative deadline (epoch ms); the clock renders an estimate. */
+  netDeadlineAt: number | null;
   /**
    * The live tournament, when one is running. Seat 0 is always the player;
    * the other seven seats are bots whose matches resolve through the same
@@ -183,6 +191,9 @@ export const useStore = create<Store>((set, get) => ({
   chainNotice: null,
   escrow: null,
   lastTx: null,
+  net: net.offNet,
+  remoteView: null,
+  netDeadlineAt: null,
   tournament: null,
   busy: null,
   error: null,
@@ -232,11 +243,18 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   view() {
-    const ms = get().match;
-    return ms ? clientView(ms, 0) : null;
+    const { net: n, remoteView, match } = get();
+    if (n.remote && remoteView) return remoteView;
+    return match ? clientView(match, 0) : null;
   },
 
   async startMatch(mode, stake) {
+    // A configured server takes precedence: the same buttons queue on the
+    // wire, and the local bot path stays the offline fallback.
+    if (net.netAvailable() && (mode === 'casual' || mode === 'arena')) {
+      await net.queueNet(mode, stake);
+      return;
+    }
     // Money is checked before anything else happens. An arena entry the
     // wallet cannot cover fails here, with the amounts, not at settlement.
     if (mode === 'arena') {
@@ -388,6 +406,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   submitShipPick(defId) {
+    if (get().net.remote) {
+      net.netPickShip(defId);
+      return;
+    }
     const ms = get().match;
     if (!ms) return;
     const [botChoice, rng] = botShipPick(clientView(ms, 1), get().settings.botLevel, get().botRng);
@@ -398,6 +420,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   submitCardPick(defId) {
+    if (get().net.remote) {
+      net.netPickCard(defId);
+      return;
+    }
     const ms = get().match;
     if (!ms) return;
     const [botChoice, rng] = botCardPick(clientView(ms, 1), get().settings.botLevel, get().botRng);
@@ -408,6 +434,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   submitDeployment(placements) {
+    if (get().net.remote) {
+      net.netDeploy(placements);
+      return;
+    }
     const ms = get().match;
     if (!ms) return;
     const [botPlacements, rng] = botDeploy(
@@ -422,6 +452,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   submitPlan(plan) {
+    if (get().net.remote) {
+      net.netPlan(plan);
+      return;
+    }
     const ms = get().match;
     if (!ms || ms.phase !== 'battle') return;
     const [oppPlan, rng] = botPlan(clientView(ms, 1), get().settings.botLevel, get().botRng);
@@ -505,7 +539,16 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   tick() {
-    const { clock, match, playback } = get();
+    const { clock, match, playback, net: n, netDeadlineAt } = get();
+    if (n.remote) {
+      const left =
+        netDeadlineAt === null ? 0 : Math.max(0, Math.ceil((netDeadlineAt - Date.now()) / 1000));
+      if (left !== clock) {
+        if (left === 5) Sound.play('timer-warning');
+        set({ clock: left });
+      }
+      return;
+    }
     if (!match || playback) return;
     if (clock <= 0) return;
     const next = clock - 1;
@@ -537,6 +580,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   leaveMatch() {
+    if (get().net.remote || get().remoteView) {
+      net.netLeave();
+      set({ remoteView: null, netDeadlineAt: null });
+    }
     const t = get().tournament;
     if (t && !t.settled) {
       // Walking away from a live bracket is a forfeit: the stake stays in

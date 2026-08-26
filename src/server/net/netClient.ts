@@ -49,6 +49,11 @@ export class NetClient {
 
   constructor(private readonly opts: NetClientOptions) {}
 
+  /** The session key's public half — the transcript's signer identity. */
+  get sessionPublicKeyHex(): string {
+    return this.opts.sessionKey.publicKeyHex;
+  }
+
   async connect(): Promise<void> {
     const make =
       this.opts.makeSocket ??
@@ -155,21 +160,25 @@ export class NetClient {
     this.send({ t: 'deploy', matchId: this.match.matchId, placements, nonce });
   }
 
-  /** The two-phase plan: hash now, plan only after the server opens reveals. */
-  async playPlan(plan: Plan, nonce: string): Promise<void> {
-    if (!this.match) throw new Error('not in a match');
-    const round = this.view?.round ?? 1;
+  /**
+   * The two-phase plan: hash now, plan only after the server opens reveals.
+   * Pass `matchId` and `round` explicitly when driving several matches on
+   * one connection — the shared `view`/`match` fields move under a caller
+   * the moment the next match is found.
+   */
+  async playPlan(plan: Plan, nonce: string, matchId?: string, round?: number): Promise<void> {
+    const mid = matchId ?? this.match?.matchId;
+    if (!mid) throw new Error('not in a match');
+    const r = round ?? this.view?.round ?? 1;
     const hash = commit(plan, nonce);
     this.send({
       t: 'planCommit',
-      matchId: this.match.matchId,
-      round,
+      matchId: mid,
+      round: r,
       hash,
       signature: signPlan(this.opts.sessionKey, plan, nonce),
     });
-    await this.waitFor(
-      (m) => m.t === 'revealOpen' && m.matchId === this.match?.matchId && m.round === round,
-    );
-    this.send({ t: 'planReveal', matchId: this.match.matchId, round, plan, nonce });
+    await this.waitFor((m) => m.t === 'revealOpen' && m.matchId === mid && m.round === r);
+    this.send({ t: 'planReveal', matchId: mid, round: r, plan, nonce });
   }
 }

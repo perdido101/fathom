@@ -7,6 +7,7 @@ import { Deployment } from './ui/screens/Deployment';
 import { Battle } from './ui/screens/Battle';
 import { Result } from './ui/screens/Result';
 import { BracketScreen } from './ui/screens/Bracket';
+import { NetBanners, NetResult } from './ui/screens/NetStatus';
 import { ResolveOverlay } from './ui/screens/ResolveOverlay';
 import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
@@ -91,6 +92,7 @@ export function App(): ReactElement {
               {screen === 'deploy' && <Deployment />}
               {screen === 'battle' && <Battle />}
               {screen === 'result' && <Result />}
+              {screen === 'netResult' && <NetResult />}
               {screen === 'leaderboard' && <Leaderboard />}
               {screen === 'season' && <Season />}
               {screen === 'settings' && <SettingsScreen />}
@@ -99,6 +101,7 @@ export function App(): ReactElement {
           )}
         </ErrorBoundary>
         <ResolveOverlay />
+        <NetBanners />
       </div>
     </div>
   );

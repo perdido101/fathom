@@ -128,6 +128,26 @@ const SCREEN_NOTES: Record<string, { phase: string; note: string }> = {
     phase: 'Arrival',
     note: 'Below 1280×720 the game does not attempt a squeezed layout: the logo, one sentence, nothing else.',
   },
+  '29-reconnecting': {
+    phase: 'Network',
+    note: 'The socket dropped mid-match. The server holds the seat for the grace period and the client says exactly that — no clock of the client’s decides anything.',
+  },
+  '30-connection-lost': {
+    phase: 'Network',
+    note: 'Reconnection gave up. Said plainly, with the consequence (the grace period is running) and the one useful button.',
+  },
+  '31-opponent-disconnected': {
+    phase: 'Network',
+    note: 'Their socket, their problem: the banner names the grace period, the match holds, and if they stay away the server forfeits them — with real money that path is exercised, not assumed.',
+  },
+  '32-server-error': {
+    phase: 'Network',
+    note: 'A server refusal surfaces as a sentence, not a code. Codes travel on the wire; humans get words.',
+  },
+  '33-queue-timeout': {
+    phase: 'Network',
+    note: 'A staked player never silently faces a bot. If nobody in the band joins in time, the queue says so — the stake was never taken — and offers a retry.',
+  },
 };
 
 const PROCEDURAL = [
@@ -187,6 +207,7 @@ const PHASE_ORDER = [
   'Resolve',
   'After',
   'Tournament',
+  'Network',
   'Ladder',
 ];
 const phases: { phase: string; items: { key: string; html: string }[] }[] = [];
@@ -442,9 +463,9 @@ const html = `<title>Shadow Armada UI Inventory</title>
 
 <div class="wrap">
   <header class="hero">
-    <p class="eyebrow">Shadow Armada · build 4</p>
+    <p class="eyebrow">Shadow Armada · build 5</p>
     <h1>Every screen, and<br>every <em>asset</em> behind it.</h1>
-    <p class="lede">Twenty-eight screens photographed at 1920×1080 — tournaments included — and a complete accounting of what is drawn, what is licensed, what now has real audio, and what is still to be made.</p>
+    <p class="lede">Thirty-three screens photographed at 1920×1080 — tournaments and the network states included — and a complete accounting of what is drawn, what is licensed, what has real audio, and what is still to be made.</p>
     <div class="stats">
       <div class="stat"><b>${files.length}</b><span>Screens</span></div>
       <div class="stat"><b>${ICON_CREDITS.length}</b><span>Licensed icons</span></div>

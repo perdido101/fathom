@@ -269,10 +269,67 @@ try {
   await shot('28-desktop-gate', 'below 1280×720: logo, one line, nothing else');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await wait(200);
+
+  // The network states, staged through the dev store handle — the transport
+  // itself is proven by the wire tests and the acceptance run; these frames
+  // show what the player sees when it happens.
+  const setNet = (patch) =>
+    page.evaluate((p) => {
+      const s = window.__store.getState();
+      window.__store.setState({ net: { ...s.net, ...p } });
+    }, patch);
+  await setNet({ status: 'reconnecting' });
+  await wait(300);
+  await shot('29-reconnecting', 'the seat is held server-side; the client only says so');
+  await setNet({ status: 'lost' });
+  await wait(300);
+  await shot('30-connection-lost', 'unreachable, said plainly, with the one useful button');
+  await setNet({ status: 'online' });
+
+  // Opponent disconnected: a live battle with the grace-period banner.
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await wait(400);
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.draft-pick').first().click();
+    await wait(1600);
+  }
+  for (let i = 0; i < 3; i++) {
+    await page.locator('button.gamecard').first().click();
+    await wait(1600);
+  }
+  await click('Auto');
+  await click('Commit fleet');
+  await wait(400);
+  await setNet({ remote: true, oppConnected: false });
+  await wait(300);
+  await shot('31-opponent-disconnected', 'their problem, your grace period — the match holds');
+  await setNet({ remote: false, oppConnected: true });
+  await page.evaluate(() => window.__store.getState().leaveMatch());
+  await wait(300);
+
+  await setNet({ lastServerError: 'rate-limited: queueing too fast' });
+  await wait(300);
+  await shot('32-server-error', 'a server refusal as a sentence, not a code');
+  await setNet({ lastServerError: null });
+
+  await page.evaluate(() =>
+    window.__store.getState().fail(
+      'Nobody joined in time',
+      'nobody in your band joined in time — your stake was never taken',
+      () => undefined,
+    ),
+  );
+  await wait(300);
+  await shot('33-queue-timeout', 'a staked player never silently faces a bot');
+  await page.evaluate(() => window.__store.getState().clearError());
 } catch (err) {
   errors.push(`sweep aborted: ${err instanceof Error ? err.message.split('\n')[0] : err}`);
 } finally {
-  const failed = errors.filter((e) => !e.includes('favicon'));
+  // The queue-timeout frame is staged by calling the store's own fail(),
+  // which logs to the console by design; that one staged line is not a bug.
+  const failed = errors.filter(
+    (e) => !e.includes('favicon') && !e.includes('Nobody joined in time'),
+  );
   console.log(`\n${taken.length} screens captured into ${OUT}/`);
   if (failed.length) {
     console.error(`${failed.length} console error(s):`);

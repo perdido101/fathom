@@ -1,4 +1,4 @@
-# Functional audit — Build 4
+# Functional audit — Builds 4 and 5
 
 Every item from the Build 4 Part 2 checklist (and the Part 5 tournament
 extension), walked as a player or proven by an automated harness. One line
@@ -116,6 +116,33 @@ devnet-specific items note their blocker.
 | No byes | PASS | brackets refuse to exist at ≠8 seats (`bracket.test.ts`), on-chain a ninth join is refused and play needs status FULL |
 | Drawn bracket match | PASS (ruled) | sudden-death replay with a fresh seed, player and bot matches alike — RULINGS.md, Build 4 section |
 | Rating: rated at arena K, provisional locked to lowest tier | PASS (mock) | tournament matches run the same `ratingDelta`; the tier picker reuses `allowedStakes` |
+
+## Build 5 — the same audit, over the wire
+
+Everything above was proven in-process. Build 5 re-proves the load-bearing
+half over a real WebSocket, with two new harnesses:
+
+| Harness | Command | Scope |
+| --- | --- | --- |
+| Wire tests | `npm test` (`src/server/net/net.test.ts`, 18 tests) | auth, matchmaking, commit–reveal adversaries, clocks, reconnection, forfeit, the leak test |
+| Network acceptance | inside `npm run chain:local` (`scripts/e2e-net.ts`) | two clients + eight clients, real escrow, settled and verified |
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Server authority survives the wire | PASS | clients send intents only; every refusal is the `MatchServer`'s own; `roomState` is reachable by no message; the full-match test checks the server's finished state against both clients' final views |
+| `clientView()` is what actually travels | **FIXED — the leak test caught a real leak** | the resolve stream's `reveal` beat carried both raw `Plan` objects (a failed Mirror/Ambush read included). Nothing consumed the payload; it is now a bare marker. The outbound-frame test inspects every raw frame delivered to a client and fails on pile order, placements payloads, plan objects, or any unrevealed foe identity — collision-free draft, so nothing was legitimately public |
+| Both hashes before either reveal | PASS | wire test: one commit in → no `revealOpen` for anyone; early reveal refused with `reveal-closed` |
+| Commit and never reveal | PASS | the seat lapses to the engine's timeout plan at the reveal deadline; the round resolves; wire test "ghost that never commits" covers the no-commit case, and the committed opponent still gets its reveal window |
+| Reveal not matching commit | PASS | discarded with `reveal-mismatch`; the seat lapses exactly as if silent, takes a strike, and its secret plan never enters the match |
+| Two different commits | PASS | second refused with `double-commit` |
+| Server-authoritative clocks | PASS | deadlines are epoch-ms stamped by the server; the client renders an estimate; a silent/slow/backgrounded client is lapsed by the server sweep, never by its own clock (wire tests run with 1s reveal windows) |
+| Reconnection mid-draft / mid-deploy / mid-plan / mid-resolve | PASS | four wire tests; resync is a full server `state` message (view + deadline + missed beats), never local storage |
+| Disconnect → grace → forfeit → settlement | PASS | wire test with a jumped server clock: the vanished seat forfeits, the opponent gets `result` with reason "disconnect"; the settle hook receives it (money path proven in acceptance) |
+| Matchmaking | PASS | wire tests: same-tier pairing, strict tier segregation, rating bands that widen with wait, provisional lockout above the lowest table, casual-only bot fallback (announced as `vsBot`), staked queue times out loudly and never seats a bot |
+| Two clients, two wallets, full escrowed match | PASS (local validator) | acceptance [N1]: paired over the wire, escrow opened while drafting (both wallets sign), per-player deployment commitments on-chain, played to a result, `verify()` replay green with every round signature checking out, settled on-chain with exact amounts |
+| Eight clients, full bracket | PASS (local validator) | acceptance [N2]: eight stakes escrowed before the bracket starts, seven matches over the wire, standings reported by the server, 55/25/10/10 settled to the lamport |
+| What the acceptance clients are | stated | headless Node processes speaking the production protocol through the production `NetClient` — the identical class the browser store uses; wallet keypairs live in the harness and co-sign escrow transactions the way a matchmaking flow assembles them. What this does not prove: DOM rendering over the wire (covered separately by the browser smoke) and a real network between machines (that is what staging is for — docs/DEPLOY.md) |
+| Server restart mid-match | documented | in-memory by design; matches die, stakes never strand (on-chain reclaim paths); docs/DEPLOY.md |
 
 ## Console cleanliness
 
