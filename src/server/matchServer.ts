@@ -162,6 +162,12 @@ export class MatchServer {
     return this.rooms.get(matchId)?.log.records() ?? [];
   }
 
+  /** The last resolved round's beats, projected for one seat. */
+  lastRoundEvents(creds: SeatCredentials): ResolveEvent[] {
+    const room = this.authorise(creds);
+    return room ? visibleEvents(room.lastEvents, creds.seat) : [];
+  }
+
   /** Present only so tests and the referee can audit a finished match. */
   finishedState(matchId: string): MatchState | null {
     const room = this.rooms.get(matchId);

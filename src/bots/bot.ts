@@ -426,8 +426,11 @@ function aim(defId: string, charges: number, o: Options, view: ClientView, level
       return { shape: 'steal', from: targets, toUid: dest };
     }
     case 'beacon': {
-      const { row, col } = bestReadout(view, prob, level);
-      return { shape: 'beacon', row, col, cells: ranked.slice(0, BALANCE.beaconCells) };
+      return {
+        shape: 'beacon',
+        ...bestReadout(view, prob, level),
+        cells: ranked.slice(0, BALANCE.beaconCells),
+      };
     }
     default:
       return { shape: 'cell', cell: ranked[0] ?? 0 };
@@ -455,8 +458,12 @@ function keepAlive(view: ClientView): number {
   return sorted[0]?.uid ?? view.me.hand[0]?.uid ?? 0;
 }
 
-/** The row and column a readout would tell you most about. */
-function bestReadout(view: ClientView, prob: number[], level: Level): { row: number; col: number } {
+/** The single axis a readout would tell you most about — row or column. */
+function bestReadout(
+  view: ClientView,
+  prob: number[],
+  level: Level,
+): { axis: 'row' | 'col'; index: number } {
   let bestRow = 0;
   let bestCol = 0;
   let rowScore = -1;
@@ -479,7 +486,9 @@ function bestReadout(view: ClientView, prob: number[], level: Level): { row: num
       bestCol = i;
     }
   }
-  return { row: bestRow, col: bestCol };
+  return rowScore >= colScore
+    ? { axis: 'row', index: bestRow }
+    : { axis: 'col', index: bestCol };
 }
 
 // ---------------------------------------------------------------------------
@@ -553,10 +562,13 @@ function chooseAbility(
       }
       case 'beacon': {
         if (view.round <= 4 || o.openClusters.length === 0) {
-          const { row, col } = bestReadout(view, prob, level);
           return {
             defId: 'beacon',
-            spec: { shape: 'beacon', row, col, cells: ranked.slice(0, BALANCE.beaconCells) },
+            spec: {
+              shape: 'beacon',
+              ...bestReadout(view, prob, level),
+              cells: ranked.slice(0, BALANCE.beaconCells),
+            },
           };
         }
         break;
@@ -639,7 +651,10 @@ function randomSpec(
     case 'steal':
       return [{ shape: 'steal', from: fattest(view, charges), toUid: keepAlive(view) }, st];
     case 'beacon':
-      return [{ shape: 'beacon', row: 0, col: 0, cells: shuffled.slice(0, BALANCE.beaconCells) }, st];
+      return [
+        { shape: 'beacon', axis: 'row', index: 0, cells: shuffled.slice(0, BALANCE.beaconCells) },
+        st,
+      ];
     default:
       return [{ shape: 'none' }, st];
   }

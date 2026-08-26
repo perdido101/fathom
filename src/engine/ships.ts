@@ -94,7 +94,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'B',
     type: 'ACTIVE',
     shape: 'beacon',
-    text: 'Name a row and a column; learn how many ship cells occupy each. Then fire 2 cells anywhere.',
+    text: 'Name a row or a column; learn how many ship cells occupy it. Then fire 2 cells anywhere.',
   },
 
   // Pack C — length 2

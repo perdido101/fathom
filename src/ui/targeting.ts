@@ -27,9 +27,11 @@ export interface Draft {
   /** Charge allocations for Jam, Siphon and Leech. */
   from: { uid: number; amount: number }[];
   toUid: number | null;
-  /** Beacon's readout, and Kiln's chosen card. */
+  /** Beacon's readout: the tapped cell's row/column, and the chosen axis. */
   row: number | null;
   col: number | null;
+  axis: 'row' | 'col' | null;
+  /** Kiln's chosen card. */
   innerUid: number | null;
 }
 
@@ -42,6 +44,7 @@ export function newDraft(aiming: Aiming): Draft {
     toUid: null,
     row: null,
     col: null,
+    axis: null,
     innerUid: null,
   };
 }
@@ -122,7 +125,11 @@ export function isComplete(d: Draft, innerDefId?: string): boolean {
     case 'line':
       return d.cells.length === 1 && d.dir !== null;
     case 'beacon':
-      return d.row !== null && d.col !== null && d.cells.length === BALANCE.beaconCells;
+      return (
+        d.axis !== null &&
+        (d.axis === 'row' ? d.row : d.col) !== null &&
+        d.cells.length === BALANCE.beaconCells
+      );
     case 'strip':
       return total(d.from) > 0;
     case 'steal':
@@ -160,7 +167,8 @@ export function prompt(d: Draft, charges: number, innerDefId?: string): string {
       if (!d.cells.length) return 'tap where the line starts';
       return d.dir ? 'ready' : 'choose a direction';
     case 'beacon':
-      if (d.row === null || d.col === null) return 'tap a cell to set the row and column to read';
+      if (d.row === null || d.col === null) return 'tap a cell to choose what to read';
+      if (d.axis === null) return 'read its row, or its column?';
       return `tap ${BALANCE.beaconCells} cells to fire — ${d.cells.length} chosen`;
     case 'strip':
       return `take ${total(d.from)} of ${charges} — tap their cards`;
@@ -193,7 +201,12 @@ export function toSpec(d: Draft, charges: number, innerDefId?: string, inner?: F
     case 'line':
       return { shape: 'line', origin: d.cells[0] ?? 0, dir: d.dir ?? [1, 0] };
     case 'beacon':
-      return { shape: 'beacon', row: d.row ?? 0, col: d.col ?? 0, cells: d.cells };
+      return {
+        shape: 'beacon',
+        axis: d.axis ?? 'row',
+        index: (d.axis === 'col' ? d.col : d.row) ?? 0,
+        cells: d.cells,
+      };
     case 'strip':
       return { shape: 'strip', from: d.from };
     case 'steal':

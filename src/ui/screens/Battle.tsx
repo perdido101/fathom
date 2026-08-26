@@ -420,6 +420,26 @@ export function Battle(): ReactElement | null {
                   {prompt(draft, draftCharges, innerDefId)}
                 </span>
               </div>
+              {shapeOf(draft, innerDefId) === 'beacon' &&
+                draft.row !== null &&
+                draft.axis === null && (
+                  <div className="row">
+                    <button
+                      className="btn small"
+                      style={{ flex: 1 }}
+                      onClick={() => setDraft({ ...draft, axis: 'row' })}
+                    >
+                      Read row {draft.row + 1}
+                    </button>
+                    <button
+                      className="btn small"
+                      style={{ flex: 1 }}
+                      onClick={() => setDraft({ ...draft, axis: 'col' })}
+                    >
+                      Read column {String.fromCharCode(65 + (draft.col ?? 0))}
+                    </button>
+                  </div>
+                )}
               {shapeOf(draft, innerDefId) === 'line' && draft.cells.length > 0 && (
                 <div className="row">
                   {(

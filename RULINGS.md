@@ -298,6 +298,19 @@ on the row+column read. If a further step is wanted, the smallest next
 candidates are 1 cell, or keeping 2 cells but dropping one of the two
 readouts. Awaiting a call.
 
+### Build 5 ruling — Beacon reads one axis, applied
+
+Aris ruled: keep 2 cells, cut a readout. Beacon now names a row **or** a
+column (player's choice) and learns that one count. Post-patch, measuring
+pairing (L4 vs L4 random drafts, n=743): **Beacon 56.9% — in band.**
+
+New marginal: **Ember 59.4%** (n=749), just over the 58 line it sat inside
+last run — the meta shifted when Beacon stopped absorbing wins, and 59.4 on
+n=749 is within noise of the boundary. Reported, not self-corrected. The
+three remaining band failures are the same pre-existing bot artifacts
+(L3-vs-L3 median 9, L2 bots never firing Ambush, denial ships unused in the
+L4-vs-L1 stomp), unchanged.
+
 ### Build 4 ruling — the card draft is blind-pick, canon
 
 The Build 3 brief's line that the opponent's hand renders face up "(draft was

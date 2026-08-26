@@ -223,8 +223,8 @@ export type FireSpec =
   | { shape: 'strip'; from: { uid: number; amount: number }[] }
   /** Siphon, Leech: charges to move from enemy cards onto one of yours. */
   | { shape: 'steal'; from: { uid: number; amount: number }[]; toUid: number }
-  /** Beacon: a row and a column to read, plus four cells to fire. */
-  | { shape: 'beacon'; row: number; col: number; cells: CellIndex[] }
+  /** Beacon: one axis to read — a row or a column — plus the cells to fire. */
+  | { shape: 'beacon'; axis: 'row' | 'col'; index: number; cells: CellIndex[] }
   /** Kiln: which card in hand to fire at +3 charges, and how to aim it. */
   | { shape: 'kiln'; uid: number; inner: FireSpec }
   /** Blackout, Dreadnought, Cinder, Spite, Thorn: nothing to aim. */
@@ -273,7 +273,14 @@ export interface RoundRecord {
  * both agree on what happened by construction.
  */
 export type ResolveEvent =
-  | { t: 'reveal'; plans: [Plan, Plan] }
+  /**
+   * The beat marker for "both plans turn face up". It deliberately carries
+   * no payload: an event stream travels to both clients, and a plan object
+   * holds things the rules never disclose — a failed prediction's exact
+   * read among them. Build 5's outbound-frame leak test caught the payload
+   * this used to carry; nothing ever consumed it.
+   */
+  | { t: 'reveal' }
   | { t: 'nerf'; by: PlayerId; text: string }
   | { t: 'prediction'; by: PlayerId; card: string; triggered: boolean; cell: CellIndex }
   | { t: 'shot'; by: PlayerId; cell: CellIndex; hit: boolean; source: string }

@@ -66,6 +66,23 @@ export function signPayload(key: SessionKey, payload: unknown): string {
  * rather than a claim: without it a server could invent moves for a player
  * and the replay would happily reproduce its lie.
  */
+/** Check a payload signature — connect challenges, match acceptance. */
+export function verifyPayloadSignature(
+  publicKeyHex: string,
+  signatureHex: string,
+  payload: unknown,
+): boolean {
+  try {
+    return nacl.sign.detached.verify(
+      utf8(stableStringify(payload)),
+      unhex(signatureHex),
+      unhex(publicKeyHex),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function verifyPlanSignature(
   publicKeyHex: string,
   signatureHex: string,

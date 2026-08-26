@@ -160,8 +160,8 @@ function specSane(spec: FireSpec, ms: MatchState, p: PlayerId): string | null {
     case 'block':
       return onBoardCell(spec.anchor) ? null : 'target off the board';
     case 'beacon':
-      if (spec.row < 0 || spec.row >= BOARD || spec.col < 0 || spec.col >= BOARD) {
-        return 'beacon row or column is off the board';
+      if (spec.index < 0 || spec.index >= BOARD) {
+        return 'beacon readout is off the board';
       }
       return spec.cells.every(onBoardCell) ? null : 'target off the board';
     case 'strip':
@@ -234,7 +234,7 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
     hullCellsRemaining(s.players[1].ships),
   ];
 
-  events.push({ t: 'reveal', plans: [structuredClone(plans[0]), structuredClone(plans[1])] });
+  events.push({ t: 'reveal' });
 
   // --- Step 0: lock in what every fired card is worth ----------------------
   // Charges are read once, here. A Jam landing in step 2 strips banked
@@ -786,15 +786,25 @@ function resolveIntel(
     const ship = liveShip(s.players[p], 'beacon');
     if (!ship || ship.sunk) continue;
     const foeShips = snapshot[other(p)];
-    const rows = rowCount(foeShips, ability.spec.row);
-    const cols = columnCount(foeShips, ability.spec.col);
-    s.players[p].counts.rows[ability.spec.row] = rows;
-    s.players[p].counts.cols[ability.spec.col] = cols;
-    events.push({
-      t: 'intel',
-      to: p,
-      text: `Beacon: row ${ability.spec.row + 1} holds ${rows}, column ${String.fromCharCode(65 + ability.spec.col)} holds ${cols}`,
-    });
+    // Build 5 ruling: one readout, the player's choice of axis. Still a
+    // scouting ship; no longer also the best attacker in the game.
+    if (ability.spec.axis === 'row') {
+      const n = rowCount(foeShips, ability.spec.index);
+      s.players[p].counts.rows[ability.spec.index] = n;
+      events.push({
+        t: 'intel',
+        to: p,
+        text: `Beacon: row ${ability.spec.index + 1} holds ${n}`,
+      });
+    } else {
+      const n = columnCount(foeShips, ability.spec.index);
+      s.players[p].counts.cols[ability.spec.index] = n;
+      events.push({
+        t: 'intel',
+        to: p,
+        text: `Beacon: column ${String.fromCharCode(65 + ability.spec.index)} holds ${n}`,
+      });
+    }
   }
   return rng;
 }
