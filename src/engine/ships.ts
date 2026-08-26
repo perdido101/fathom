@@ -38,7 +38,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'A',
     type: 'ACTIVE',
     shape: 'line',
-    text: 'Fire a free 3-cell line, then gain 2 charges.',
+    text: 'Fire a free 3-cell line.',
   },
   {
     id: 'blackout',
@@ -85,7 +85,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'B',
     type: 'REACT',
     shape: 'none',
-    text: 'When sunk: gain 2 charges at random; they cannot fire a card holding exactly 2 next round.',
+    text: 'When sunk: gain 2 charges at random; they cannot fire a card next round.',
   },
   {
     id: 'beacon',
@@ -94,7 +94,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'B',
     type: 'ACTIVE',
     shape: 'beacon',
-    text: 'Name a row and a column; learn how many ship cells occupy each. Then fire 4 cells anywhere.',
+    text: 'Name a row and a column; learn how many ship cells occupy each. Then fire 2 cells anywhere.',
   },
 
   // Pack C — length 2
@@ -114,7 +114,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'C',
     type: 'ACTIVE',
     shape: 'cells',
-    text: 'Fire 4 cells anywhere. Gain 2 charges for each one that hits.',
+    text: 'Fire 3 cells anywhere. Gain 2 charges for each one that hits.',
   },
   {
     id: 'pin',

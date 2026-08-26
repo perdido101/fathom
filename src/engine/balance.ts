@@ -24,8 +24,15 @@ export const BALANCE = {
   mirrorMinCharges: 2,
   /** Ember's payoff per hit. */
   emberGainPerHit: 2,
-  /** Forge's flat payoff. */
-  forgeGain: 2,
+  /** How many cells Ember fires. Build 4 balance patch: was 4. */
+  emberCells: 3,
+  /** How many cells Beacon fires after its read. Build 4 balance patch: was 4. */
+  beaconCells: 2,
+  /**
+   * Forge's flat charge payoff. Build 4 balance patch: was 2 — the free
+   * 3-cell line is already the payoff; the charges were doubling up.
+   */
+  forgeGain: 0,
   /** Kiln's charge uplift on the card it fires. */
   kilnUplift: 3,
   /** Leech's steal size. */
@@ -34,10 +41,12 @@ export const BALANCE = {
   blackoutStrip: 2,
   /** Dreadnought's scatter on death. */
   dreadnoughtScatter: 4,
-  /** Cinder's scatter on death. */
+  /**
+   * Cinder's scatter on death. Its lockout is now a full fire-lock (no card
+   * may be fired next round) — Build 4 balance patch, replacing the
+   * exactly-2-charges lock that almost never bound.
+   */
   cinderScatter: 2,
-  /** The charge count Cinder locks out for one round. */
-  cinderLock: 2,
   /**
    * How many times a REACT chain may fire before the resolver stops. Thorn
    * shooting back can sink a ship whose REACT shoots back again; without a cap

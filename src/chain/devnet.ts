@@ -147,6 +147,22 @@ export class DevnetChain implements ChainAdapter {
     );
   }
 
+  async settleBracket(
+    bracketId: string | null,
+    place: 'champion' | 'runnerUp' | 'semiLoser' | 'out',
+    stake: Stake,
+  ): Promise<void> {
+    this.requireProgram();
+    if (!bracketId) throw new Error('No bracket to settle.');
+    // Same authority rule as 1v1 settlement: the referee posts standings and
+    // the program pays the curve. A client that could settle its own bracket
+    // could award itself the pot.
+    throw new Error(
+      `Bracket settlement is the referee's to submit, not this client's. Place "${place}" ` +
+        `(${stake} SOL tier) has been reported to the server for settlement.`,
+    );
+  }
+
   /** Read the on-chain record, for the UI to show a player what was published. */
   async readMatch(matchId: string): Promise<MatchRecord | null> {
     const programId = this.requireProgram();

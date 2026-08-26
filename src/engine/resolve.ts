@@ -109,9 +109,6 @@ export function validatePlan(ms: MatchState, p: PlayerId, plan: Plan): string | 
     const chargesAtFire = card.charges + (plan.chargeTo === card.uid ? BALANCE.chargePerRound : 0);
     if (!canFireAt(card.defId, chargesAtFire))
       return `${card.defId} cannot fire at ${chargesAtFire}`;
-    if (r.chargeLock !== null && chargesAtFire === r.chargeLock) {
-      return `cards holding exactly ${r.chargeLock} charges are locked this round`;
-    }
     if (!specMatchesCard(card.defId, plan.fire.spec)) return 'declaration does not fit the card';
     const specErr = specSane(plan.fire.spec, ms, p);
     if (specErr) return specErr;
@@ -426,7 +423,7 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
     ? collectReacts(struck.newlySunk, declaredAttacks, events)
     : [];
   rng = struck.rng ?? rng;
-  rng = applyReactCharges(s, struck.newlySunk, plans, events, rng);
+  rng = applyReactCharges(s, struck.newlySunk, plans, events, rng, nextRestrictions);
 
   while (pendingAttacks.length && cascade < BALANCE.reactCascadeLimit) {
     cascade += 1;
@@ -441,7 +438,7 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
     const r = applyAttacks(s, pendingAttacks, snap, dmg, events);
     // Still the declared attacks, not what the last cascade fired.
     pendingAttacks = r.newlySunk.length ? collectReacts(r.newlySunk, declaredAttacks, events) : [];
-    rng = applyReactCharges(s, r.newlySunk, plans, events, rng);
+    rng = applyReactCharges(s, r.newlySunk, plans, events, rng, nextRestrictions);
   }
 
   // --- Step 7: charges gained ---------------------------------------------
@@ -462,7 +459,7 @@ export function resolveRound(ms: MatchState, plans: [Plan, Plan]): RoundResult {
       gain += struck.emberHits[p] * BALANCE.emberGainPerHit;
       reasons.push('Ember');
     }
-    if (struck.forgeUsed[p]) {
+    if (struck.forgeUsed[p] && BALANCE.forgeGain > 0) {
       gain += BALANCE.forgeGain;
       reasons.push('Forge');
     }
@@ -693,6 +690,7 @@ function applyReactCharges(
   plans: [Plan, Plan],
   events: ResolveEvent[],
   rng: RngState,
+  nextRestrictions: [Restrictions, Restrictions],
 ): RngState {
   let st = rng;
   for (const { owner, defId } of sunk) {
@@ -706,8 +704,10 @@ function applyReactCharges(
     if (defId === 'cinder') {
       [st] = scatter(st, ps, BALANCE.cinderScatter);
       ps.stats.chargesEarned += BALANCE.cinderScatter;
-      foe.restrictions.chargeLock = BALANCE.cinderLock;
-      events.push({ t: 'react', owner, defId, text: 'Cinder scatters 2 and locks 2-charge cards' });
+      // Into next round's restrictions, not the current player state — the
+      // end-of-round swap would silently discard a direct write.
+      nextRestrictions[other(owner)].noFire = true;
+      events.push({ t: 'react', owner, defId, text: 'Cinder scatters 2 and locks their cards for a round' });
     }
     if (defId === 'spite') {
       for (const c of foe.hand) c.charges = 0;

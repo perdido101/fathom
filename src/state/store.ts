@@ -5,7 +5,18 @@ import { clientView, type ClientView } from '../engine/view';
 import { timeoutPlan } from '../engine/resolve';
 import { seedRng, type RngState } from '../engine/rng';
 import { botCardPick, botDeploy, botPlan, botShipPick, type Level } from '../bots/bot';
-import type { Placement } from '../engine/board';
+import { autoDeploy, type Placement } from '../engine/board';
+import { autoPick } from '../engine/draft';
+import {
+  BRACKET_SEATS,
+  newBracket,
+  nextPlayable,
+  reportResult,
+  roundOf,
+  standings,
+  type Bracket,
+} from '../tournament/bracket';
+import { playBotMatch } from '../sim/runner';
 import { Sound } from '../ui/sfx/SoundManager';
 import {
   type MatchHistoryEntry,
@@ -39,7 +50,9 @@ export type Screen =
   | 'season'
   | 'settings'
   | 'credits'
-  | 'escrow';
+  | 'escrow'
+  | 'bracket'
+  | 'tqueue';
 
 export interface Settings {
   sound: boolean;
@@ -79,6 +92,23 @@ interface Store {
   escrow: { you: boolean; opponent: boolean; stake: Stake } | null;
   /** Signature of the last settlement, for the result screen's explorer link. */
   lastTx: string | null;
+  /**
+   * The live tournament, when one is running. Seat 0 is always the player;
+   * the other seven seats are bots whose matches resolve through the same
+   * engine via the sim runner.
+   */
+  tournament: {
+    bracketId: string;
+    bracket: Bracket;
+    stake: Stake;
+    /** Seats staked so far while the bracket forms; 8 = full. */
+    filled: number;
+    /** The player's finishing place once known. */
+    yourPlace: 'champion' | 'runnerUp' | 'semiLoser' | 'out' | null;
+    settled: boolean;
+    /** Set while a drawn match forces a sudden-death replay. */
+    suddenDeath: boolean;
+  } | null;
 
   go(screen: Screen): void;
   fail(what: string, detail?: unknown, retry?: () => void): void;
@@ -87,6 +117,10 @@ interface Store {
   setSettings(patch: Partial<Settings>): void;
   startMatch(mode: Mode, stake: Stake): Promise<void>;
   view(): ClientView | null;
+
+  startTournament(stake: Stake): Promise<void>;
+  /** From the bracket screen: start the player's next match. */
+  playTournamentRound(): void;
 
   submitShipPick(defId: string): void;
   submitCardPick(defId: string): void;
@@ -99,6 +133,24 @@ interface Store {
   leaveMatch(): void;
 }
 
+const SETTINGS_KEY = 'shadow-armada:settings';
+
+/** Volume and mute survive a reload; a player should set them once. */
+function loadSettings(): Settings {
+  const fallback: Settings = { sound: true, volume: 0.8, fastResolve: false, botLevel: 3 };
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<Settings>;
+    const merged = { ...fallback, ...parsed };
+    Sound.setEnabled(merged.sound);
+    Sound.setVolume(merged.volume);
+    return merged;
+  } catch {
+    return fallback;
+  }
+}
+
 function freshSeed(): string {
   // The seed is committed before the match and revealed at the end, so it must
   // not be predictable from anything the opponent can see.
@@ -109,7 +161,7 @@ function freshSeed(): string {
 
 export const useStore = create<Store>((set, get) => ({
   screen: 'menu',
-  settings: { sound: true, volume: 0.8, fastResolve: false, botLevel: 3 },
+  settings: loadSettings(),
   profile: {
     name: 'You',
     rating: 1200,
@@ -131,6 +183,7 @@ export const useStore = create<Store>((set, get) => ({
   chainNotice: null,
   escrow: null,
   lastTx: null,
+  tournament: null,
   busy: null,
   error: null,
   firstRun: true,
@@ -170,6 +223,11 @@ export const useStore = create<Store>((set, get) => ({
     const settings = { ...get().settings, ...patch };
     Sound.setEnabled(settings.sound);
     Sound.setVolume(settings.volume);
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {
+      // Private windows may refuse storage; the session still works.
+    }
     set({ settings });
   },
 
@@ -238,6 +296,94 @@ export const useStore = create<Store>((set, get) => ({
       return;
     }
     set({ ...base, screen: 'shipDraft' });
+    Sound.play('round-start');
+  },
+
+  async startTournament(stake) {
+    const balance = chain.balanceSol();
+    if (balance !== null && balance < stake) {
+      get().fail(
+        'Not enough devnet SOL for this bracket',
+        `A seat at this bracket stakes ${stake} SOL and your wallet holds ${balance.toFixed(3)}. ` +
+          'Top up at the devnet faucet (faucet.solana.com) or pick a lower tier.',
+      );
+      return;
+    }
+    set({ busy: 'Opening a bracket' });
+    let notice;
+    try {
+      notice = await chain.openMatch({ mode: 'tournament', stake, seedCommit: freshSeed() });
+    } catch (err) {
+      get().fail('Could not open the bracket', err, () => void get().startTournament(stake));
+      return;
+    }
+    const entrants = [
+      get().profile.name,
+      'Squall',
+      'Meridian',
+      'Undertow',
+      'Ballast',
+      'Mistral',
+      'Keelhaul',
+      'Sextant',
+    ];
+    set({
+      busy: null,
+      mode: 'tournament',
+      stake,
+      screen: 'bracket',
+      lastTx: null,
+      chainNotice: notice.text,
+      tournament: {
+        bracketId: notice.matchId,
+        bracket: newBracket(entrants, stake),
+        stake,
+        filled: 1,
+        yourPlace: null,
+        settled: false,
+        suddenDeath: false,
+      },
+    });
+    // The other seven stakes land in view. Theatre in the mock, but the same
+    // states a devnet bracket walks — and a bracket only starts once full.
+    for (let seat = 2; seat <= 8; seat++) {
+      setTimeout(
+        () => {
+          const t = get().tournament;
+          if (!t || get().screen !== 'bracket' || t.filled >= seat) return;
+          set({ tournament: { ...t, filled: seat } });
+          Sound.play(seat === 8 ? 'round-start' : 'charge-placed');
+        },
+        350 * (seat - 1),
+      );
+    }
+  },
+
+  playTournamentRound() {
+    const t = get().tournament;
+    if (!t || t.filled < BRACKET_SEATS) return;
+    const idx = nextPlayable(t.bracket);
+    if (idx === null) return;
+    const m = t.bracket.matches[idx];
+    if (!m.seats.includes(0)) return;
+    const foeSeat = m.seats[0] === 0 ? m.seats[1] : m.seats[0];
+    if (foeSeat === null) return;
+    const seed = freshSeed();
+    const match = createMatch({
+      seed,
+      players: [get().profile.name, t.bracket.entrants[foeSeat]],
+    });
+    set({
+      match,
+      botRng: seedRng(`${seed}:opponent`),
+      playback: null,
+      lastRoundEvents: [],
+      clock: 25,
+      screen: 'shipDraft',
+      matchIdOnChain: t.bracketId,
+      chainNotice: `bracket ${roundOf(idx)} vs ${t.bracket.entrants[foeSeat]}`,
+      tournament: { ...t, suddenDeath: false },
+    });
     Sound.play('round-start');
   },
 
@@ -320,6 +466,11 @@ export const useStore = create<Store>((set, get) => ({
       Sound.play(drew ? 'draw' : won ? 'victory' : 'defeat');
       const profile = get().profile;
       const delta = ratingDelta(profile, result);
+      if (get().mode === 'tournament') {
+        // A bracket match settles through the bracket, not the 1v1 escrow.
+        finishTournamentMatch(result, delta, ms.history.length);
+        return;
+      }
       void chain
         .settle(get().matchIdOnChain, result, get().stake)
         .then(() => set({ lastTx: chain.lastTxSignature() }))
@@ -358,13 +509,25 @@ export const useStore = create<Store>((set, get) => ({
     if (!match || playback) return;
     if (clock <= 0) return;
     const next = clock - 1;
-    if (next === 5) Sound.play('timer-warning');
+    // The last five seconds tick audibly, quickening as they run out.
+    if (next > 0 && next <= 5) Sound.play('timer-warning', { rate: 1 + (5 - next) * 0.12 });
     set({ clock: next });
     if (next > 0) return;
-    // Out of time. The engine decides what a lapsed plan does, not the UI.
+    // Out of time. The engine decides what a lapsed plan does, not the UI:
+    // a lapsed battle plan is the engine's timeout plan (basic shot + random
+    // charge + a strike); a lapsed draft pick takes the pack's first option,
+    // no strike; a lapsed deployment auto-places the fleet and commits.
     if (match.phase === 'battle') {
       const [fallback] = timeoutPlan(match, 0);
       get().submitPlan(fallback);
+    } else if (match.phase === 'shipDraft') {
+      get().submitShipPick(autoPick(match.shipDraft));
+    } else if (match.phase === 'cardDraft') {
+      get().submitCardPick(autoPick(match.cardDraft));
+    } else if (match.phase === 'deploy') {
+      const ships = match.players[0].draftedShips;
+      const [placements] = autoDeploy(ships, seedRng(freshSeed()));
+      get().submitDeployment(placements);
     }
   },
 
@@ -374,9 +537,123 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   leaveMatch() {
-    set({ match: null, playback: null, screen: 'menu', matchIdOnChain: null });
+    const t = get().tournament;
+    if (t && !t.settled) {
+      // Walking away from a live bracket is a forfeit: the stake stays in
+      // the pot, exactly as a disconnect past the grace period would.
+      void chain.settleBracket(t.bracketId, 'out', t.stake).catch(() => undefined);
+    }
+    set({ match: null, playback: null, screen: 'menu', matchIdOnChain: null, tournament: null });
   },
 }));
+
+/**
+ * A tournament match ended. Record it on the profile (rated at the same K as
+ * arena), fold the result into the bracket, resolve every bot-vs-bot match
+ * that is now playable through the same engine, and settle the player's
+ * share the moment their finishing place is known.
+ */
+function finishTournamentMatch(
+  result: MatchHistoryEntry['result'],
+  delta: number,
+  rounds: number,
+): void {
+  const get = useStore.getState;
+  const set = useStore.setState;
+  const t = get().tournament;
+  const profile = get().profile;
+  const record = {
+    profile: {
+      ...profile,
+      rating: profile.rating + delta,
+      provisionalMatches: profile.provisionalMatches + 1,
+      wins: profile.wins + (result === 'win' ? 1 : 0),
+      losses: profile.losses + (result === 'loss' ? 1 : 0),
+      draws: profile.draws + (result === 'draw' ? 1 : 0),
+      history: [
+        { result, delta, rounds, mode: 'tournament' as Mode, stake: get().stake },
+        ...profile.history,
+      ].slice(0, 30),
+    },
+    firstRun: false,
+  };
+  if (!t) {
+    set({ ...record, match: null, screen: 'menu' });
+    return;
+  }
+  if (result === 'draw') {
+    // A bracket needs a winner, so a drawn match forces a sudden-death
+    // replay — full rules, fresh seed. Ruled in RULINGS.md.
+    set({ ...record, match: null, screen: 'bracket', tournament: { ...t, suddenDeath: true } });
+    return;
+  }
+  const idx = t.bracket.matches.findIndex(
+    (m) => m.winner === null && m.seats[0] !== null && m.seats[1] !== null && m.seats.includes(0),
+  );
+  let bracket = t.bracket;
+  if (idx >= 0) {
+    const m = bracket.matches[idx];
+    const foeSeat = m.seats[0] === 0 ? m.seats[1] : m.seats[0];
+    bracket = reportResult(bracket, idx, result === 'win' ? 0 : (foeSeat ?? 1));
+  }
+  bracket = simulateBotMatches(bracket, `${t.bracketId}:${idx}`, get().settings.botLevel);
+  const final = standings(bracket);
+  let yourPlace: NonNullable<ReturnType<typeof get>['tournament']>['yourPlace'] = null;
+  if (final) {
+    yourPlace =
+      final.champion === 0
+        ? 'champion'
+        : final.runnerUp === 0
+          ? 'runnerUp'
+          : final.semiLosers.includes(0)
+            ? 'semiLoser'
+            : 'out';
+  } else if (result === 'loss') {
+    yourPlace = idx < 4 ? 'out' : idx < 6 ? 'semiLoser' : 'runnerUp';
+  }
+  const settledNow = yourPlace !== null && !t.settled;
+  if (settledNow && yourPlace !== null) {
+    void chain
+      .settleBracket(t.bracketId, yourPlace, t.stake)
+      .then(() => set({ lastTx: chain.lastTxSignature() }))
+      .catch((err) => get().fail('Bracket settlement did not go through', err));
+  }
+  set({
+    ...record,
+    match: null,
+    screen: 'bracket',
+    tournament: {
+      ...t,
+      bracket,
+      yourPlace,
+      settled: t.settled || settledNow,
+      suddenDeath: false,
+    },
+  });
+}
+
+/**
+ * Resolve every playable bot-vs-bot match with the real engine and bots. A
+ * drawn bot match replays with a derived seed — the same sudden-death rule
+ * the player is held to.
+ */
+function simulateBotMatches(bracket: Bracket, baseSeed: string, level: Level): Bracket {
+  let b = bracket;
+  for (;;) {
+    const idx = nextPlayable(b);
+    if (idx === null) break;
+    const m = b.matches[idx];
+    if (m.seats.includes(0)) break;
+    let winnerSeat: number | null = null;
+    for (let attempt = 0; attempt < 8 && winnerSeat === null; attempt++) {
+      const rec = playBotMatch(`${baseSeed}:m${idx}:r${attempt}`, [level, level]);
+      if (rec.result === 'p0') winnerSeat = m.seats[0];
+      else if (rec.result === 'p1') winnerSeat = m.seats[1];
+    }
+    b = reportResult(b, idx, winnerSeat ?? m.seats[0] ?? 0);
+  }
+  return b;
+}
 
 // Dev builds expose the store so the screenshot sweep can stage states the
 // happy path cannot reach quickly — an established (non-provisional) profile,

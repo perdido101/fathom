@@ -6,6 +6,7 @@ import { Draft } from './ui/screens/Draft';
 import { Deployment } from './ui/screens/Deployment';
 import { Battle } from './ui/screens/Battle';
 import { Result } from './ui/screens/Result';
+import { BracketScreen } from './ui/screens/Bracket';
 import { ResolveOverlay } from './ui/screens/ResolveOverlay';
 import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
@@ -82,7 +83,9 @@ export function App(): ReactElement {
               {screen === 'menu' && <MainMenu />}
               {screen === 'howto' && <HowToPlay />}
               {screen === 'queue' && <Queue />}
+              {screen === 'tqueue' && <Queue tournament />}
               {screen === 'escrow' && <Escrow />}
+              {screen === 'bracket' && <BracketScreen />}
               {screen === 'shipDraft' && <Draft kind="ship" />}
               {screen === 'cardDraft' && <Draft kind="card" />}
               {screen === 'deploy' && <Deployment />}

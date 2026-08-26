@@ -151,7 +151,6 @@ export function Battle(): ReactElement | null {
     if (blocked.noFire) return;
     const withCharge = charges + (chargeTo === uid ? 1 : 0);
     if (!canFireAt(defId, withCharge)) return;
-    if (blocked.chargeLock !== null && withCharge === blocked.chargeLock) return;
     setDraft(newDraft({ kind: 'card', uid, defId, charges: withCharge }));
   }
 
@@ -268,16 +267,16 @@ export function Battle(): ReactElement | null {
         <HullPips label="You" value={me.hullRemaining} colour="var(--confirm)" />
         <div className="spacer" />
         <span
-          className={`big-num ${warn ? '' : ''}`}
+          className={`big-num ${warn ? 'timer-hot' : ''}`}
           style={{ fontSize: 40, color: warn ? 'var(--danger)' : undefined }}
         >
           {playingBack ? '—' : `${clock}`}
         </span>
         <div className="spacer" />
         <HullPips label={foe.name} value={foe.hullRemaining} colour="var(--danger)" />
-        {mode === 'arena' ? (
+        {mode === 'arena' || mode === 'tournament' ? (
           <span className="pill gold" style={{ fontSize: 16 }}>
-            ◎ {(stake * 2).toFixed(2)} pot
+            ◎ {(stake * (mode === 'tournament' ? 8 : 2)).toFixed(2)} pot
           </span>
         ) : (
           <span className="pill">{mode}</span>
@@ -460,8 +459,7 @@ export function Battle(): ReactElement | null {
             <div className="col" style={{ gap: 6 }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-dim)' }}>
                 {blocked.noCharge && 'Blacked out — no charge this round. '}
-                {blocked.noFire && 'Pinned — no card may be fired. '}
-                {blocked.chargeLock !== null && `Cards on exactly ${blocked.chargeLock} are locked. `}
+                {blocked.noFire && 'Locked — no card may be fired this round. '}
                 {basic === null
                   ? 'Click their water to aim your free shot.'
                   : `Free shot: ${label(basic)}.`}
@@ -533,10 +531,7 @@ export function Battle(): ReactElement | null {
       >
         {me.hand.map((c, i) => {
           const withCharge = c.charges + (chargeTo === c.uid ? 1 : 0);
-          const firable =
-            !blocked.noFire &&
-            canFireAt(c.defId, withCharge) &&
-            !(blocked.chargeLock !== null && withCharge === blocked.chargeLock);
+          const firable = !blocked.noFire && canFireAt(c.defId, withCharge);
           const mid = (me.hand.length - 1) / 2;
           const angle = (i - mid) * 4;
           const lift = Math.abs(i - mid) * 10;
@@ -576,7 +571,8 @@ export function Battle(): ReactElement | null {
                   disabled={blocked.noCharge}
                   onClick={() => {
                     setChargeTo(c.uid);
-                    Sound.play('charge-placed');
+                    // The click's pitch rises with the count the card will hold.
+                    Sound.play('charge-placed', { rate: 1 + 0.09 * Math.min(withCharge, 8) });
                   }}
                 >
                   Charge

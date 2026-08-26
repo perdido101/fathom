@@ -71,8 +71,26 @@ class SoundManagerImpl {
   private volume = 0.8;
   /** Populated when real audio lands: cue id -> preloaded element. */
   private files = new Map<Cue, HTMLAudioElement>();
+  /**
+   * Browsers refuse audio before the first user gesture. Playback stays
+   * gated on this so the console never fills with autoplay rejections; every
+   * cue in the game already follows a click anyway.
+   */
+  private unlocked = false;
   /** Cues fired this session, so the UI can prove the hooks are live. */
   readonly history: { cue: Cue; at: number }[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const unlock = (): void => {
+        this.unlocked = true;
+        window.removeEventListener('pointerdown', unlock);
+        window.removeEventListener('keydown', unlock);
+      };
+      window.addEventListener('pointerdown', unlock, { once: true });
+      window.addEventListener('keydown', unlock, { once: true });
+    }
+  }
 
   setEnabled(on: boolean): void {
     this.enabled = on;
@@ -82,18 +100,23 @@ class SoundManagerImpl {
     this.volume = Math.max(0, Math.min(1, v));
   }
 
-  play(cue: Cue): void {
+  /**
+   * Fire a cue. `rate` shifts pitch and speed together — the charge click
+   * rises with the count, the timer tick quickens as the clock runs out.
+   */
+  play(cue: Cue, opts?: { rate?: number }): void {
     this.history.push({ cue, at: this.history.length });
     if (this.history.length > 200) this.history.shift();
-    if (!this.enabled) return;
+    if (!this.enabled || !this.unlocked) return;
     const file = this.files.get(cue);
     if (!file) return; // no audio yet; the hook still fired
     const node = file.cloneNode(true) as HTMLAudioElement;
     node.volume = this.volume;
+    if (opts?.rate) node.playbackRate = Math.max(0.5, Math.min(3, opts.rate));
     void node.play().catch(() => undefined);
   }
 
-  /** Called once real files exist. */
+  /** Called once per cue at startup by src/ui/sfx/register.ts. */
   register(cue: Cue, url: string): void {
     const el = new Audio(url);
     el.preload = 'auto';

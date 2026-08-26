@@ -7,7 +7,7 @@
  * stop a strong player farming beginners from a fresh wallet.
  */
 
-export type Mode = 'casual' | 'ranked' | 'arena';
+export type Mode = 'casual' | 'ranked' | 'arena' | 'tournament';
 export type Stake = 0 | 0.05 | 0.1 | 0.25 | 0.5;
 
 export const STAKE_TIERS: Stake[] = [0.05, 0.1, 0.25, 0.5];

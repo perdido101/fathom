@@ -12,6 +12,7 @@ import {
   type Stake,
 } from '../../state/profile';
 import { Wordmark } from '../components/WalletChip';
+import { bracketPayoutSol } from '../../tournament/bracket';
 import { chain } from '../../chain/client';
 import { CUES, Sound } from '../sfx/SoundManager';
 import { VFX_HOOKS } from '../vfx/hooks';
@@ -65,7 +66,7 @@ export function MainMenu(): ReactElement {
         Three ships · twelve cards · both plans resolve at once
       </p>
 
-      <div className="row" style={{ gap: 26, alignItems: 'stretch' }}>
+      <div className="row" style={{ gap: 22, alignItems: 'stretch' }}>
         <ModeCard
           bob=""
           icon="ui.anchor"
@@ -88,13 +89,23 @@ export function MainMenu(): ReactElement {
         />
         <ModeCard
           bob="b3"
-          icon="ui.trophy"
+          icon="ui.target"
           title="Arena"
           stakeLine="◎ 0.05 – 0.5"
           blurb="Winner takes the pot minus 5%. Draws return both stakes, no rake."
           colour="var(--predict)"
           onClick={() => go('queue')}
           cta="Pick a table"
+        />
+        <ModeCard
+          bob="b2"
+          icon="ui.trophy"
+          title="Tournament"
+          stakeLine="8 seats · ◎ pot"
+          blurb="Single elimination, eight players, one pot. Champion takes 55% — quarter-final losers take nothing."
+          colour="var(--gold-deep)"
+          onClick={() => go('tqueue')}
+          cta="Enter a bracket"
         />
       </div>
 
@@ -270,12 +281,14 @@ function RankedJoinModal({
 // Arena: the tier picker
 // ---------------------------------------------------------------------------
 
-export function Queue(): ReactElement {
+export function Queue({ tournament = false }: { tournament?: boolean }): ReactElement {
   const go = useStore((s) => s.go);
   const start = useStore((s) => s.startMatch);
+  const startTournament = useStore((s) => s.startTournament);
   const profile = useStore((s) => s.profile);
   const [stake, setStake] = useState<Stake>(allowedStakes(profile)[0]);
   const payout = arenaPayout(stake);
+  const bracket = bracketPayoutSol(stake);
   const balance = chain.balanceSol();
   const short = balance !== null && balance < stake;
   const band = isProvisional(profile) ? 300 : 120;
@@ -283,10 +296,13 @@ export function Queue(): ReactElement {
   return (
     <div className="screen centered" style={{ gap: 24, position: 'relative', overflow: 'hidden' }}>
       <Clouds />
-      <h1 style={{ color: '#ffffff', textShadow: '0 3px 0 rgba(18,58,94,0.3)' }}>Arena</h1>
+      <h1 style={{ color: '#ffffff', textShadow: '0 3px 0 rgba(18,58,94,0.3)' }}>
+        {tournament ? 'Tournament' : 'Arena'}
+      </h1>
       <p style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 700 }}>
-        Winner takes the pot minus {(ARENA_RAKE * 100).toFixed(0)}% rake. A draw returns both
-        stakes in full — no rake taken.
+        {tournament
+          ? 'Eight players, single elimination, one pot. 5% rake, then champion 55% · runner-up 25% · each losing semifinalist 10%. A bracket only starts full.'
+          : `Winner takes the pot minus ${(ARENA_RAKE * 100).toFixed(0)}% rake. A draw returns both stakes in full — no rake taken.`}
       </p>
 
       <div className="row" style={{ gap: 18, alignItems: 'stretch' }}>
@@ -328,7 +344,9 @@ export function Queue(): ReactElement {
                 </span>
               ) : (
                 <span className="pill gold" style={{ fontSize: 12 }}>
-                  win ◎ {arenaPayout(s).toWinner.toFixed(3)}
+                  {tournament
+                    ? `champion ◎ ${bracketPayoutSol(s).champion.toFixed(3)}`
+                    : `win ◎ ${arenaPayout(s).toWinner.toFixed(3)}`}
                 </span>
               )}
             </button>
@@ -336,28 +354,43 @@ export function Queue(): ReactElement {
         })}
       </div>
 
-      <div className="panel tight row" style={{ gap: 22, minWidth: 560, justifyContent: 'center' }}>
-        <span style={{ fontWeight: 800 }}>Pot ◎ {payout.pot.toFixed(2)}</span>
-        <span style={{ color: 'var(--ink-dim)', fontWeight: 700 }}>
-          Rake ◎ {payout.rake.toFixed(4)}
-        </span>
-        <span style={{ color: 'var(--confirm-deep)', fontWeight: 800 }}>
-          To winner ◎ {payout.toWinner.toFixed(4)}
-        </span>
-      </div>
+      {tournament ? (
+        <div className="panel tight row" style={{ gap: 22, minWidth: 640, justifyContent: 'center' }}>
+          <span style={{ fontWeight: 800 }}>Pot ◎ {bracket.pot.toFixed(2)}</span>
+          <span style={{ color: 'var(--ink-dim)', fontWeight: 700 }}>
+            Rake ◎ {bracket.rake.toFixed(4)}
+          </span>
+          <span style={{ color: 'var(--confirm-deep)', fontWeight: 800 }}>
+            Champion ◎ {bracket.champion.toFixed(4)}
+          </span>
+          <span style={{ color: 'var(--ink-dim)', fontWeight: 700 }}>
+            2nd ◎ {bracket.runnerUp.toFixed(4)} · semis ◎ {bracket.semiLoser.toFixed(4)}
+          </span>
+        </div>
+      ) : (
+        <div className="panel tight row" style={{ gap: 22, minWidth: 560, justifyContent: 'center' }}>
+          <span style={{ fontWeight: 800 }}>Pot ◎ {payout.pot.toFixed(2)}</span>
+          <span style={{ color: 'var(--ink-dim)', fontWeight: 700 }}>
+            Rake ◎ {payout.rake.toFixed(4)}
+          </span>
+          <span style={{ color: 'var(--confirm-deep)', fontWeight: 800 }}>
+            To winner ◎ {payout.toWinner.toFixed(4)}
+          </span>
+        </div>
+      )}
 
       {short && (
         <div className="panel tight" style={{ borderColor: 'var(--danger)', maxWidth: 560 }}>
           <p style={{ color: 'var(--danger)', fontWeight: 800, marginBottom: 4 }}>
-            Not enough devnet SOL for this table.
+            Not enough devnet SOL for this {tournament ? 'bracket' : 'table'}.
           </p>
           <p style={{ fontSize: 14 }}>
-            The ◎ {stake} table needs ◎ {stake} staked and your wallet holds ◎{' '}
-            {balance?.toFixed(3)}. Get free devnet SOL at{' '}
+            A ◎ {stake} seat needs ◎ {stake} staked and your wallet holds ◎ {balance?.toFixed(3)}.
+            Get free devnet SOL at{' '}
             <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">
               faucet.solana.com
             </a>{' '}
-            or pick a lower table.
+            or pick a lower {tournament ? 'tier' : 'table'}.
           </p>
         </div>
       )}
@@ -366,8 +399,14 @@ export function Queue(): ReactElement {
         <button className="btn ghost" onClick={() => go('menu')}>
           Back
         </button>
-        <button className="btn go huge" disabled={short} onClick={() => void start('arena', stake)}>
-          Find match · ◎ {stake}
+        <button
+          className="btn go huge"
+          disabled={short}
+          onClick={() =>
+            tournament ? void startTournament(stake) : void start('arena', stake)
+          }
+        >
+          {tournament ? `Take a seat · ◎ ${stake}` : `Find match · ◎ ${stake}`}
         </button>
       </div>
     </div>
@@ -739,6 +778,23 @@ export function SettingsScreen(): ReactElement {
           <div className="panel">
             <h3 style={{ marginBottom: 10 }}>Play</h3>
             <Toggle label="Sound" on={settings.sound} onChange={(v) => setSettings({ sound: v })} />
+            <div className="row" style={{ gap: 10, alignItems: 'center', margin: '6px 0' }}>
+              <span style={{ fontWeight: 800, fontSize: 14, minWidth: 110 }}>Master volume</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(settings.volume * 100)}
+                disabled={!settings.sound}
+                onChange={(e) => setSettings({ volume: Number(e.target.value) / 100 })}
+                onMouseUp={() => Sound.play('charge-placed')}
+                style={{ flex: 1, accentColor: 'var(--gold)' }}
+                aria-label="Master volume"
+              />
+              <span className="mono" style={{ fontSize: 12, width: 34, textAlign: 'right' }}>
+                {Math.round(settings.volume * 100)}%
+              </span>
+            </div>
             <Toggle
               label="Fast resolve (~1s)"
               on={settings.fastResolve}

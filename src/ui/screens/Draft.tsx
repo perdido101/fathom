@@ -141,12 +141,25 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
       {collision && (
         <div className="overlay" style={{ justifyContent: 'center', alignItems: 'center' }}>
           {collision.hit && <div className="prediction-wash" />}
-          <div className="panel beat" style={{ textAlign: 'center', padding: '36px 60px' }}>
+          <div
+            className={`panel ${collision.hit ? 'banner' : 'beat'}`}
+            style={{
+              textAlign: 'center',
+              padding: collision.hit ? '42px 72px' : '36px 60px',
+              border: collision.hit ? '5px solid var(--gold)' : undefined,
+              boxShadow: collision.hit
+                ? '0 0 0 8px rgba(255,197,49,0.35), var(--shadow-deep)'
+                : undefined,
+            }}
+          >
             <h1
-              className={collision.hit ? 'prediction' : ''}
-              style={{ color: collision.hit ? undefined : 'var(--ink-dim)' }}
+              className={collision.hit ? 'big-num' : ''}
+              style={{
+                color: collision.hit ? 'var(--gold)' : 'var(--ink-dim)',
+                fontSize: collision.hit ? 58 : undefined,
+              }}
             >
-              {collision.hit ? 'BOTH TOOK IT!' : 'PICKS DIFFER'}
+              {collision.hit ? 'COLLISION!' : 'PICKS DIFFER'}
             </h1>
             <p style={{ marginTop: 10, fontWeight: 700 }}>
               {collision.hit

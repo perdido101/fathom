@@ -6,6 +6,7 @@ import { autoDeploy, block, orthLine, rowRun } from '../engine/board';
 import { CARDS, canFireAt } from '../engine/cards';
 import { SHIPS } from '../engine/ships';
 import { nextInt, pick, shuffle, type RngState } from '../engine/rng';
+import { BALANCE } from '../engine/balance';
 import {
   bestBlock,
   bestLine,
@@ -232,7 +233,7 @@ export function botPlan(view: ClientView, level: Level, rng: RngState): [Plan, R
     return {
       card: c,
       now,
-      firable: canFireAt(c.defId, now) && !lockedOut(view, now),
+      firable: canFireAt(c.defId, now),
       scoreNow: scoreCard(c.defId, now, opts),
       scoreNext: scoreCard(c.defId, now + 1, opts),
     };
@@ -283,10 +284,6 @@ export function botPlan(view: ClientView, level: Level, rng: RngState): [Plan, R
 /** Small helper so the level-1 fallback can reuse the tuple-returning rng. */
 function await0<T>(pair: [T, RngState]): T {
   return pair[0];
-}
-
-function lockedOut(view: ClientView, charges: number): boolean {
-  return view.me.restrictions.chargeLock !== null && view.me.restrictions.chargeLock === charges;
 }
 
 /**
@@ -430,7 +427,7 @@ function aim(defId: string, charges: number, o: Options, view: ClientView, level
     }
     case 'beacon': {
       const { row, col } = bestReadout(view, prob, level);
-      return { shape: 'beacon', row, col, cells: ranked.slice(0, 4) };
+      return { shape: 'beacon', row, col, cells: ranked.slice(0, BALANCE.beaconCells) };
     }
     default:
       return { shape: 'cell', cell: ranked[0] ?? 0 };
@@ -528,7 +525,7 @@ function chooseAbility(
       case 'ember': {
         const covered = sumTop(prob, ranked, 4);
         if (covered >= 1.2 || late) {
-          return { defId: 'ember', spec: { shape: 'cells', cells: ranked.slice(0, 4) } };
+          return { defId: 'ember', spec: { shape: 'cells', cells: ranked.slice(0, BALANCE.emberCells) } };
         }
         break;
       }
@@ -559,7 +556,7 @@ function chooseAbility(
           const { row, col } = bestReadout(view, prob, level);
           return {
             defId: 'beacon',
-            spec: { shape: 'beacon', row, col, cells: ranked.slice(0, 4) },
+            spec: { shape: 'beacon', row, col, cells: ranked.slice(0, BALANCE.beaconCells) },
           };
         }
         break;
@@ -642,7 +639,7 @@ function randomSpec(
     case 'steal':
       return [{ shape: 'steal', from: fattest(view, charges), toUid: keepAlive(view) }, st];
     case 'beacon':
-      return [{ shape: 'beacon', row: 0, col: 0, cells: shuffled.slice(0, 4) }, st];
+      return [{ shape: 'beacon', row: 0, col: 0, cells: shuffled.slice(0, BALANCE.beaconCells) }, st];
     default:
       return [{ shape: 'none' }, st];
   }

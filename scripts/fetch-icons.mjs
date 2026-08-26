@@ -12,7 +12,7 @@
  * `currentColor` and sit on our own palette, which is what keeps a set of
  * borrowed icons looking like one deliberate set rather than a pile.
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 
 const LICENCE = 'CC BY 3.0';
 const LICENCE_URL = 'https://creativecommons.org/licenses/by/3.0/';
@@ -142,6 +142,34 @@ export const ICON_RETRIEVED = ${JSON.stringify(RETRIEVED)};
 writeFileSync('src/ui/art/icons.ts', ts, 'utf8');
 console.log('wrote src/ui/art/icons.ts');
 
+// The audio section comes from the JSON that scripts/fetch-audio.mjs wrote
+// when it downloaded the files — same single-writer rule as the icons.
+let audioSection = `## Audio
+
+**None shipped.** The cue list exists and fires; no files are bundled.
+`;
+try {
+  const audio = JSON.parse(readFileSync('src/ui/sfx/audio-credits.json', 'utf8'));
+  audioSection = `## Audio — Kenney (kenney.nl)
+
+**${audio.credits.length} sound cues**, all CC0 1.0 / public domain
+(<https://creativecommons.org/publicdomain/zero/1.0/>), retrieved ${audio.retrieved}
+by \`npm run audio\`. CC0 requires no attribution; it is recorded anyway.
+Files live in \`src/ui/sfx/files/\`, renamed to their cue.
+
+| Cue | File | From pack | Original file | Author | Source |
+| --- | --- | --- | --- | --- | --- |
+${audio.credits
+  .map(
+    (a) =>
+      `| \`${a.cue}\` | \`${a.file}\` | ${a.pack} | \`${a.original}\` | ${a.author} | <${a.source}> |`,
+  )
+  .join('\n')}
+`;
+} catch {
+  // No audio fetched yet — the placeholder section stands.
+}
+
 const authors = [...new Set(credits.map((c) => c.author))].sort();
 const md = `# Asset credits
 
@@ -166,20 +194,22 @@ attribution is unaffected.
 | --- | --- | --- | --- |
 ${credits.map((c) => `| \`${c.slot}\` | ${c.name} | ${c.author} | <${c.source}> |`).join('\n')}
 
+${audioSection}
 ## Everything else
 
 | Asset | Origin | Licence |
 | --- | --- | --- |
 | Ship hulls, board tiles, card frames, wordmark, all VFX | Drawn procedurally in this repository | Original work, no third-party content |
 | Palette | Defined in \`src/ui/theme.css\` | Original work |
-| Fonts | Baloo 2, Nunito, JetBrains Mono via Google Fonts | SIL Open Font License 1.1 |
-| Audio | **None shipped.** The cue list exists and fires; no files are bundled | n/a |
+| Fonts | Baloo 2, Nunito, JetBrains Mono, bundled from @fontsource | SIL Open Font License 1.1 |
 
 ## Verification
 
 \`npm run icons\` re-fetches every icon from the URL recorded above and
-regenerates both \`src/ui/art/icons.ts\` and this file, so the credits cannot
-drift from what is actually in the build.
+regenerates both \`src/ui/art/icons.ts\` and this file (including the audio
+table, from \`src/ui/sfx/audio-credits.json\`); \`npm run audio\` re-fetches
+every sound from its pack URL. The credits cannot drift from what is actually
+in the build.
 `;
 writeFileSync('ASSETS_CREDITS.md', md, 'utf8');
 console.log('wrote ASSETS_CREDITS.md');

@@ -2,6 +2,7 @@ import type { Plan } from '../engine/types';
 import type { Mode, Stake } from '../state/profile';
 import { arenaPayout } from '../state/profile';
 import { issueSessionKey, signPlan, type SessionKey } from './sessionKey';
+import { bracketPayoutSol } from '../tournament/bracket';
 import { sha256 } from '../engine/sha256';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { DevnetChain } from './devnet';
@@ -49,6 +50,16 @@ export interface ChainAdapter {
   openMatch(args: OpenMatchArgs): Promise<OpenMatchResult>;
   commitDeployment(matchId: string | null, commitHash: string): Promise<void>;
   settle(matchId: string | null, result: Result, stake: Stake): Promise<void>;
+  /**
+   * Settle a tournament bracket for the local player: their finishing place
+   * decides their share of the 8-stake pot (55/25/10/10 of the post-rake
+   * pot; quarter-final losers take nothing).
+   */
+  settleBracket(
+    bracketId: string | null,
+    place: 'champion' | 'runnerUp' | 'semiLoser' | 'out',
+    stake: Stake,
+  ): Promise<void>;
   signWithSessionKey(plan: Plan, nonce: string): string;
   /**
    * Spendable balance in SOL, or null while unknown. Sync on purpose — the
@@ -103,9 +114,11 @@ class MockChain implements ChainAdapter {
     const text =
       mode === 'arena'
         ? `escrowed ${stake} SOL (mock) — pot ${arenaPayout(stake).pot}, rake ${arenaPayout(stake).rake.toFixed(4)}`
-        : mode === 'ranked'
-          ? 'ranked ladder — season entry already paid (mock)'
-          : 'casual — no chain interaction beyond identity';
+        : mode === 'tournament'
+          ? `staked a bracket seat, ${stake} SOL (mock) — pot ${(stake * 8).toFixed(2)} once eight are in`
+          : mode === 'ranked'
+            ? 'ranked ladder — season entry already paid (mock)'
+            : 'casual — no chain interaction beyond identity';
     this.journal.push(`open ${matchId}: ${text}; seed commitment ${seedCommit.slice(0, 12)}...`);
     return { matchId, text };
   }
@@ -124,10 +137,29 @@ class MockChain implements ChainAdapter {
       return;
     }
     const { toWinner, rake } = arenaPayout(stake);
-    if (result === 'win') this.balance += toWinner;
+    // The mock never moved the stake at escrow time, so settlement applies
+    // the net effect: a winner is up their winnings minus the stake they put
+    // in, a loser is down exactly their stake.
+    if (result === 'win') this.balance += toWinner - stake;
     else this.balance -= stake;
     this.journal.push(
       `${matchId}: ${result} — ${result === 'win' ? `${toWinner.toFixed(4)} SOL paid out` : 'stake forfeited'}, rake ${rake.toFixed(4)}`,
+    );
+  }
+
+  async settleBracket(
+    bracketId: string | null,
+    place: 'champion' | 'runnerUp' | 'semiLoser' | 'out',
+    stake: Stake,
+  ): Promise<void> {
+    const p = bracketPayoutSol(stake);
+    const won = { champion: p.champion, runnerUp: p.runnerUp, semiLoser: p.semiLoser, out: 0 }[
+      place
+    ];
+    this.lastTx = sha256(`${bracketId}:${place}:${stake}`);
+    this.balance += won - stake;
+    this.journal.push(
+      `${bracketId}: bracket settled — ${place}, ${won.toFixed(4)} SOL of a ${p.pot.toFixed(2)} pot (rake ${p.rake.toFixed(4)})`,
     );
   }
 

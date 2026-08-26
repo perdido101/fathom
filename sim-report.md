@@ -13,68 +13,71 @@ reported as measured and a change is proposed in the summary rather than applied
 | `mirrorGainPerCharge` | 2 |
 | `mirrorMinCharges` | 2 |
 | `emberGainPerHit` | 2 |
-| `forgeGain` | 2 |
+| `emberCells` | 3 |
+| `beaconCells` | 2 |
+| `forgeGain` | 0 |
 | `kilnUplift` | 3 |
 | `leechSteal` | 3 |
 | `blackoutStrip` | 2 |
 | `dreadnoughtScatter` | 4 |
 | `cinderScatter` | 2 |
-| `cinderLock` | 2 |
 | `reactCascadeLimit` | 4 |
 
 ## L4 vs L4 — 2000 matches
 
 | Band | Result | Measured |
 | --- | --- | --- |
-| Median match length 10-16 rounds | PASS | median 10, p10 7, p90 13, max 18 |
+| Median match length 10-16 rounds | PASS | median 10, p10 7, p90 13, max 20 |
 | Round-20 timeouts under 5% | PASS | 0.0% (0/2000) |
-| Draws under 8% | PASS | 6.6% (132/2000) — mutual 132, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.6% |
+| Draws under 8% | PASS | 6.3% (127/2000) — mutual 127, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.3% |
 | Every card fired in >=5% of matches where drafted | PASS | all twelve clear the bar |
 | Every ACTIVE/NERF used in >=20% of matches where drafted | PASS | all eight clear the bar |
-| First-blood win rate under 65% | PASS | 61.9% over 1963 decided matches |
-| Median charges on a card when fired | report | median 3 — 1:11.1% 2:35.4% 3:26.0% 4:16.8% 5:7.0% 6:2.1% 7:0.9% 8:0.4% 9:0.2% 10:0.1% 11:0.1% 12:0.0% 13:0.0% 15:0.0% 19:0.0% |
-| Prediction cards strong but not dominant | report | Mirror 61.9% over 839 (baseline 50.0%), Ambush 57.2% over 847 (baseline 50.0%) |
-| Per-ship win rate inside 42-58% | report | Kiln 39.0% (n=747), Beacon 72.0% (n=386), Spite 35.1% (n=745), Ember 64.9% (n=745) |
-| Comeback rate at least 15% | PASS | 25.0% of 1404 matches that were uneven at round 8 |
+| First-blood win rate under 65% | PASS | 64.7% over 1962 decided matches |
+| Median charges on a card when fired | report | median 3 — 1:11.6% 2:35.9% 3:26.0% 4:16.4% 5:7.1% 6:1.8% 7:0.6% 8:0.3% 9:0.1% 10:0.1% 11:0.0% 12:0.0% 13:0.0% 15:0.0% 16:0.0% |
+| Prediction cards strong but not dominant | report | Mirror 62.8% over 892 (baseline 50.0%), Ambush 58.1% over 859 (baseline 50.0%) |
+| Per-ship win rate inside 42-58% | report | Forge 41.8% (n=337), Blackout 40.4% (n=364), Warhead 58.9% (n=701), Beacon 61.0% (n=386), Spite 34.0% (n=745), Ember 66.0% (n=745) |
+| Comeback rate at least 15% | PASS | 23.2% of 1411 matches that were uneven at round 8 |
 
-Win rate: P0 44.5% / P1 48.9% / draw 6.6%
+Win rate: P0 46.4% / P1 47.3% / draw 6.3%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
-| 4 | 10 | `#` |
-| 5 | 33 | `###` |
-| 6 | 71 | `######` |
-| 7 | 176 | `##############` |
-| 8 | 284 | `#######################` |
-| 9 | 365 | `##############################` |
-| 10 | 324 | `###########################` |
-| 11 | 300 | `#########################` |
-| 12 | 180 | `###############` |
-| 13 | 134 | `###########` |
-| 14 | 84 | `#######` |
-| 15 | 27 | `##` |
-| 16 | 8 | `#` |
-| 17 | 2 | `#` |
+| 4 | 3 | `#` |
+| 5 | 11 | `#` |
+| 6 | 85 | `#######` |
+| 7 | 164 | `##############` |
+| 8 | 248 | `#####################` |
+| 9 | 332 | `############################` |
+| 10 | 361 | `##############################` |
+| 11 | 312 | `##########################` |
+| 12 | 211 | `##################` |
+| 13 | 133 | `###########` |
+| 14 | 83 | `#######` |
+| 15 | 35 | `###` |
+| 16 | 9 | `#` |
+| 17 | 9 | `#` |
 | 18 | 2 | `#` |
+| 19 | 1 | `#` |
+| 20 | 1 | `#` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Mirror | 0 | 0 | 0.0% | 2 | 61.9% (n=839) |
-| Ping | 168 | 168 | 100.0% | 3 | 59.3% (n=1435) |
-| Ambush | 166 | 121 | 72.9% | 3 | 57.2% (n=847) |
-| Rake | 981 | 974 | 99.3% | 1 | 54.5% (n=1928) |
-| Burst | 2254 | 2253 | 100.0% | 2 | 53.0% (n=2594) |
-| Echo | 979 | 979 | 100.0% | 3 | 52.8% (n=1904) |
-| Breaker | 2220 | 2152 | 96.9% | 3 | 51.4% (n=2485) |
-| Lance | 937 | 914 | 97.5% | 2 | 50.6% (n=1759) |
-| Salvo | 3177 | 3147 | 99.1% | 4 | 49.8% (n=3218) |
-| Siphon | 965 | 948 | 98.2% | 2 | 46.9% (n=1726) |
-| Jam | 153 | 144 | 94.1% | 2 | 46.1% (n=1121) |
-| Sounding | 0 | 0 | 0.0% | 3 | 43.4% (n=1154) |
+| Mirror | 0 | 0 | 0.0% | 2 | 62.8% (n=892) |
+| Ping | 168 | 168 | 100.0% | 3 | 58.5% (n=1453) |
+| Ambush | 166 | 120 | 72.3% | 3 | 58.1% (n=859) |
+| Rake | 981 | 977 | 99.6% | 1 | 54.1% (n=1932) |
+| Burst | 2254 | 2254 | 100.0% | 2 | 54.0% (n=2615) |
+| Echo | 979 | 979 | 100.0% | 3 | 53.7% (n=1904) |
+| Lance | 937 | 907 | 96.8% | 2 | 51.4% (n=1768) |
+| Breaker | 2220 | 2179 | 98.2% | 4 | 50.9% (n=2526) |
+| Salvo | 3177 | 3152 | 99.2% | 4 | 50.4% (n=3221) |
+| Siphon | 965 | 955 | 99.0% | 2 | 46.8% (n=1755) |
+| Jam | 153 | 142 | 92.8% | 2 | 45.2% (n=1177) |
+| Sounding | 0 | 0 | 0.0% | 3 | 44.7% (n=1175) |
 
 ### Per-ship win rate
 
@@ -82,56 +85,56 @@ Counted only where one side fielded the ship and the other did not.
 
 | Ship | Type | Length | Uncontested drafts | Win rate |
 | --- | --- | --- | --- | --- |
-| Beacon | ACTIVE | 3 | 386 | 72.0% |
-| Ember | ACTIVE | 2 | 745 | 64.9% |
-| Forge | ACTIVE | 4 | 337 | 55.3% |
-| Warhead | ACTIVE | 4 | 701 | 50.8% |
+| Ember | ACTIVE | 2 | 745 | 66.0% |
+| Beacon | ACTIVE | 3 | 386 | 61.0% |
+| Warhead | ACTIVE | 4 | 701 | 58.9% |
 | Dreadnought | REACT | 4 | 0 | 50.0% |
 | Cinder | REACT | 3 | 0 | 50.0% |
 | Pin | ACTIVE | 2 | 0 | 50.0% |
 | Thorn | REACT | 2 | 0 | 50.0% |
-| Leech | NERF | 3 | 361 | 49.3% |
-| Blackout | NERF | 4 | 364 | 43.5% |
-| Kiln | ACTIVE | 3 | 747 | 39.0% |
-| Spite | REACT | 2 | 745 | 35.1% |
+| Kiln | ACTIVE | 3 | 747 | 46.6% |
+| Leech | NERF | 3 | 361 | 45.3% |
+| Forge | ACTIVE | 4 | 337 | 41.8% |
+| Blackout | NERF | 4 | 364 | 40.4% |
+| Spite | REACT | 2 | 745 | 34.0% |
 
 ### Prediction cards
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 839 | 61.9% | 50.0% |
-| Ambush | 847 | 57.2% | 50.0% |
+| Mirror | 892 | 62.8% | 50.0% |
+| Ambush | 859 | 58.1% | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
-| 1 | 11.1% |
-| 2 | 35.4% |
+| 1 | 11.6% |
+| 2 | 35.9% |
 | 3 | 26.0% |
-| 4 | 16.8% |
-| 5 | 7.0% |
-| 6 | 2.1% |
-| 7 | 0.9% |
-| 8 | 0.4% |
-| 9 | 0.2% |
+| 4 | 16.4% |
+| 5 | 7.1% |
+| 6 | 1.8% |
+| 7 | 0.6% |
+| 8 | 0.3% |
+| 9 | 0.1% |
 | 10 | 0.1% |
-| 11 | 0.1% |
+| 11 | 0.0% |
 | 12 | 0.0% |
 | 13 | 0.0% |
 | 15 | 0.0% |
-| 19 | 0.0% |
+| 16 | 0.0% |
 
 ### Ship ability usage
 
 | Ship | Type | Drafted | Used | Rate |
 | --- | --- | --- | --- | --- |
 | Pin | ACTIVE | 0 | 0 | 0.0% |
-| Blackout | NERF | 476 | 139 | 29.2% |
-| Leech | NERF | 465 | 143 | 30.8% |
-| Kiln | ACTIVE | 3031 | 2369 | 78.2% |
-| Warhead | ACTIVE | 3061 | 2550 | 83.3% |
-| Ember | ACTIVE | 3045 | 3042 | 99.9% |
+| Blackout | NERF | 476 | 121 | 25.4% |
+| Leech | NERF | 465 | 121 | 26.0% |
+| Kiln | ACTIVE | 3031 | 2342 | 77.3% |
+| Warhead | ACTIVE | 3061 | 2588 | 84.5% |
+| Ember | ACTIVE | 3045 | 3044 | 100.0% |
 | Forge | ACTIVE | 463 | 463 | 100.0% |
 | Beacon | ACTIVE | 504 | 504 | 100.0% |
 
@@ -139,54 +142,55 @@ Counted only where one side fielded the ship and the other did not.
 
 | Band | Result | Measured |
 | --- | --- | --- |
-| Median match length 10-16 rounds | FAIL | median 9, p10 7, p90 12, max 17 |
+| Median match length 10-16 rounds | FAIL | median 9, p10 7, p90 12, max 18 |
 | Round-20 timeouts under 5% | PASS | 0.0% (0/2000) |
-| Draws under 8% | PASS | 5.8% (116/2000) — mutual 116, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 5.8% |
+| Draws under 8% | PASS | 6.6% (132/2000) — mutual 132, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.6% |
 | Every card fired in >=5% of matches where drafted | PASS | all twelve clear the bar |
 | Every ACTIVE/NERF used in >=20% of matches where drafted | PASS | all eight clear the bar |
-| First-blood win rate under 65% | FAIL | 66.2% over 1938 decided matches |
-| Median charges on a card when fired | report | median 3 — 1:11.6% 2:33.4% 3:26.9% 4:18.6% 5:6.4% 6:1.8% 7:0.3% 8:0.2% 9:0.3% 10:0.2% 11:0.2% 12:0.1% 13:0.0% 14:0.0% |
-| Prediction cards strong but not dominant | report | Mirror 64.2% over 502 (baseline 50.0%), Ambush 56.7% over 531 (baseline 50.0%) |
+| First-blood win rate under 65% | PASS | 64.7% over 1933 decided matches |
+| Median charges on a card when fired | report | median 3 — 1:12.1% 2:32.7% 3:27.1% 4:19.6% 5:6.3% 6:1.0% 7:0.3% 8:0.2% 9:0.3% 10:0.2% 11:0.1% 12:0.1% 13:0.0% 14:0.0% 15:0.0% |
+| Prediction cards strong but not dominant | report | Mirror 63.7% over 495 (baseline 50.0%), Ambush 52.8% over 523 (baseline 50.0%) |
 | Per-ship win rate inside 42-58% | report | no uncontested sample — both bots draft identically in this pairing, so every ship was fielded by both sides and nothing can be measured |
-| Comeback rate at least 15% | PASS | 25.1% of 1357 matches that were uneven at round 8 |
+| Comeback rate at least 15% | PASS | 22.5% of 1205 matches that were uneven at round 8 |
 
-Win rate: P0 47.6% / P1 46.6% / draw 5.8%
+Win rate: P0 45.9% / P1 47.5% / draw 6.6%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
 | 4 | 6 | `#` |
-| 5 | 26 | `##` |
-| 6 | 79 | `######` |
-| 7 | 190 | `###############` |
-| 8 | 329 | `#########################` |
-| 9 | 393 | `##############################` |
-| 10 | 356 | `###########################` |
-| 11 | 288 | `######################` |
-| 12 | 175 | `#############` |
-| 13 | 87 | `#######` |
-| 14 | 45 | `###` |
-| 15 | 19 | `#` |
-| 16 | 4 | `#` |
-| 17 | 3 | `#` |
+| 5 | 49 | `####` |
+| 6 | 143 | `############` |
+| 7 | 270 | `#######################` |
+| 8 | 314 | `##########################` |
+| 9 | 357 | `##############################` |
+| 10 | 308 | `##########################` |
+| 11 | 231 | `###################` |
+| 12 | 185 | `################` |
+| 13 | 72 | `######` |
+| 14 | 37 | `###` |
+| 15 | 20 | `##` |
+| 16 | 5 | `#` |
+| 17 | 2 | `#` |
+| 18 | 1 | `#` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Mirror | 0 | 0 | 0.0% | 4 | 64.2% (n=502) |
-| Ping | 38 | 38 | 100.0% | 3 | 59.2% (n=1212) |
-| Ambush | 44 | 30 | 68.2% | 3 | 56.7% (n=531) |
-| Echo | 740 | 740 | 100.0% | 3 | 54.9% (n=1756) |
-| Rake | 722 | 720 | 99.7% | 1 | 53.7% (n=1815) |
-| Lance | 668 | 663 | 99.3% | 2 | 53.2% (n=1571) |
-| Breaker | 2494 | 2433 | 97.6% | 3 | 52.3% (n=2831) |
-| Burst | 2516 | 2516 | 100.0% | 2 | 51.2% (n=2951) |
-| Salvo | 4000 | 3980 | 99.5% | 4 | 50.1% (n=3980) |
-| Siphon | 744 | 739 | 99.3% | 2 | 49.6% (n=1592) |
-| Jam | 34 | 30 | 88.2% | 2 | 47.1% (n=958) |
-| Sounding | 0 | 0 | 0.0% | 3 | 43.0% (n=968) |
+| Mirror | 0 | 0 | 0.0% | 4 | 63.7% (n=495) |
+| Ping | 38 | 38 | 100.0% | 3 | 59.0% (n=1203) |
+| Echo | 740 | 740 | 100.0% | 3 | 54.6% (n=1701) |
+| Rake | 722 | 718 | 99.4% | 1 | 54.5% (n=1778) |
+| Ambush | 44 | 33 | 75.0% | 3 | 52.8% (n=523) |
+| Breaker | 2494 | 2442 | 97.9% | 3 | 51.5% (n=2792) |
+| Burst | 2516 | 2516 | 100.0% | 2 | 51.1% (n=2957) |
+| Lance | 668 | 640 | 95.8% | 2 | 51.1% (n=1519) |
+| Salvo | 4000 | 3955 | 98.9% | 4 | 50.2% (n=3955) |
+| Siphon | 744 | 738 | 99.2% | 2 | 49.2% (n=1527) |
+| Jam | 34 | 27 | 79.4% | 2 | 48.5% (n=897) |
+| Sounding | 0 | 0 | 0.0% | 3 | 45.4% (n=933) |
 
 ### Per-ship win rate
 
@@ -211,27 +215,28 @@ Counted only where one side fielded the ship and the other did not.
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 502 | 64.2% | 50.0% |
-| Ambush | 531 | 56.7% | 50.0% |
+| Mirror | 495 | 63.7% | 50.0% |
+| Ambush | 523 | 52.8% | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
-| 1 | 11.6% |
-| 2 | 33.4% |
-| 3 | 26.9% |
-| 4 | 18.6% |
-| 5 | 6.4% |
-| 6 | 1.8% |
+| 1 | 12.1% |
+| 2 | 32.7% |
+| 3 | 27.1% |
+| 4 | 19.6% |
+| 5 | 6.3% |
+| 6 | 1.0% |
 | 7 | 0.3% |
 | 8 | 0.2% |
 | 9 | 0.3% |
 | 10 | 0.2% |
-| 11 | 0.2% |
+| 11 | 0.1% |
 | 12 | 0.1% |
 | 13 | 0.0% |
 | 14 | 0.0% |
+| 15 | 0.0% |
 
 ### Ship ability usage
 
@@ -242,8 +247,8 @@ Counted only where one side fielded the ship and the other did not.
 | Leech | NERF | 0 | 0 | 0.0% |
 | Beacon | ACTIVE | 0 | 0 | 0.0% |
 | Pin | ACTIVE | 0 | 0 | 0.0% |
-| Kiln | ACTIVE | 4000 | 2868 | 71.7% |
-| Warhead | ACTIVE | 4000 | 3486 | 87.2% |
+| Kiln | ACTIVE | 4000 | 2757 | 68.9% |
+| Warhead | ACTIVE | 4000 | 3565 | 89.1% |
 | Ember | ACTIVE | 4000 | 4000 | 100.0% |
 
 ## L4 vs L3 — 2000 matches
@@ -252,52 +257,51 @@ Counted only where one side fielded the ship and the other did not.
 | --- | --- | --- |
 | Median match length 10-16 rounds | PASS | median 10, p10 7, p90 12, max 17 |
 | Round-20 timeouts under 5% | PASS | 0.0% (0/2000) |
-| Draws under 8% | PASS | 6.7% (134/2000) — mutual 134, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.7% |
+| Draws under 8% | PASS | 6.3% (125/2000) — mutual 125, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.3% |
 | Every card fired in >=5% of matches where drafted | PASS | all twelve clear the bar |
 | Every ACTIVE/NERF used in >=20% of matches where drafted | PASS | all eight clear the bar |
-| First-blood win rate under 65% | report | 65.9% over 1941 decided matches |
-| Median charges on a card when fired | report | median 3 — 0:0.0% 1:11.3% 2:33.8% 3:26.5% 4:17.7% 5:6.7% 6:2.3% 7:0.9% 8:0.3% 9:0.3% 10:0.1% 11:0.1% 12:0.1% 13:0.0% 14:0.0% |
-| Prediction cards strong but not dominant | report | Mirror 63.6% over 696 (baseline 50.0%), Ambush 58.4% over 699 (baseline 50.0%) |
-| Per-ship win rate inside 42-58% | report | Forge 69.0% (n=229), Blackout 40.9% (n=248), Leech 41.3% (n=253), Beacon 65.5% (n=222), Spite 38.7% (n=484), Ember 61.3% (n=484) |
-| Comeback rate at least 15% | report | 21.8% of 1351 matches that were uneven at round 8 |
+| First-blood win rate under 65% | report | 64.2% over 1955 decided matches |
+| Median charges on a card when fired | report | median 3 — 1:12.0% 2:33.5% 3:26.4% 4:18.7% 5:6.7% 6:1.4% 7:0.4% 8:0.3% 9:0.2% 10:0.2% 11:0.1% 12:0.1% 13:0.0% 14:0.0% 16:0.0% 17:0.0% |
+| Prediction cards strong but not dominant | report | Mirror 62.8% over 689 (baseline 50.0%), Ambush 52.4% over 692 (baseline 50.0%) |
+| Per-ship win rate inside 42-58% | report | Blackout 33.1% (n=248), Warhead 62.4% (n=477), Leech 39.1% (n=253), Spite 33.0% (n=484), Ember 67.0% (n=484) |
+| Comeback rate at least 15% | report | 24.2% of 1346 matches that were uneven at round 8 |
 
-Win rate: P0 46.6% / P1 46.7% / draw 6.7%
+Win rate: P0 41.5% / P1 52.2% / draw 6.3%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
-| 4 | 5 | `#` |
-| 5 | 24 | `##` |
-| 6 | 95 | `#######` |
-| 7 | 177 | `#############` |
-| 8 | 295 | `######################` |
-| 9 | 355 | `###########################` |
-| 10 | 394 | `##############################` |
-| 11 | 272 | `#####################` |
-| 12 | 199 | `###############` |
-| 13 | 92 | `#######` |
-| 14 | 48 | `####` |
-| 15 | 30 | `##` |
-| 16 | 11 | `#` |
-| 17 | 3 | `#` |
+| 5 | 33 | `###` |
+| 6 | 124 | `##########` |
+| 7 | 178 | `##############` |
+| 8 | 283 | `#######################` |
+| 9 | 327 | `###########################` |
+| 10 | 369 | `##############################` |
+| 11 | 297 | `########################` |
+| 12 | 195 | `################` |
+| 13 | 100 | `########` |
+| 14 | 55 | `####` |
+| 15 | 28 | `##` |
+| 16 | 10 | `#` |
+| 17 | 1 | `#` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Mirror | 0 | 0 | 0.0% | 3 | 63.6% (n=696) |
-| Ping | 99 | 99 | 100.0% | 3 | 60.1% (n=1335) |
-| Ambush | 100 | 71 | 71.0% | 3 | 58.4% (n=699) |
-| Echo | 843 | 841 | 99.8% | 3 | 54.5% (n=1820) |
-| Rake | 819 | 817 | 99.8% | 1 | 54.3% (n=1830) |
-| Breaker | 2392 | 2324 | 97.2% | 3 | 52.7% (n=2638) |
-| Burst | 2347 | 2346 | 100.0% | 2 | 52.3% (n=2697) |
-| Lance | 858 | 842 | 98.1% | 2 | 51.4% (n=1694) |
-| Salvo | 3616 | 3566 | 98.6% | 4 | 50.0% (n=3566) |
-| Siphon | 825 | 819 | 99.3% | 2 | 47.2% (n=1646) |
-| Sounding | 0 | 0 | 0.0% | 3 | 45.4% (n=1044) |
-| Jam | 101 | 92 | 91.1% | 2 | 44.0% (n=1080) |
+| Mirror | 0 | 0 | 0.0% | 3 | 62.8% (n=689) |
+| Ping | 99 | 99 | 100.0% | 3 | 58.9% (n=1337) |
+| Rake | 819 | 814 | 99.4% | 1 | 53.4% (n=1857) |
+| Echo | 843 | 843 | 100.0% | 3 | 53.3% (n=1832) |
+| Ambush | 100 | 67 | 67.0% | 3 | 52.4% (n=692) |
+| Burst | 2347 | 2347 | 100.0% | 2 | 52.4% (n=2753) |
+| Breaker | 2392 | 2342 | 97.9% | 3 | 52.3% (n=2647) |
+| Lance | 858 | 839 | 97.8% | 2 | 50.7% (n=1696) |
+| Salvo | 3616 | 3595 | 99.4% | 4 | 50.2% (n=3595) |
+| Jam | 101 | 87 | 86.1% | 2 | 47.2% (n=1040) |
+| Siphon | 825 | 820 | 99.4% | 2 | 46.2% (n=1630) |
+| Sounding | 0 | 0 | 0.0% | 3 | 45.8% (n=1070) |
 
 ### Per-ship win rate
 
@@ -305,114 +309,116 @@ Counted only where one side fielded the ship and the other did not.
 
 | Ship | Type | Length | Uncontested drafts | Win rate |
 | --- | --- | --- | --- | --- |
-| Forge | ACTIVE | 4 | 229 | 69.0% |
-| Beacon | ACTIVE | 3 | 222 | 65.5% |
-| Ember | ACTIVE | 2 | 484 | 61.3% |
+| Ember | ACTIVE | 2 | 484 | 67.0% |
+| Warhead | ACTIVE | 4 | 477 | 62.4% |
+| Kiln | ACTIVE | 3 | 475 | 54.9% |
+| Beacon | ACTIVE | 3 | 222 | 51.8% |
 | Dreadnought | REACT | 4 | 0 | 50.0% |
 | Cinder | REACT | 3 | 0 | 50.0% |
 | Pin | ACTIVE | 2 | 0 | 50.0% |
 | Thorn | REACT | 2 | 0 | 50.0% |
-| Kiln | ACTIVE | 3 | 475 | 47.4% |
-| Warhead | ACTIVE | 4 | 477 | 45.6% |
-| Leech | NERF | 3 | 253 | 41.3% |
-| Blackout | NERF | 4 | 248 | 40.9% |
-| Spite | REACT | 2 | 484 | 38.7% |
+| Forge | ACTIVE | 4 | 229 | 42.6% |
+| Leech | NERF | 3 | 253 | 39.1% |
+| Blackout | NERF | 4 | 248 | 33.1% |
+| Spite | REACT | 2 | 484 | 33.0% |
 
 ### Prediction cards
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 696 | 63.6% | 50.0% |
-| Ambush | 699 | 58.4% | 50.0% |
+| Mirror | 689 | 62.8% | 50.0% |
+| Ambush | 692 | 52.4% | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
-| 0 | 0.0% |
-| 1 | 11.3% |
-| 2 | 33.8% |
-| 3 | 26.5% |
-| 4 | 17.7% |
+| 1 | 12.0% |
+| 2 | 33.5% |
+| 3 | 26.4% |
+| 4 | 18.7% |
 | 5 | 6.7% |
-| 6 | 2.3% |
-| 7 | 0.9% |
+| 6 | 1.4% |
+| 7 | 0.4% |
 | 8 | 0.3% |
-| 9 | 0.3% |
-| 10 | 0.1% |
+| 9 | 0.2% |
+| 10 | 0.2% |
 | 11 | 0.1% |
 | 12 | 0.1% |
 | 13 | 0.0% |
 | 14 | 0.0% |
+| 16 | 0.0% |
+| 17 | 0.0% |
 
 ### Ship ability usage
 
 | Ship | Type | Drafted | Used | Rate |
 | --- | --- | --- | --- | --- |
 | Pin | ACTIVE | 0 | 0 | 0.0% |
-| Leech | NERF | 253 | 71 | 28.1% |
-| Blackout | NERF | 248 | 72 | 29.0% |
-| Kiln | ACTIVE | 3525 | 2661 | 75.5% |
-| Warhead | ACTIVE | 3523 | 2947 | 83.7% |
-| Ember | ACTIVE | 3516 | 3514 | 99.9% |
+| Blackout | NERF | 248 | 55 | 22.2% |
+| Leech | NERF | 253 | 58 | 22.9% |
+| Kiln | ACTIVE | 3525 | 2597 | 73.7% |
+| Warhead | ACTIVE | 3523 | 3032 | 86.1% |
 | Forge | ACTIVE | 229 | 229 | 100.0% |
 | Beacon | ACTIVE | 222 | 222 | 100.0% |
+| Ember | ACTIVE | 3516 | 3516 | 100.0% |
 
 ## L2 vs L2 — 2000 matches
 
 | Band | Result | Measured |
 | --- | --- | --- |
-| Median match length 10-16 rounds | PASS | median 10, p10 7, p90 14, max 19 |
-| Round-20 timeouts under 5% | PASS | 0.0% (0/2000) |
-| Draws under 8% | PASS | 6.7% (134/2000) — mutual 134, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.7% |
+| Median match length 10-16 rounds | PASS | median 10, p10 7, p90 14, max 20 |
+| Round-20 timeouts under 5% | PASS | 0.1% (1/2000) |
+| Draws under 8% | PASS | 7.4% (149/2000) — mutual 148, round-20 1; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 7.4% |
 | Every card fired in >=5% of matches where drafted | FAIL | Ambush 0.0% |
 | Every ACTIVE/NERF used in >=20% of matches where drafted | PASS | all eight clear the bar |
-| First-blood win rate under 65% | PASS | 62.9% over 1980 decided matches |
-| Median charges on a card when fired | report | median 2 — 1:11.4% 2:41.0% 3:27.3% 4:11.7% 5:4.7% 6:2.3% 7:0.8% 8:0.2% 9:0.1% 10:0.0% 11:0.0% 12:0.0% 13:0.1% 14:0.1% 15:0.1% 16:0.1% 17:0.0% 18:0.0% 19:0.0% 20:0.0% 21:0.0% |
-| Prediction cards strong but not dominant | report | Mirror 62.1% over 400 (baseline 50.0%), Ambush never fired |
+| First-blood win rate under 65% | PASS | 60.5% over 1969 decided matches |
+| Median charges on a card when fired | report | median 2 — 1:11.9% 2:43.0% 3:26.2% 4:11.2% 5:4.4% 6:1.9% 7:0.6% 8:0.1% 9:0.1% 10:0.0% 11:0.0% 12:0.0% 13:0.1% 14:0.1% 15:0.1% 16:0.1% 17:0.0% 18:0.0% 19:0.0% 21:0.0% 23:0.0% |
+| Prediction cards strong but not dominant | report | Mirror 67.6% over 380 (baseline 50.0%), Ambush never fired |
 | Per-ship win rate inside 42-58% | report | no uncontested sample — both bots draft identically in this pairing, so every ship was fielded by both sides and nothing can be measured |
-| Comeback rate at least 15% | PASS | 26.8% of 1415 matches that were uneven at round 8 |
+| Comeback rate at least 15% | PASS | 27.3% of 1397 matches that were uneven at round 8 |
 
-Win rate: P0 49.7% / P1 43.6% / draw 6.7%
+Win rate: P0 47.3% / P1 45.2% / draw 7.4%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
-| 3 | 3 | `#` |
+| 3 | 2 | `#` |
 | 4 | 11 | `#` |
-| 5 | 29 | `###` |
-| 6 | 71 | `#######` |
-| 7 | 129 | `############` |
-| 8 | 167 | `###############` |
-| 9 | 274 | `#########################` |
-| 10 | 326 | `##############################` |
-| 11 | 320 | `#############################` |
-| 12 | 253 | `#######################` |
-| 13 | 195 | `##################` |
-| 14 | 116 | `###########` |
-| 15 | 63 | `######` |
-| 16 | 28 | `###` |
-| 17 | 12 | `#` |
-| 18 | 1 | `#` |
-| 19 | 2 | `#` |
+| 5 | 33 | `###` |
+| 6 | 67 | `######` |
+| 7 | 140 | `############` |
+| 8 | 215 | `###################` |
+| 9 | 257 | `#######################` |
+| 10 | 339 | `##############################` |
+| 11 | 284 | `#########################` |
+| 12 | 245 | `######################` |
+| 13 | 189 | `#################` |
+| 14 | 94 | `########` |
+| 15 | 65 | `######` |
+| 16 | 32 | `###` |
+| 17 | 20 | `##` |
+| 18 | 4 | `#` |
+| 19 | 1 | `#` |
+| 20 | 2 | `#` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Mirror | 0 | 0 | 0.0% | 6 | 62.1% (n=400) |
-| Rake | 732 | 715 | 97.7% | 1 | 53.1% (n=1505) |
-| Ping | 34 | 34 | 100.0% | 2 | 53.1% (n=1450) |
-| Lance | 732 | 697 | 95.2% | 2 | 52.2% (n=1441) |
-| Breaker | 2470 | 2445 | 99.0% | 4 | 52.0% (n=2870) |
-| Burst | 2462 | 2448 | 99.4% | 2 | 51.3% (n=2881) |
-| Echo | 748 | 748 | 100.0% | 2 | 50.2% (n=1889) |
+| Mirror | 0 | 0 | 0.0% | 6 | 67.6% (n=380) |
+| Rake | 732 | 714 | 97.5% | 1 | 52.9% (n=1536) |
+| Ping | 34 | 34 | 100.0% | 2 | 52.8% (n=1465) |
+| Lance | 732 | 697 | 95.2% | 2 | 52.2% (n=1435) |
+| Breaker | 2470 | 2451 | 99.2% | 4 | 51.6% (n=2879) |
+| Burst | 2462 | 2462 | 100.0% | 2 | 51.5% (n=2893) |
+| Echo | 748 | 748 | 100.0% | 2 | 50.5% (n=1895) |
+| Siphon | 732 | 730 | 99.7% | 3 | 50.2% (n=1733) |
 | Ambush | 58 | 0 | 0.0% | 0 | 50.0% (n=0) |
-| Salvo | 4000 | 3923 | 98.1% | 3 | 49.9% (n=3923) |
-| Siphon | 732 | 729 | 99.6% | 2 | 49.5% (n=1741) |
-| Sounding | 0 | 0 | 0.0% | 2 | 48.1% (n=1240) |
-| Jam | 32 | 27 | 84.4% | 3 | 45.6% (n=863) |
+| Salvo | 4000 | 3923 | 98.1% | 2 | 49.7% (n=3923) |
+| Jam | 32 | 29 | 90.6% | 3 | 48.9% (n=928) |
+| Sounding | 0 | 0 | 0.0% | 2 | 48.8% (n=1256) |
 
 ### Per-ship win rate
 
@@ -437,21 +443,21 @@ Counted only where one side fielded the ship and the other did not.
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 400 | 62.1% | 50.0% |
+| Mirror | 380 | 67.6% | 50.0% |
 | Ambush | 0 | - | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
-| 1 | 11.4% |
-| 2 | 41.0% |
-| 3 | 27.3% |
-| 4 | 11.7% |
-| 5 | 4.7% |
-| 6 | 2.3% |
-| 7 | 0.8% |
-| 8 | 0.2% |
+| 1 | 11.9% |
+| 2 | 43.0% |
+| 3 | 26.2% |
+| 4 | 11.2% |
+| 5 | 4.4% |
+| 6 | 1.9% |
+| 7 | 0.6% |
+| 8 | 0.1% |
 | 9 | 0.1% |
 | 10 | 0.0% |
 | 11 | 0.0% |
@@ -463,8 +469,8 @@ Counted only where one side fielded the ship and the other did not.
 | 17 | 0.0% |
 | 18 | 0.0% |
 | 19 | 0.0% |
-| 20 | 0.0% |
 | 21 | 0.0% |
+| 23 | 0.0% |
 
 ### Ship ability usage
 
@@ -475,8 +481,8 @@ Counted only where one side fielded the ship and the other did not.
 | Leech | NERF | 0 | 0 | 0.0% |
 | Beacon | ACTIVE | 0 | 0 | 0.0% |
 | Pin | ACTIVE | 0 | 0 | 0.0% |
-| Kiln | ACTIVE | 4000 | 2205 | 55.1% |
-| Warhead | ACTIVE | 4000 | 3471 | 86.8% |
+| Kiln | ACTIVE | 4000 | 2253 | 56.3% |
+| Warhead | ACTIVE | 4000 | 3531 | 88.3% |
 | Ember | ACTIVE | 4000 | 4000 | 100.0% |
 
 ## L4 vs L1 — 2000 matches
@@ -484,58 +490,58 @@ Counted only where one side fielded the ship and the other did not.
 | Band | Result | Measured |
 | --- | --- | --- |
 | Median match length 10-16 rounds | PASS | median 10, p10 6, p90 15, max 20 |
-| Round-20 timeouts under 5% | PASS | 0.4% (7/2000) |
-| Draws under 8% | PASS | 0.4% (8/2000) — mutual 6, round-20 2; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 0.4% |
+| Round-20 timeouts under 5% | PASS | 0.5% (11/2000) |
+| Draws under 8% | PASS | 0.7% (13/2000) — mutual 9, round-20 4; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 0.7% |
 | Every card fired in >=5% of matches where drafted | PASS | all twelve clear the bar |
-| Every ACTIVE/NERF used in >=20% of matches where drafted | FAIL | Blackout 6.0%, Leech 9.5%, Pin 0.0% |
-| First-blood win rate under 65% | report | 81.4% over 1997 decided matches |
-| Median charges on a card when fired | report | median 2 — 0:2.6% 1:17.4% 2:34.7% 3:25.2% 4:11.7% 5:4.9% 6:1.9% 7:0.9% 8:0.4% 9:0.2% 10:0.0% 11:0.0% 12:0.0% 13:0.0% |
-| Prediction cards strong but not dominant | report | Mirror 31.6% over 1359 (baseline 50.0%), Ambush 28.8% over 1477 (baseline 50.0%) |
-| Per-ship win rate inside 42-58% | report | Dreadnought 1.2% (n=531), Forge 32.9% (n=659), Blackout 30.7% (n=601), Warhead 89.5% (n=1237), Kiln 89.2% (n=1236), Leech 31.2% (n=621), Cinder 1.1% (n=481), Beacon 29.7% (n=654), Ember 89.0% (n=1281), Pin 0.6% (n=471), Thorn 1.3% (n=536) |
-| Comeback rate at least 15% | report | 4.2% of 1405 matches that were uneven at round 8 |
+| Every ACTIVE/NERF used in >=20% of matches where drafted | FAIL | Blackout 7.0%, Leech 8.8%, Pin 0.0% |
+| First-blood win rate under 65% | report | 80.3% over 1999 decided matches |
+| Median charges on a card when fired | report | median 2 — 0:2.6% 1:17.2% 2:35.4% 3:25.5% 4:11.9% 5:5.3% 6:1.4% 7:0.5% 8:0.1% 9:0.0% 10:0.0% 11:0.0% 14:0.0% |
+| Prediction cards strong but not dominant | report | Mirror 32.1% over 1416 (baseline 50.0%), Ambush 32.2% over 1555 (baseline 50.0%) |
+| Per-ship win rate inside 42-58% | report | Dreadnought 0.9% (n=531), Forge 32.5% (n=659), Blackout 31.6% (n=601), Warhead 89.3% (n=1237), Kiln 89.4% (n=1236), Leech 31.3% (n=621), Cinder 0.6% (n=481), Beacon 29.7% (n=654), Ember 89.3% (n=1281), Pin 0.6% (n=471), Thorn 0.6% (n=536) |
+| Comeback rate at least 15% | report | 5.1% of 1499 matches that were uneven at round 8 |
 
-Win rate: P0 98.8% / P1 0.9% / draw 0.4%
+Win rate: P0 98.8% / P1 0.6% / draw 0.7%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
-| 2 | 3 | `#` |
-| 3 | 28 | `####` |
-| 4 | 49 | `######` |
-| 5 | 97 | `#############` |
-| 6 | 141 | `##################` |
-| 7 | 182 | `########################` |
-| 8 | 215 | `############################` |
-| 9 | 231 | `##############################` |
-| 10 | 230 | `##############################` |
-| 11 | 217 | `############################` |
-| 12 | 153 | `####################` |
-| 13 | 122 | `################` |
-| 14 | 91 | `############` |
-| 15 | 94 | `############` |
-| 16 | 57 | `#######` |
-| 17 | 40 | `#####` |
-| 18 | 19 | `##` |
-| 19 | 10 | `#` |
-| 20 | 21 | `###` |
+| 2 | 1 | `#` |
+| 3 | 11 | `#` |
+| 4 | 34 | `####` |
+| 5 | 66 | `########` |
+| 6 | 118 | `##############` |
+| 7 | 161 | `####################` |
+| 8 | 201 | `#########################` |
+| 9 | 232 | `############################` |
+| 10 | 245 | `##############################` |
+| 11 | 216 | `##########################` |
+| 12 | 165 | `####################` |
+| 13 | 148 | `##################` |
+| 14 | 121 | `###############` |
+| 15 | 91 | `###########` |
+| 16 | 76 | `#########` |
+| 17 | 55 | `#######` |
+| 18 | 24 | `###` |
+| 19 | 11 | `#` |
+| 20 | 24 | `###` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Salvo | 2071 | 2021 | 97.6% | 3 | 73.8% (n=2263) |
-| Breaker | 1682 | 1577 | 93.8% | 4 | 71.3% (n=1922) |
-| Burst | 1636 | 1582 | 96.7% | 2 | 65.3% (n=2009) |
-| Echo | 993 | 978 | 98.5% | 2 | 52.3% (n=1794) |
-| Rake | 1002 | 979 | 97.7% | 2 | 49.7% (n=1797) |
-| Lance | 935 | 904 | 96.7% | 2 | 49.2% (n=1716) |
-| Siphon | 997 | 966 | 96.9% | 2 | 48.5% (n=1732) |
-| Ping | 565 | 549 | 97.2% | 2 | 38.4% (n=1574) |
-| Sounding | 492 | 478 | 97.2% | 2 | 35.1% (n=1495) |
-| Jam | 556 | 534 | 96.0% | 2 | 34.7% (n=1456) |
-| Mirror | 498 | 450 | 90.4% | 3 | 31.6% (n=1359) |
-| Ambush | 573 | 549 | 95.8% | 1 | 28.8% (n=1477) |
+| Salvo | 2071 | 2026 | 97.8% | 3 | 73.4% (n=2280) |
+| Breaker | 1682 | 1594 | 94.8% | 4 | 69.6% (n=1951) |
+| Burst | 1636 | 1591 | 97.2% | 2 | 65.5% (n=2043) |
+| Echo | 993 | 981 | 98.8% | 2 | 51.0% (n=1855) |
+| Rake | 1002 | 993 | 99.1% | 2 | 49.5% (n=1855) |
+| Siphon | 997 | 975 | 97.8% | 2 | 48.6% (n=1804) |
+| Lance | 935 | 911 | 97.4% | 2 | 48.5% (n=1783) |
+| Ping | 565 | 556 | 98.4% | 2 | 39.4% (n=1646) |
+| Sounding | 492 | 486 | 98.8% | 2 | 33.8% (n=1547) |
+| Jam | 556 | 543 | 97.7% | 2 | 33.2% (n=1513) |
+| Ambush | 573 | 557 | 97.2% | 1 | 32.2% (n=1555) |
+| Mirror | 498 | 467 | 93.8% | 3 | 32.1% (n=1416) |
 
 ### Per-ship win rate
 
@@ -543,113 +549,112 @@ Counted only where one side fielded the ship and the other did not.
 
 | Ship | Type | Length | Uncontested drafts | Win rate |
 | --- | --- | --- | --- | --- |
-| Warhead | ACTIVE | 4 | 1237 | 89.5% |
-| Kiln | ACTIVE | 3 | 1236 | 89.2% |
-| Ember | ACTIVE | 2 | 1281 | 89.0% |
+| Kiln | ACTIVE | 3 | 1236 | 89.4% |
+| Ember | ACTIVE | 2 | 1281 | 89.3% |
+| Warhead | ACTIVE | 4 | 1237 | 89.3% |
 | Spite | REACT | 2 | 778 | 49.2% |
-| Forge | ACTIVE | 4 | 659 | 32.9% |
-| Leech | NERF | 3 | 621 | 31.2% |
-| Blackout | NERF | 4 | 601 | 30.7% |
+| Forge | ACTIVE | 4 | 659 | 32.5% |
+| Blackout | NERF | 4 | 601 | 31.6% |
+| Leech | NERF | 3 | 621 | 31.3% |
 | Beacon | ACTIVE | 3 | 654 | 29.7% |
-| Thorn | REACT | 2 | 536 | 1.3% |
-| Dreadnought | REACT | 4 | 531 | 1.2% |
-| Cinder | REACT | 3 | 481 | 1.1% |
+| Dreadnought | REACT | 4 | 531 | 0.9% |
 | Pin | ACTIVE | 2 | 471 | 0.6% |
+| Cinder | REACT | 3 | 481 | 0.6% |
+| Thorn | REACT | 2 | 536 | 0.6% |
 
 ### Prediction cards
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 1359 | 31.6% | 50.0% |
-| Ambush | 1477 | 28.8% | 50.0% |
+| Mirror | 1416 | 32.1% | 50.0% |
+| Ambush | 1555 | 32.2% | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
 | 0 | 2.6% |
-| 1 | 17.4% |
-| 2 | 34.7% |
-| 3 | 25.2% |
-| 4 | 11.7% |
-| 5 | 4.9% |
-| 6 | 1.9% |
-| 7 | 0.9% |
-| 8 | 0.4% |
-| 9 | 0.2% |
+| 1 | 17.2% |
+| 2 | 35.4% |
+| 3 | 25.5% |
+| 4 | 11.9% |
+| 5 | 5.3% |
+| 6 | 1.4% |
+| 7 | 0.5% |
+| 8 | 0.1% |
+| 9 | 0.0% |
 | 10 | 0.0% |
 | 11 | 0.0% |
-| 12 | 0.0% |
-| 13 | 0.0% |
+| 14 | 0.0% |
 
 ### Ship ability usage
 
 | Ship | Type | Drafted | Used | Rate |
 | --- | --- | --- | --- | --- |
 | Pin | ACTIVE | 471 | 0 | 0.0% |
-| Blackout | NERF | 685 | 41 | 6.0% |
-| Leech | NERF | 749 | 71 | 9.5% |
+| Blackout | NERF | 685 | 48 | 7.0% |
+| Leech | NERF | 749 | 66 | 8.8% |
 | Beacon | ACTIVE | 784 | 257 | 32.8% |
 | Forge | ACTIVE | 777 | 272 | 35.0% |
-| Kiln | ACTIVE | 1986 | 1325 | 66.7% |
+| Kiln | ACTIVE | 1986 | 1337 | 67.3% |
 | Warhead | ACTIVE | 2007 | 1495 | 74.5% |
-| Ember | ACTIVE | 1959 | 1466 | 74.8% |
+| Ember | ACTIVE | 1959 | 1475 | 75.3% |
 
 ## L4 vs L4 (random drafts) — 2000 matches
 
 | Band | Result | Measured |
 | --- | --- | --- |
-| Median match length 10-16 rounds | PASS | median 11, p10 8, p90 14, max 20 |
+| Median match length 10-16 rounds | PASS | median 12, p10 9, p90 15, max 20 |
 | Round-20 timeouts under 5% | PASS | 0.0% (0/2000) |
-| Draws under 8% | PASS | 6.0% (120/2000) — mutual 120, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 6.0% |
+| Draws under 8% | PASS | 7.1% (143/2000) — mutual 143, round-20 0; 0 of the mutual ones entered the final round with unequal hulls, so a hull-count tiebreak would leave 7.1% |
 | Every card fired in >=5% of matches where drafted | PASS | all twelve clear the bar |
 | Every ACTIVE/NERF used in >=20% of matches where drafted | PASS | all eight clear the bar |
-| First-blood win rate under 65% | PASS | 61.0% over 1992 decided matches |
-| Median charges on a card when fired | report | median 3 — 0:0.0% 1:10.1% 2:32.7% 3:27.4% 4:15.9% 5:6.7% 6:3.0% 7:1.5% 8:1.0% 9:0.5% 10:0.4% 11:0.2% 12:0.2% 13:0.1% 14:0.1% 15:0.0% 16:0.0% 17:0.0% 18:0.0% 19:0.0% 20:0.0% 21:0.0% 22:0.0% 23:0.0% 27:0.0% |
-| Prediction cards strong but not dominant | PASS | Mirror 57.6% over 1576 (baseline 50.0%), Ambush 54.9% over 1587 (baseline 50.0%) |
-| Per-ship win rate inside 42-58% | FAIL | Forge 60.0% (n=724), Cinder 39.3% (n=751), Beacon 67.4% (n=743), Ember 60.9% (n=749) |
-| Comeback rate at least 15% | PASS | 24.4% of 1581 matches that were uneven at round 8 |
+| First-blood win rate under 65% | PASS | 58.3% over 1991 decided matches |
+| Median charges on a card when fired | report | median 3 — 1:10.7% 2:33.6% 3:27.8% 4:14.9% 5:6.5% 6:2.7% 7:1.5% 8:0.8% 9:0.4% 10:0.4% 11:0.2% 12:0.2% 13:0.1% 14:0.1% 15:0.0% 16:0.0% 17:0.0% 18:0.0% 19:0.0% 27:0.0% |
+| Prediction cards strong but not dominant | PASS | Mirror 55.8% over 1622 (baseline 50.0%), Ambush 54.2% over 1658 (baseline 50.0%) |
+| Per-ship win rate inside 42-58% | FAIL | Beacon 62.9% (n=743) |
+| Comeback rate at least 15% | PASS | 25.2% of 1620 matches that were uneven at round 8 |
 
-Win rate: P0 49.3% / P1 44.7% / draw 6.0%
+Win rate: P0 47.8% / P1 45.1% / draw 7.1%
 
 ### Match length distribution
 
 | Rounds | Matches | |
 | --- | --- | --- |
-| 4 | 4 | `#` |
-| 5 | 9 | `#` |
-| 6 | 33 | `###` |
-| 7 | 63 | `######` |
-| 8 | 120 | `###########` |
-| 9 | 235 | `#####################` |
-| 10 | 283 | `##########################` |
-| 11 | 330 | `##############################` |
-| 12 | 311 | `############################` |
-| 13 | 253 | `#######################` |
-| 14 | 160 | `###############` |
-| 15 | 101 | `#########` |
-| 16 | 50 | `#####` |
-| 17 | 29 | `###` |
-| 18 | 11 | `#` |
-| 19 | 4 | `#` |
-| 20 | 4 | `#` |
+| 4 | 2 | `#` |
+| 5 | 3 | `#` |
+| 6 | 14 | `#` |
+| 7 | 24 | `##` |
+| 8 | 76 | `######` |
+| 9 | 207 | `##################` |
+| 10 | 251 | `#####################` |
+| 11 | 344 | `#############################` |
+| 12 | 353 | `##############################` |
+| 13 | 284 | `########################` |
+| 14 | 221 | `###################` |
+| 15 | 113 | `##########` |
+| 16 | 64 | `#####` |
+| 17 | 27 | `##` |
+| 18 | 7 | `#` |
+| 19 | 7 | `#` |
+| 20 | 3 | `#` |
 
 ### Card usage
 
 | Card | Drafted | Fired | Rate | Median charges | Win rate when fired |
 | --- | --- | --- | --- | --- | --- |
-| Mirror | 998 | 892 | 89.4% | 3 | 57.6% (n=1576) |
-| Burst | 979 | 979 | 100.0% | 2 | 56.5% (n=1899) |
-| Breaker | 960 | 945 | 98.4% | 4 | 56.0% (n=1772) |
-| Rake | 998 | 996 | 99.8% | 1 | 55.9% (n=1991) |
-| Ping | 1002 | 1001 | 99.9% | 3 | 55.2% (n=1940) |
-| Ambush | 1026 | 873 | 85.1% | 4 | 54.9% (n=1587) |
-| Salvo | 971 | 969 | 99.8% | 3 | 52.8% (n=1915) |
-| Echo | 969 | 968 | 99.9% | 3 | 50.8% (n=1927) |
-| Lance | 1034 | 1027 | 99.3% | 2 | 50.7% (n=1914) |
-| Siphon | 1055 | 1046 | 99.1% | 2 | 46.4% (n=1859) |
-| Jam | 1043 | 996 | 95.5% | 3 | 45.5% (n=1718) |
-| Sounding | 965 | 962 | 99.7% | 3 | 42.5% (n=1842) |
+| Burst | 979 | 979 | 100.0% | 2 | 56.4% (n=1932) |
+| Breaker | 960 | 949 | 98.9% | 4 | 55.9% (n=1822) |
+| Mirror | 998 | 919 | 92.1% | 3 | 55.8% (n=1622) |
+| Rake | 998 | 996 | 99.8% | 1 | 55.2% (n=2022) |
+| Ambush | 1026 | 888 | 86.5% | 3 | 54.2% (n=1658) |
+| Salvo | 971 | 969 | 99.8% | 3 | 53.7% (n=1937) |
+| Echo | 969 | 969 | 100.0% | 3 | 52.9% (n=1950) |
+| Ping | 1002 | 1002 | 100.0% | 3 | 52.8% (n=1984) |
+| Lance | 1034 | 1029 | 99.5% | 2 | 50.7% (n=1943) |
+| Jam | 1043 | 994 | 95.3% | 3 | 45.3% (n=1770) |
+| Siphon | 1055 | 1049 | 99.4% | 2 | 44.4% (n=1885) |
+| Sounding | 965 | 960 | 99.5% | 3 | 43.4% (n=1883) |
 
 ### Per-ship win rate
 
@@ -657,40 +662,39 @@ Counted only where one side fielded the ship and the other did not.
 
 | Ship | Type | Length | Uncontested drafts | Win rate |
 | --- | --- | --- | --- | --- |
-| Beacon | ACTIVE | 3 | 743 | 67.4% |
-| Ember | ACTIVE | 2 | 749 | 60.9% |
-| Forge | ACTIVE | 4 | 724 | 60.0% |
-| Warhead | ACTIVE | 4 | 747 | 52.0% |
-| Kiln | ACTIVE | 3 | 787 | 51.0% |
-| Thorn | REACT | 2 | 721 | 50.5% |
+| Beacon | ACTIVE | 3 | 743 | 62.9% |
+| Ember | ACTIVE | 2 | 749 | 57.9% |
+| Forge | ACTIVE | 4 | 724 | 55.1% |
+| Warhead | ACTIVE | 4 | 747 | 54.3% |
+| Thorn | REACT | 2 | 721 | 53.8% |
+| Kiln | ACTIVE | 3 | 787 | 50.5% |
+| Blackout | NERF | 4 | 744 | 46.0% |
 | Spite | REACT | 2 | 736 | 45.9% |
-| Dreadnought | REACT | 4 | 777 | 45.0% |
-| Blackout | NERF | 4 | 744 | 43.4% |
-| Pin | ACTIVE | 2 | 772 | 42.8% |
+| Dreadnought | REACT | 4 | 777 | 44.9% |
+| Cinder | REACT | 3 | 751 | 44.3% |
+| Pin | ACTIVE | 2 | 772 | 42.7% |
 | Leech | NERF | 3 | 751 | 42.5% |
-| Cinder | REACT | 3 | 751 | 39.3% |
 
 ### Prediction cards
 
 | Card | Times fired | Win rate when fired | Baseline |
 | --- | --- | --- | --- |
-| Mirror | 1576 | 57.6% | 50.0% |
-| Ambush | 1587 | 54.9% | 50.0% |
+| Mirror | 1622 | 55.8% | 50.0% |
+| Ambush | 1658 | 54.2% | 50.0% |
 
 ### Charges when fired
 
 | Charges | Share |
 | --- | --- |
-| 0 | 0.0% |
-| 1 | 10.1% |
-| 2 | 32.7% |
-| 3 | 27.4% |
-| 4 | 15.9% |
-| 5 | 6.7% |
-| 6 | 3.0% |
+| 1 | 10.7% |
+| 2 | 33.6% |
+| 3 | 27.8% |
+| 4 | 14.9% |
+| 5 | 6.5% |
+| 6 | 2.7% |
 | 7 | 1.5% |
-| 8 | 1.0% |
-| 9 | 0.5% |
+| 8 | 0.8% |
+| 9 | 0.4% |
 | 10 | 0.4% |
 | 11 | 0.2% |
 | 12 | 0.2% |
@@ -701,22 +705,18 @@ Counted only where one side fielded the ship and the other did not.
 | 17 | 0.0% |
 | 18 | 0.0% |
 | 19 | 0.0% |
-| 20 | 0.0% |
-| 21 | 0.0% |
-| 22 | 0.0% |
-| 23 | 0.0% |
 | 27 | 0.0% |
 
 ### Ship ability usage
 
 | Ship | Type | Drafted | Used | Rate |
 | --- | --- | --- | --- | --- |
-| Blackout | NERF | 966 | 457 | 47.3% |
-| Leech | NERF | 1015 | 622 | 61.3% |
-| Pin | ACTIVE | 1018 | 672 | 66.0% |
-| Warhead | ACTIVE | 997 | 857 | 86.0% |
-| Kiln | ACTIVE | 997 | 869 | 87.2% |
-| Ember | ACTIVE | 1007 | 1006 | 99.9% |
+| Blackout | NERF | 966 | 429 | 44.4% |
+| Leech | NERF | 1015 | 557 | 54.9% |
+| Pin | ACTIVE | 1018 | 641 | 63.0% |
+| Kiln | ACTIVE | 997 | 871 | 87.4% |
+| Warhead | ACTIVE | 997 | 878 | 88.1% |
 | Forge | ACTIVE | 1012 | 1012 | 100.0% |
 | Beacon | ACTIVE | 1031 | 1031 | 100.0% |
+| Ember | ACTIVE | 1007 | 1007 | 100.0% |
 

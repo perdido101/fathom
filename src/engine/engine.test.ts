@@ -366,6 +366,29 @@ describe('the charge economy', () => {
   });
 });
 
+describe('the draw pile', () => {
+  it('continues without a draw once the pile is empty', () => {
+    const ms = battle({
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    ms.pile = [];
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: salvoUid,
+      basic: null,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [35] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    expect(res.events.filter((e) => e.t === 'draw' && e.to === 0)).toHaveLength(0);
+    expect(res.state.players[0].hand).toHaveLength(2);
+    expect(res.state.phase).toBe('battle');
+  });
+});
+
 describe('simultaneity', () => {
   it('lets a ship that dies this round still land its shots', () => {
     // Both fleets are one hit from gone; both fire; both die.
@@ -523,6 +546,31 @@ describe('predictions', () => {
     const back = res.events.filter((e) => e.t === 'shot' && e.by === 0 && e.source === 'ambush');
     expect(back).toHaveLength(1);
     expect(res.state.players[0].hand.find((c) => c.uid === ambushUid)).toBeUndefined();
+  });
+
+  it('widens Ambush to three cells at 2 charges and a whole row at 3', () => {
+    for (const [chg, expected] of [
+      [2, 3],
+      [3, 6],
+    ] as const) {
+      const ms = battle({
+        hands: [
+          ['ambush', 'lance', 'rake'],
+          ['salvo', 'lance', 'rake'],
+        ],
+      });
+      charge(ms, 0, 'ambush', chg);
+      const ambushUid = card(ms, 0, 'ambush').uid;
+      const a: Plan = {
+        ...idle(ms, 0),
+        chargeTo: card(ms, 0, 'lance').uid,
+        basic: null,
+        fire: { uid: ambushUid, spec: { shape: 'cell', cell: 20 } },
+      };
+      const res = run(ms, a, { ...idle(ms, 1), basic: 20 });
+      const back = res.events.filter((e) => e.t === 'shot' && e.by === 0 && e.source === 'ambush');
+      expect(back).toHaveLength(expected);
+    }
   });
 
   it('does nothing when the read is wrong', () => {
@@ -837,6 +885,40 @@ describe('ship abilities', () => {
     expect(res.state.players[1].restrictions.noFire).toBe(true);
   });
 
+  it('locks every enemy card for a round when Cinder dies, and scatters 2', () => {
+    let ms = battle({
+      ships: [
+        ['warhead', 'beacon', 'ember'],
+        ['forge', 'cinder', 'pin'],
+      ],
+      place: [
+        rows(['warhead', 'beacon', 'ember'], 0),
+        [
+          { defId: 'forge', cells: [0, 1, 2, 3] },
+          { defId: 'cinder', cells: [6, 7, 8] },
+          { defId: 'pin', cells: [12, 13] },
+        ],
+      ],
+      hands: [
+        ['salvo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    charge(ms, 0, 'salvo', 2);
+    const salvoUid = card(ms, 0, 'salvo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: salvoUid,
+      basic: 6,
+      fire: { uid: salvoUid, spec: { shape: 'cells', cells: [7, 8] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    // The killer, not the owner, is locked out of firing next round.
+    expect(res.state.players[0].restrictions.noFire).toBe(true);
+    const bank = res.state.players[1].hand.reduce((n, c) => n + c.charges, 0);
+    expect(bank).toBeGreaterThanOrEqual(2);
+  });
+
   it('wipes every enemy charge when Spite dies', () => {
     let ms = battle({
       ships: [
@@ -921,6 +1003,28 @@ describe('intel', () => {
     const res = run(ms, a, idle(ms, 1));
     const intel = res.events.filter((e) => e.t === 'intel');
     expect(intel.length).toBeGreaterThan(0);
+  });
+
+  it('makes each Echo hit expose another cell of the same ship', () => {
+    const ms = battle({
+      hands: [
+        ['echo', 'lance', 'rake'],
+        ['salvo', 'lance', 'rake'],
+      ],
+    });
+    const echoUid = card(ms, 0, 'echo').uid;
+    const a: Plan = {
+      ...idle(ms, 0),
+      chargeTo: echoUid,
+      basic: null,
+      fire: { uid: echoUid, spec: { shape: 'cells', cells: [0] } },
+    };
+    const res = run(ms, a, idle(ms, 1));
+    // Cell 0 is a hit on their length-4 in row 0 — the forced reveal must be
+    // another unhit cell of that same ship, and knowledge, not damage.
+    const known = res.state.players[0].knownShipCells;
+    expect(known).toHaveLength(1);
+    expect([1, 2, 3]).toContain(known[0]);
   });
 
   it('withholds Sounding’s column count below two charges', () => {

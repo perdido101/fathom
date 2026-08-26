@@ -255,9 +255,14 @@ charges of denial is not.
 
 Beacon is the worst offender because it is strictly Ember plus intel.
 
-### Proposed fix — four values, awaiting your approval
+### Proposed fix — four values — **APPROVED by Aris in Build 4 and applied**
 
-I have not applied any of these.
+Applied exactly as tabled below, nothing else touched. Applying the Cinder
+change surfaced a latent engine bug: REACT death-rattles wrote restrictions
+directly onto the player state, which the end-of-round restrictions swap then
+discarded — so the old exactly-2 lock had never actually bound in play. The
+new fire-lock is routed through `nextRestrictions` like Pin's, and a unit test
+now pins the behaviour (`locks every enemy card for a round when Cinder dies`).
 
 | Ship | Now | Proposed | Why |
 |---|---|---|---|
@@ -267,11 +272,39 @@ I have not applied any of these.
 | **Cinder** | gain 2 at random; they cannot fire a card holding exactly 2 next round | gain 2 at random; they **cannot fire a card next round** | The exactly-2 clause almost never binds — it is a lockout that usually locks nothing. This makes a dying Cinder actually cost them a turn. |
 
 Expected effect: pulls Beacon and Ember toward the high 50s, lifts Cinder off
-the floor. I would leave Blackout, Leech and Pin alone in the same pass and
-re-measure — with the top three brought down, the whole distribution shifts,
-and changing seven ships at once means learning nothing from the result.
+the floor. Blackout, Leech and Pin were left alone in the same pass on
+purpose — with the top three brought down, the whole distribution shifts, and
+changing seven ships at once means learning nothing from the result.
 
-**Say the word and I will apply these and re-run.**
+Post-patch measurements (L4 vs L4 random drafts, n=2000, the measuring
+pairing):
+
+| Ship | Before | After | Band 42–58% |
+|---|---|---|---|
+| Forge | 60.0% | in band | ✓ |
+| Cinder | 39.3% | in band | ✓ |
+| Ember | 60.9% | in band | ✓ |
+| **Beacon** | 67.4% | **62.9%** | **still high — the nerf undershot** |
+
+Nothing previously healthy fell out of band; the three bands that were
+already failing before the patch (L3 vs L3 median 9 rounds, L2 bots never
+firing Ambush, denial abilities unused in the L4-vs-L1 stomp pairing) fail
+identically after it — they are bot-behaviour artifacts of lopsided or
+low-skill pairings, not balance regressions. L3 vs L3 first-blood actually
+improved from 66.2% (FAIL) to 64.7% (PASS).
+
+**Beacon undershoot, reported and not self-corrected:** 2 cells still rides
+on the row+column read. If a further step is wanted, the smallest next
+candidates are 1 cell, or keeping 2 cells but dropping one of the two
+readouts. Awaiting a call.
+
+### Build 4 ruling — the card draft is blind-pick, canon
+
+The Build 3 brief's line that the opponent's hand renders face up "(draft was
+open)" was ruled wrong by Aris in Build 4: the implementation is canon. Both
+drafts are blind-pick from a public pack; the only identity a draft leaks is a
+collision, and the opponent's hand renders as card backs with public charge
+gems, flipping face-up only what a collision made public.
 
 ## Everything else passes
 

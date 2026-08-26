@@ -3,6 +3,7 @@ import { BOARD, cellAt, xy } from './types';
 import { CARDS } from './cards';
 import { SHIPS } from './ships';
 import { block, orthLine, rowRun, wholeRow } from './board';
+import { BALANCE } from './balance';
 
 /**
  * Turning a declaration into cells.
@@ -91,13 +92,13 @@ export function abilityShot(defId: string, spec: FireSpec): Shot {
       return spec.shape === 'block' ? { cells: block(spec.anchor, 2), execute: true } : NOTHING;
     case 'ember':
       return spec.shape === 'cells'
-        ? { cells: unique(spec.cells).slice(0, 4), execute: false }
+        ? { cells: unique(spec.cells).slice(0, BALANCE.emberCells), execute: false }
         : NOTHING;
     case 'pin':
       return spec.shape === 'cell' ? { cells: [spec.cell], execute: false } : NOTHING;
     case 'beacon':
       return spec.shape === 'beacon'
-        ? { cells: unique(spec.cells).slice(0, 4), execute: false }
+        ? { cells: unique(spec.cells).slice(0, BALANCE.beaconCells), execute: false }
         : NOTHING;
     default:
       return NOTHING;

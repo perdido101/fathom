@@ -77,14 +77,12 @@ export interface CardInstance {
 export interface Restrictions {
   /** Blackout: no charge may be placed. */
   noCharge: boolean;
-  /** Pin: no card may be fired. */
+  /** Pin (on a hit) and Cinder (on sinking): no card may be fired. */
   noFire: boolean;
-  /** Cinder: a card holding exactly this many charges cannot be fired. */
-  chargeLock: number | null;
 }
 
 export function noRestrictions(): Restrictions {
-  return { noCharge: false, noFire: false, chargeLock: null };
+  return { noCharge: false, noFire: false };
 }
 
 export interface PlayerState {

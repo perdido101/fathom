@@ -3,6 +3,7 @@ import { BOARD, cellAt, xy } from '../engine/types';
 import { CARDS } from '../engine/cards';
 import { SHIPS } from '../engine/ships';
 import { block, orthLine, rowRun } from '../engine/board';
+import { BALANCE } from '../engine/balance';
 
 /**
  * Building a declaration by tapping.
@@ -56,10 +57,10 @@ export function shapeOf(d: Draft, innerDefId?: string): FireSpec['shape'] {
 export function wantsCells(d: Draft, innerDefId?: string): number {
   const shape = shapeOf(d, innerDefId);
   if (shape === 'cells') {
-    if (d.aiming.kind === 'ability') return 4; // Ember and Beacon both fire four
+    if (d.aiming.kind === 'ability') return BALANCE.emberCells; // Ember's free shots
     return Math.max(1, effectiveCharges(d));
   }
-  if (shape === 'beacon') return 4;
+  if (shape === 'beacon') return BALANCE.beaconCells;
   if (shape === 'cell' || shape === 'row' || shape === 'block' || shape === 'line') return 1;
   return 0;
 }
@@ -121,7 +122,7 @@ export function isComplete(d: Draft, innerDefId?: string): boolean {
     case 'line':
       return d.cells.length === 1 && d.dir !== null;
     case 'beacon':
-      return d.row !== null && d.col !== null && d.cells.length === 4;
+      return d.row !== null && d.col !== null && d.cells.length === BALANCE.beaconCells;
     case 'strip':
       return total(d.from) > 0;
     case 'steal':
@@ -160,7 +161,7 @@ export function prompt(d: Draft, charges: number, innerDefId?: string): string {
       return d.dir ? 'ready' : 'choose a direction';
     case 'beacon':
       if (d.row === null || d.col === null) return 'tap a cell to set the row and column to read';
-      return `tap 4 cells to fire — ${d.cells.length} chosen`;
+      return `tap ${BALANCE.beaconCells} cells to fire — ${d.cells.length} chosen`;
     case 'strip':
       return `take ${total(d.from)} of ${charges} — tap their cards`;
     case 'steal':
