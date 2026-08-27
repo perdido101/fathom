@@ -109,7 +109,9 @@ export function GameCard({
           <div
             style={{
               position: 'relative',
-              height: '58%',
+              // The hand runs at `lg` since Build 7, where the rule text is
+              // the point of the card; the art window gives it the room.
+              height: size === 'lg' ? '50%' : '58%',
               borderRadius: `${size === 'sm' ? 7 : 12}px ${size === 'sm' ? 7 : 12}px 0 0`,
               background: `radial-gradient(120% 90% at 30% 15%, ${artA} 0%, ${artB} 75%)`,
               overflow: 'hidden',

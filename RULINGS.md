@@ -448,3 +448,71 @@ rules allow to be drawn on their water.
 engine on the click rather than at the end of the animation, so the theatre
 can never delay the opponent; if the phase advances underneath, the sequence
 is cut short by the screen unmounting and its timers are cleared.
+
+# Build 7
+
+## Ember, confirmed on a fresh seed set
+
+The change approved in the brief — `emberCells: 3 → 2`, and nothing else — was
+measured in Build 6 on the seed prefix the balance suite has always used. A
+tune measured on the seeds that produced the finding is not yet evidence, so
+`src/sim/cli.ts` now takes `--seed <prefix>` and the confirmation run used a
+prefix the project had never run before.
+
+`npm run sim -- --matches 1000 --seed b7`, n = 6000 matches across the six
+pairings:
+
+| | Build 6 (`sa` seeds) | Build 7 confirmation (`b7` seeds) |
+| --- | --- | --- |
+| Ember win rate | 51.9% | **51.0%** (n = 2268) |
+| Spread, all twelve ships | 44.9% – 55.2% | **45.2% – 55.6%** |
+| Ships outside the 42–58% band | 0 | **0** |
+
+The number moved 0.9pp on seeds it had never seen, which is inside the noise
+this sample size carries, and the band holds. The charge payback stays at 2
+per hit: halving it moved Ember by 0.1pp on the same seeds, which is the
+measurement that proved the free cells were the strength.
+
+## Build 7 rulings taken here rather than raised
+
+**Ownership is carried by position first and colour second, and by no label
+at all.** A `YOUR SIDE` pill on the waterline was built during this build and
+then deleted. It is the same object as the `Your waters · hull 9/9` caption
+Build 6 removed: a string apologising for a layout that does not communicate.
+The brief's requirement — *a new player can tell whose board is whose without
+being told* — is not met by a label, because a label is being told. What
+carries it instead is the division across the screen, one continuous cluster
+of your things below it, and two waters that differ in lightness as well as
+hue.
+
+**Colour is reinforcement, never the carrier.** Green-versus-blue fails for
+roughly one man in twelve, so the two waters were separated in luminance too
+and the separation is asserted rather than asserted-about: `npm run
+colourblind` measures mean board luminance under a greyscale filter and fails
+the run below 10%. Measured 11.1%. Position would still carry the screen at
+0%.
+
+**The celebration and the receipt are generated from one computed value.**
+`settlement()` returns the headline, the money string, the bare figure and the
+direction; the slam renders it and the result screen's receipt reads the same
+object. There is no second place for the arithmetic to live, which is the only
+defence that survives a refactor. `settlement.test.ts` states the rule as an
+inequality — the banner may never exceed what the settlement pays, by any
+amount including a rounding one.
+
+**A bracket round announces the floor it secured, not the prize it might
+win.** Winning a quarter-final guarantees at least a losing semifinalist's
+share; winning a semi-final guarantees at least runner-up. Those are real
+numbers the player has actually banked. Celebrating a quarter-final with the
+champion's 55% would be the same lie the banner/receipt rule exists to
+prevent, one round earlier.
+
+**A won final does not slam.** Every other match end raises the banner; the
+final hands straight to the CHAMPION screen, which is the loudest surface in
+the product and already carries the number. Two celebrations in a row is one
+too many.
+
+**The slam honours fast-resolve.** 2000ms normally, 700ms with the
+fast-resolve setting on, dismissable by a click at any point, and skipped
+entirely when transitions are off. A player who has turned the theatre down
+has said what they want.

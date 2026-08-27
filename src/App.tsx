@@ -10,6 +10,7 @@ import { BracketScreen } from './ui/screens/Bracket';
 import { NetBanners, NetResult } from './ui/screens/NetStatus';
 import { ResolveOverlay } from './ui/screens/ResolveOverlay';
 import { PhaseBeats } from './ui/screens/Beats';
+import { Slam } from './ui/screens/Slam';
 import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
 import { WalletChip, Wordmark } from './ui/components/WalletChip';
@@ -104,6 +105,7 @@ export function App(): ReactElement {
         </ErrorBoundary>
         <ResolveOverlay />
         <PhaseBeats />
+        <Slam />
         <NetBanners />
       </div>
 

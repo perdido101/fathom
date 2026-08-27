@@ -26,6 +26,7 @@
     "serve": "tsx scripts/serve.ts",
     "screens": "node scripts/screens.mjs",
     "clips": "node scripts/clips.mjs",
+    "colourblind": "node scripts/colourblind.mjs",
     "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs && tsx scripts/guide-docx.ts",
     "guide:docx": "tsx scripts/guide-docx.ts",
     "feedback": "tsx scripts/feedback-doc.ts",

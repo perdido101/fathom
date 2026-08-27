@@ -22,10 +22,18 @@ export const BALANCE = {
    * the rules actually read.
    */
   mirrorMinCharges: 2,
-  /** Ember's payoff per hit. */
+  /**
+   * Ember's payoff per hit. Deliberately untouched by the Build 7 patch:
+   * halving it was measured on the same seeds and moved the ship's win rate
+   * by 0.1pp, which is what proved the free cells were the strength.
+   */
   emberGainPerHit: 2,
-  /** How many cells Ember fires. Build 4 balance patch: was 4. */
-  emberCells: 3,
+  /**
+   * How many cells Ember fires. Build 4 cut it 4 → 3; Build 7 cut it 3 → 2,
+   * on a measurement of 59.5% at n=2234 that had not moved across three
+   * sample sizes. Measured landing: 51.9%, with every ship in band.
+   */
+  emberCells: 2,
   /** How many cells Beacon fires after its read. Build 4 balance patch: was 4. */
   beaconCells: 2,
   /**

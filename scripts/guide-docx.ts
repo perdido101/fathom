@@ -190,8 +190,26 @@ function rule(): Paragraph {
 
 // --- the pieces ------------------------------------------------------------
 
-const plateCount = SECTIONS.reduce((n, s) => n + s.plates.length, 0);
-const pinCount = SECTIONS.reduce(
+/**
+ * Every chapter, with any plate the sweep could not photograph dropped.
+ *
+ * Two plates are conditional on what a real match produces — a named event
+ * needs a REACT, a prediction or a restriction to actually fire — so a sweep
+ * can finish clean and still come back one frame short. The HTML build makes
+ * the same cut, so the two documents never disagree about what is in them.
+ */
+const dropped: string[] = [];
+const CHAPTERS = SECTIONS.map((s) => ({
+  ...s,
+  plates: s.plates.filter((p) => {
+    if (p.spread !== undefined || figureFor(p) !== null) return true;
+    dropped.push(p.file);
+    return false;
+  }),
+}));
+
+const plateCount = CHAPTERS.reduce((n, s) => n + s.plates.length, 0);
+const pinCount = CHAPTERS.reduce(
   (n, s) => n + s.plates.reduce((m, p) => m + (p.pins?.length ?? 0), 0),
   0,
 );
@@ -213,7 +231,7 @@ function figureFor(plate: Plate): string | null {
 
 function titlePage(): (Paragraph | Table)[] {
   return [
-    para([text('Shadow Armada · build 6 · captured at 1920×1080', {
+    para([text('Shadow Armada · build 7 · captured at 1920×1080', {
       size: 9, bold: true, color: GOLD, font: DISPLAY, caps: true,
     })], { spacing: 400 }),
     new Paragraph({
@@ -244,7 +262,7 @@ function titlePage(): (Paragraph | Table)[] {
           children: [
             [String(plateCount), 'Plates'],
             [String(pinCount), 'Callouts'],
-            [String(SECTIONS.length), 'Chapters'],
+            [String(CHAPTERS.length), 'Chapters'],
             ['1920×1080', 'Capture'],
           ].map(([big, label]) =>
             cell(
@@ -388,7 +406,7 @@ function spreadPlate(plate: Plate): (Paragraph | Table)[] {
   const s = plate.spread!;
   const half = Math.floor(CONTENT / 2);
   return [
-    kicker('The restraint pass', REMOVED, true),
+    kicker(s.kicker ?? 'The restraint pass', REMOVED, true),
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
       children: [text(plate.name, { size: 16, bold: true, font: DISPLAY })],
@@ -403,8 +421,8 @@ function spreadPlate(plate: Plate): (Paragraph | Table)[] {
         new TableRow({
           cantSplit: true,
           children: [
-            [s.before, 'Before · Build 5'],
-            [s.after, 'After · Build 6'],
+            [s.before, s.beforeCaption ?? 'Before · Build 5'],
+            [s.after, s.afterCaption ?? 'After · Build 6'],
           ].map(([path, caption]) =>
             cell(
               [
@@ -427,7 +445,7 @@ function spreadPlate(plate: Plate): (Paragraph | Table)[] {
           children: [
             cell(
               [
-                kicker(`Removed — ${s.gone.length}`, REMOVED),
+                kicker(`${s.goneTitle ?? 'Removed'} — ${s.gone.length}`, REMOVED),
                 ...s.gone.flatMap(([h, p]) => [
                   para([
                     text('−  ', { size: 10, bold: true, color: REMOVED, font: DISPLAY }),
@@ -440,7 +458,7 @@ function spreadPlate(plate: Plate): (Paragraph | Table)[] {
             ),
             cell(
               [
-                kicker(`Arrived — ${s.arrived.length}`, ARRIVED),
+                kicker(`${s.arrivedTitle ?? 'Arrived'} — ${s.arrived.length}`, ARRIVED),
                 ...s.arrived.flatMap(([h, p]) => [
                   para([
                     text('+  ', { size: 10, bold: true, color: ARRIVED, font: DISPLAY }),
@@ -518,7 +536,7 @@ function platePages(plate: Plate): (Paragraph | Table)[] {
 
 const body: (Paragraph | Table)[] = [...titlePage(), ...primer()];
 
-for (const section of SECTIONS) {
+for (const section of CHAPTERS) {
   body.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_1,

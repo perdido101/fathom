@@ -19,6 +19,16 @@ export interface Pin {
 export interface Spread {
   before: string;
   after: string;
+  /**
+   * The line above the title. There are two spreads now — the restraint pass
+   * and the ownership restructure — so the headings that used to be hardcoded
+   * into both renderers are data.
+   */
+  kicker?: string;
+  beforeCaption?: string;
+  afterCaption?: string;
+  goneTitle?: string;
+  arrivedTitle?: string;
   /** What was removed, and why. */
   gone: [string, string][];
   /** What arrived in its place — three things, against eight removals. */
@@ -125,8 +135,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '42-desktop-gate',
-        num: '42',
+        file: '45-desktop-gate',
+        num: '45',
         name: 'The desktop gate',
         thesis:
           'Below 1280×720 the game does not attempt a squeezed layout. Logo, one sentence, nothing else — a polished refusal beats a broken board.',
@@ -216,8 +226,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '38-tournament-tiers',
-        num: '38',
+        file: '39-tournament-tiers',
+        num: '39',
         name: 'Bracket tiers',
         thesis:
           'The same tier picker as the arena, re-priced for eight seats: the whole payout curve is stated before entry, including the part that pays nothing.',
@@ -228,8 +238,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '39-bracket-forming',
-        num: '39',
+        file: '40-bracket-forming',
+        num: '40',
         name: 'Seats filling',
         thesis:
           'Eight seats staking in view. A bracket only ever starts full — byes cannot exist — and if it never fills, every stake reclaims and no rake is taken.',
@@ -431,17 +441,60 @@ export const SECTIONS: Section[] = [
     standfirst:
       'The screen the game is built around. Both players plan at the same time, in secret, and both plans resolve together — so nothing here is a turn you wait through.',
     journey:
-      'Twenty seconds, up to twenty times. Each round you must place exactly one charge, you may aim one free shot, and you may fire one card and use one ship ability. You are doing that while reading nine pips, three gems, a board of thirty-six cells and a clock — which is why Build 6 spent itself removing everything on this screen that said the same thing twice. What is left says each fact once, and the loudest object on it is the number you are spending.',
+      'Twenty seconds, up to twenty times. Each round you must place exactly one charge, you may aim one free shot, and you may fire one card and use one ship ability. You are doing that while reading nine pips, three gems, a board of thirty-six cells and a clock — which is why Build 6 spent itself removing everything on this screen that said the same thing twice. What is left says each fact once, and the loudest object on it is the number you are spending. Build 7 then rebuilt the arrangement around the thing Build 6’s last removal exposed: the screen had never actually said whose board was whose. It had said so in a caption. Everything above the division is now theirs and everything below it is yours, and nothing is labelled.',
     plates: [
+      {
+        file: 'OWNERSHIP',
+        num: '—',
+        name: 'Whose board is whose',
+        thesis:
+          'Build 6 removed the caption “Your waters · hull 9/9”. It was right about the hull number and wrong about everything else — that string was the only thing on screen saying which board belonged to whom. Build 7 did not put the label back.',
+        spread: {
+          kicker: 'The ownership restructure',
+          before: 'docs/before/battle-build6.jpg',
+          after: 'screens/web/24-battle.jpg',
+          beforeCaption: 'Before · Build 6',
+          afterCaption: 'After · Build 7',
+          goneTitle: 'What was wrong',
+          arrivedTitle: 'What carries it now',
+          gone: [
+            ['Your things sat in three different corners', 'Your board upper-right, your ships middle-right, your hand bottom-left, your commit bottom-right. Four corners, and no spatial rule a player could infer from any of them.'],
+            ['Both boards were the same blue', 'Ownership rested entirely on remembered position, which is the weakest signal available — and the only one a new player does not have.'],
+            ['Your ships rendered inside their half', 'Beside their board, in their strip. The layout was actively arguing the wrong thing.'],
+            ['Commit was at the far end of the screen from the hand', 'The decision and its confirmation, eighteen inches apart. That eye travel happened every round, twenty times a match.'],
+            ['The hand was the smallest readable thing on screen', 'Cards are the primary decision object and were rendered smaller than the opponent’s fleet cards.'],
+          ],
+          arrived: [
+            ['Vertical position', 'Everything above the division is theirs; everything below it is yours, in one continuous cluster. Nothing is labelled — that is the whole point.'],
+            ['A second water', 'Your board is green, theirs is blue, and the pair differs in lightness as well as hue: 11.1% apart in greyscale, so the distinction survives a colourblind simulation rather than resting on blue-versus-green.'],
+            ['Commit beside the hand', 'The decision and its confirmation, adjacent.'],
+            ['The hand at full card size', 'Second only to the boards in weight, with the rule text on the face comfortably legible at 1920×1080.'],
+          ],
+        },
+      },
+      {
+        file: '51-ownership-greyscale',
+        num: '51',
+        name: 'The same screen, with every hue removed',
+        thesis:
+          'The claim above is that position carries ownership and colour reinforces it. This is that claim tested rather than asserted: the battle screen under a full greyscale filter, where hue is worth nothing at all.',
+        notes: [
+          'The division still reads, the cluster below it still reads, and the two waters still separate — because they were pulled apart in lightness as well as hue. Their water sits at mean luminance 123.5 of 255; yours at 151.8. That is 28.3 apart, or 11.1%.',
+          'npm run colourblind renders this frame plus deuteranopia, protanopia and tritanopia simulations, measures the separation from the declared gradient stops, and fails the run below 10%. It is a check, not a screenshot.',
+          'Green-versus-blue on its own fails for roughly one man in twelve. If the tint were the carrier rather than the reinforcement, this plate would be the bug report.',
+        ],
+      },
       {
         file: 'BEFORE-AFTER',
         num: '—',
         name: 'Before and after',
         thesis:
-          'The battle screen as it stood at the end of Build 5, and as it stands now. Eight elements removed, four of them replaced by nothing at all.',
+          'The battle screen as it stood at the end of Build 5, and as it stood after the restraint pass. Eight elements removed, four of them replaced by nothing at all.',
         spread: {
           before: 'docs/before/battle-build5.jpg',
-          after: 'screens/web/24-battle.jpg',
+          after: 'docs/before/battle-build6.jpg',
+          beforeCaption: 'Before · Build 5',
+          afterCaption: 'After · Build 6',
           gone: [
             ['The hull readout under your own board', 'The nine pips in the top bar are the same number, larger, and never leave the screen.'],
             ['The timer bar above the commit button', 'A second countdown eighteen inches from the first. The commit button now drains as the window runs out — one element, two jobs.'],
@@ -465,20 +518,26 @@ export const SECTIONS: Section[] = [
         name: 'Battle · the full anatomy',
         was: 18,
         thesis:
-          'Their water dominant and centre-left; your own board small at lower right; your hand fanned along the bottom; the pot in gold in the top bar; and the clock now the largest thing on the screen.',
+          'Their world above the division and yours below it. Their water dominant in the upper band with their fleet and hand beside it; your water, your ships, your hand and the button that commits them together in the lower one. Nothing on this screen is labelled with whose it is.',
         pins: [
-          { x: 4.5, y: 7.5, label: 'Round counter', text: 'Which round of a maximum twenty. A match that reaches the cap is decided on remaining hull cells.' },
-          { x: 16.1, y: 3.5, label: 'Hull, both sides', text: 'Nine pips each, one per hull cell across three ships. Yours green, theirs red. Theirs is not a leak: every fleet is nine cells and you know which of your shots landed.' },
-          { x: 36.5, y: 3.5, label: 'The clock', text: 'The plan window, and the screen’s primary element at 64px. Under five seconds it turns red, pulses and ticks audibly. In a networked match the server owns this clock and the client renders an estimate.' },
-          { x: 76.5, y: 10.5, label: 'The pot', text: 'In gold, always visible in a staked match. You never have to leave the board to remember what is riding on it.' },
-          { x: 8.5, y: 19.5, label: 'Their fleet', text: 'Three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks.' },
-          { x: 86.5, y: 15.5, label: 'Their cards', text: 'Card backs with readable gold charge gems. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public.' },
-          { x: 37.3, y: 43.5, label: 'Their water', text: 'The biggest single element on screen — this is where you act. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
-          { x: 73.5, y: 19.5, label: 'The prompt', text: 'What the next click does, in words, directly on the water. It had a panel behind it until Build 6 and was one of the heaviest objects on the screen for one sentence.' },
-          { x: 68.5, y: 27, label: 'Your ships', text: 'Your three, face up to you, with their type and whether the once-per-match ability is still available.' },
-          { x: 84.5, y: 55, label: 'Your water', text: 'Compact and lower-right: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here.' },
-          { x: 22.5, y: 60, label: 'Your hand', text: 'Real cards, fanned, lifting on hover. Clicking one charges it. Three at a time, one drawn per round while the shared pile lasts.' },
-          { x: 70.5, y: 88, label: 'Commit', text: 'The largest control in the product. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
+          { x: 4.7, y: 8.6, label: 'Round counter', text: 'Which round of a maximum twenty. A match that reaches the cap is decided on remaining hull cells.' },
+          { x: 13.1, y: 8.6, label: 'Their hull', text: 'Nine pips, one per hull cell across three ships, in the danger red. It sits on the left with the rest of their world — the top bar reads the same way round as the screen does. Showing it is not a leak: every fleet is nine cells and you already know which of your shots landed.' },
+          { x: 39.6, y: 3.5, label: 'The clock', text: 'The plan window, and the screen’s primary element at 64px. Under five seconds it turns red, pulses and ticks audibly. In a networked match the server owns this clock and the client renders an estimate.' },
+          { x: 74, y: 8.6, label: 'Your hull', text: 'The same nine pips in your green — the colour your water carries, four inches below. Yours is on the right because everything of yours is.' },
+          { x: 81, y: 8.6, label: 'The pot', text: 'In gold, always visible in a staked match. You never have to leave the board to remember what is riding on it.' },
+          { x: 18.8, y: 32.1, label: 'Their fleet', text: 'Three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks.' },
+          { x: 24.1, y: 38.8, label: 'Their cards', text: 'Card backs with readable gold charge gems. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public.' },
+          { x: 50, y: 14, label: 'Their water', text: 'The biggest single element on screen, in the blue, and the only place you act. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
+          { x: 74.8, y: 29.5, label: 'The prompt', text: 'What the next click does, in words, directly on the water. It had a panel behind it until Build 6 and was one of the heaviest objects on the screen for one sentence.' },
+          { x: 5, y: 62.6, label: 'The division', text: 'A quiet horizontal rule with a lit edge, running the width of the screen. Everything above it is theirs; everything below it is yours. This is the whole ownership argument, and it is why no part of this screen needs a label saying whose it is.' },
+          { x: 8, y: 80.1, label: 'Your water', text: 'Green rather than blue, and below the line: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here. The two waters are 11.1% apart in greyscale, so the pairing survives a colourblind reading.' },
+          { x: 27.8, y: 91, label: 'Your ships', text: 'Your three, face up to you, beside your own water instead of inside their half of the screen — which is where they rendered until Build 7. Each shows its type and whether the once-per-match ability is still available.' },
+          { x: 50, y: 64, label: 'Your hand', text: 'Real cards at full size, fanned, lifting on hover — the rule text on the face is legible without hovering at 1920×1080. Clicking one charges it. Three at a time, one drawn per round while the shared pile lasts.' },
+          { x: 81.5, y: 80.1, label: 'Commit', text: 'The largest control in the product, and now adjacent to the hand it commits rather than at the far end of the screen from it. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
+        ],
+        notes: [
+          'Two callouts more than Build 6 left here, and the guide would rather say so than quietly round down: the hull row split into two because the top bar now reads the same way round as the screen, and the division earned one of its own because it is the most important object on the plate.',
+          'Every pin on this plate sits at a coordinate measured from the live DOM rather than estimated by eye. npm run screens now records the bounding box of each named element and writes sim-out/anchors.json; a pin landing on top of the thing it names is the failure this guide produced twice, and it is not one that can be fixed by looking harder.',
         ],
       },
       {
@@ -489,10 +548,10 @@ export const SECTIONS: Section[] = [
         thesis:
           'The same screen mid-decision: a free shot aimed on their water, one card carrying this round’s charge, and the prompt updated to match.',
         pins: [
-          { x: 33.5, y: 27.5, label: 'The aimed cell', text: 'Outlined in gold on their board. Gold marks intent — this is where your free deck gun fires when the round resolves.' },
-          { x: 73.5, y: 19.5, label: 'Plan readout', text: 'The prompt now reads back what is planned — “Free shot: C2.” — rather than what to do next.' },
-          { x: 22.5, y: 86, label: 'Charged card', text: 'The gem has ticked to 1 and pulses. The pitch of the click rises with the count, so a fifth charge sounds different from a first.' },
-          { x: 70.5, y: 88, label: 'Armed', text: 'With a complete plan the commit button pulses. Both plans are held sealed until both have arrived — there is no window in which a late plan can be informed by an early one.' },
+          { x: 43, y: 22.2, label: 'The aimed cell', text: 'Outlined in gold on their board. Gold marks intent — this is where your free deck gun fires when the round resolves.' },
+          { x: 68, y: 30.3, label: 'Plan readout', text: 'The prompt now reads back what is planned — “Free shot: C2.” — rather than what to do next.' },
+          { x: 38.5, y: 64.5, label: 'Charged card', text: 'The gem has ticked to 1 and pulses. The pitch of the click rises with the count, so a fifth charge sounds different from a first.' },
+          { x: 81.5, y: 80.1, label: 'Armed', text: 'With a complete plan the commit button pulses, a hand’s width from the cards it commits. Both plans are held sealed until both have arrived — there is no window in which a late plan can be informed by an early one.' },
         ],
       },
       {
@@ -610,11 +669,36 @@ export const SECTIONS: Section[] = [
     standfirst:
       'What a match is worth, and the proof that it was played honestly. Both fleets are revealed here and nowhere earlier.',
     journey:
-      'The match is over and every secret in it is now worthless, so all of them are shown at once. This is also the screen where the product’s central claim gets checked rather than asserted: the client re-runs the whole match from the seed and the signed transcript, and either gets the same result or says loudly that it did not.',
+      'The match is over and every secret in it is now worthless, so all of them are shown at once. But first there is a moment, which until Build 7 there was not: the game used to cut from the last enemy cell dying straight to this page of fleets and receipts, with no beat in between for the thing that had just happened. The verdict now lands at display scale with the number under it, and only then does the analysis arrive. This is also the screen where the product’s central claim gets checked rather than asserted: the client re-runs the whole match from the seed and the signed transcript, and either gets the same result or says loudly that it did not.',
     plates: [
       {
-        file: '33-result-settlement',
+        file: '33-slam-victory',
         num: '33',
+        name: 'The winning moment',
+        thesis:
+          'The verdict at display scale, and immediately beneath it the one number the player actually came for. There was a result screen for six builds and no result moment: the instant the last enemy cell died, the game cut to an analytical page of fleets, ratings and receipts.',
+        notes: [
+          'Three things, stacked and centred, and no callouts needed to find them. VICTORY at 88px in the outlined display treatment the CHAMPION banner uses — the only two places in the game that share a size with the wordmark. Under it the number, in gold: “+◎0.0950”, what landed in your wallet post-rake. Under that one line of arithmetic: “The ◎0.10 pot, less the 5% rake.”',
+          'The rule that keeps this honest is structural rather than a review step: the celebration and the receipt have no second place for the arithmetic to live. settlement.test.ts states it as an inequality — the banner may never exceed what the settlement pays, by any amount at all, including a rounding one.',
+          'Two seconds, dismissable by a click, 700ms with fast-resolve on, and skipped entirely when transitions are off. A player who has turned the theatre down has said what they want.',
+          'When nothing was staked, the money line is replaced by the rating delta rather than left empty — the slot is for what the match changed, and in an unstaked match that is the rating.',
+        ],
+      },
+      {
+        file: '44-slam-defeat',
+        num: '44',
+        name: 'And the losing one',
+        thesis:
+          'The same scale, the same timing, a different colour and a different sound. Most players lose about half their matches, and a loss that is visually skimped reads as the product being embarrassed by it.',
+        notes: [
+          'The frame here is a casual match, so the number slot carries the rating delta and the line under it says “No stake on this table.” In an arena match the same slot prints what left the wallet — “−◎0.0500”, the stake — for the same reason the win prints what arrived: the player is owed the number, not a mood. The slot is never empty and never euphemistic.',
+          'The wash behind it is red rather than gold and the headline sits in the danger colour, but nothing about the type, the hold or the dismissal differs. The two banners are the same object with a direction field.',
+          'A draw takes the third branch: “stakes returned — no rake”, unsigned, because nothing moved.',
+        ],
+      },
+      {
+        file: '34-result-settlement',
+        num: '34',
         name: 'Result and receipt',
         was: 9,
         thesis:
@@ -630,8 +714,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '40-bracket-live',
-        num: '40',
+        file: '41-bracket-live',
+        num: '41',
         name: 'The bracket',
         was: 7,
         thesis:
@@ -645,8 +729,20 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '41-champion',
-        num: '41',
+        file: '42-slam-round-win',
+        num: '42',
+        name: 'A round won',
+        thesis:
+          'A quarter-final or semi-final win lands before the bracket redraws — and announces the floor it just secured, not the prize it might still win.',
+        notes: [
+          'Winning a quarter-final guarantees at least a losing semifinalist’s share; winning a semi-final guarantees at least runner-up. Those are numbers the player has actually banked, and they come from the same bracket payout function the pot row on the bracket screen uses.',
+          'Celebrating a quarter-final with the champion’s 55% would be the same lie the banner/receipt rule exists to prevent, one round earlier. The test asserts that no round below the final can ever announce the champion share.',
+          'A won final does not slam. It hands straight to the CHAMPION screen, which is the loudest surface in the product and already carries the number — two celebrations in a row is one too many.',
+        ],
+      },
+      {
+        file: '43-champion',
+        num: '43',
         name: 'Champion',
         thesis:
           'The loudest screen in the game, and the mode’s whole reason to exist: eight entered, one takes 55% of the pot.',
@@ -668,8 +764,8 @@ export const SECTIONS: Section[] = [
       'These are the screens a player visits between matches rather than during them, which is exactly why the restraint pass was hardest here: a screen nobody is under time pressure on will happily accumulate things nobody reads. The payout curve used to be drawn twice, on two different screens, in the same shape.',
     plates: [
       {
-        file: '34-leaderboard',
-        num: '34',
+        file: '35-leaderboard',
+        num: '35',
         name: 'Leaderboard',
         was: 6,
         thesis:
@@ -681,8 +777,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '35-season',
-        num: '35',
+        file: '36-season',
+        num: '36',
         name: 'Season',
         thesis:
           'Days left, the live pool, where you stand, what that position would pay if the season ended now — and the curve that produces the number.',
@@ -693,8 +789,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '36-settings',
-        num: '36',
+        file: '37-settings',
+        num: '37',
         name: 'Settings',
         was: 8,
         thesis:
@@ -709,8 +805,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '37-credits',
-        num: '37',
+        file: '38-credits',
+        num: '38',
         name: 'Credits and licences',
         thesis:
           'Thirty-seven icons under CC BY, fifteen sounds under CC0, three typefaces under the OFL — each with its author and source, in the build itself.',
@@ -731,8 +827,8 @@ export const SECTIONS: Section[] = [
       'Everything in this chapter happens to a player who did nothing wrong. That constrains the writing more than any other screen in the product: the sentence has to say what has happened, what it will cost, and what is being done about it, without softening any of the three. A staked player who does not know they are about to forfeit is a player losing money to a wording choice.',
     plates: [
       {
-        file: '43-reconnecting',
-        num: '43',
+        file: '46-reconnecting',
+        num: '46',
         name: 'Reconnecting',
         thesis:
           'The socket dropped mid-match. The server holds your seat for the grace period, and the client says exactly that while it retries.',
@@ -742,8 +838,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '44-connection-lost',
-        num: '44',
+        file: '47-connection-lost',
+        num: '47',
         name: 'Connection lost',
         thesis:
           'Reconnection gave up. Said plainly, with the consequence spelled out and exactly one useful button.',
@@ -753,8 +849,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '45-opponent-disconnected',
-        num: '45',
+        file: '48-opponent-disconnected',
+        num: '48',
         name: 'Opponent disconnected',
         thesis:
           'Their socket, their problem — but you are told, and the match holds rather than hanging.',
@@ -765,8 +861,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '46-server-error',
-        num: '46',
+        file: '49-server-error',
+        num: '49',
         name: 'Server error',
         thesis:
           'A refusal from the server surfaces as a sentence. Codes travel on the wire; humans get words.',
@@ -776,8 +872,8 @@ export const SECTIONS: Section[] = [
         ],
       },
       {
-        file: '47-queue-timeout',
-        num: '47',
+        file: '50-queue-timeout',
+        num: '50',
         name: 'Queue timeout',
         thesis:
           'Nobody in your band joined in time. The stake was never taken — and a staked player is never silently handed a bot.',

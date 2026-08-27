@@ -114,7 +114,7 @@ export const SHIP_LIST: ShipDef[] = [
     pack: 'C',
     type: 'ACTIVE',
     shape: 'cells',
-    text: 'Fire 3 cells anywhere. Gain 2 charges for each one that hits.',
+    text: 'Fire 2 cells anywhere. Gain 2 charges for each one that hits.',
   },
   {
     id: 'pin',

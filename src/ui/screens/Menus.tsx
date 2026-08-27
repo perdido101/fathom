@@ -459,7 +459,7 @@ export function Escrow(): ReactElement | null {
       </h1>
 
       <div className="row" style={{ gap: 40, alignItems: 'center' }}>
-        <StakeStack label="You" done={escrow.you} stake={escrow.stake} />
+        <StakeStack label="You" done={escrow.you} stake={escrow.stake} own />
         <div
           className="gem big"
           style={{
@@ -502,10 +502,13 @@ function StakeStack({
   label,
   done,
   stake,
+  own = false,
 }: {
   label: string;
   done: boolean;
   stake: number;
+  /** Yours takes your water's colour, so the two stacks are not twins. */
+  own?: boolean;
 }): ReactElement {
   return (
     <div className="col" style={{ alignItems: 'center', gap: 10 }}>
@@ -528,7 +531,10 @@ function StakeStack({
       </div>
       <span
         className="pill"
-        style={{ background: done ? 'var(--confirm)' : undefined, color: done ? '#fff' : undefined }}
+        style={{
+          background: done ? (own ? 'var(--own)' : 'var(--water-deep)') : undefined,
+          color: done ? '#fff' : undefined,
+        }}
       >
         {label} {done ? `◎ ${stake} ✓` : '…'}
       </span>

@@ -114,7 +114,7 @@ export function Board({
 
   return (
     <div
-      className={`board ${compact ? 'compact' : ''}`}
+      className={`board ${compact ? 'compact' : ''} ${side === 'mine' ? 'own' : ''}`}
       onMouseLeave={onHoverCell ? () => onHoverCell(null) : undefined}
       style={{ gap: compact ? 3 : 5, padding: compact ? 6 : 10 }}
     >

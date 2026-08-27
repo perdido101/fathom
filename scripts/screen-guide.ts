@@ -34,6 +34,26 @@ const FONTS = {
 const shot = (name: string): string =>
   `data:image/jpeg;base64,${readFileSync(`screens/web/${name}.jpg`).toString('base64')}`;
 
+/**
+ * Plates whose screenshot the sweep did not manage to take.
+ *
+ * Two plates are conditional on what a real match produces — a named event
+ * needs a REACT, a prediction or a restriction to actually fire — so a sweep
+ * can finish clean and still come back one frame short. Crashing the guide
+ * over it is the wrong trade, and so is silently shipping a chapter with a
+ * hole in it: the plate is dropped and the omission is printed.
+ */
+const missing: string[] = [];
+const hasShot = (name: string): boolean => {
+  try {
+    readFileSync(`screens/web/${name}.jpg`);
+    return true;
+  } catch {
+    missing.push(name);
+    return false;
+  }
+};
+
 /** Any jpeg by path, for the before/after spread's archived frame. */
 const jpeg = (path: string): string =>
   `data:image/jpeg;base64,${readFileSync(path).toString('base64')}`;
@@ -45,31 +65,44 @@ const esc = (s: string): string =>
 
 // --- render ----------------------------------------------------------------
 
-const plateCount = SECTIONS.reduce((n, s) => n + s.plates.length, 0);
-const pinCount = SECTIONS.reduce(
+/** Every chapter, with any plate the sweep could not photograph dropped. */
+const CHAPTERS = SECTIONS.map((s) => ({
+  ...s,
+  plates: s.plates.filter((p) => p.spread !== undefined || hasShot(p.file)),
+}));
+
+const plateCount = CHAPTERS.reduce((n, s) => n + s.plates.length, 0);
+const pinCount = CHAPTERS.reduce(
   (n, s) => n + s.plates.reduce((m, p) => m + (p.pins?.length ?? 0), 0),
   0,
 );
 
+/** A spread has no capture number, so its anchor comes from its file key. */
+function spreadId(plate: Plate): string {
+  return `plate-${plate.file.toLowerCase()}`;
+}
+
 function renderSpread(plate: Plate): string {
   const s = plate.spread!;
-  return `<article class="plate spread-plate" id="plate-spread">
+  const before = s.beforeCaption ?? 'Before · Build 5';
+  const after = s.afterCaption ?? 'After · Build 6';
+  return `<article class="plate spread-plate" id="${spreadId(plate)}">
   <header class="plate-head">
-    <p class="plate-num">The restraint pass</p>
+    <p class="plate-num">${esc(s.kicker ?? 'The restraint pass')}</p>
     <h3>${esc(plate.name)}</h3>
     <p class="thesis">${esc(plate.thesis)}</p>
   </header>
   <div class="spread">
-    <figure><img src="${jpeg(s.before)}" alt="The battle screen before Build 6" width="1920" height="1080"><figcaption>Before · Build 5</figcaption></figure>
-    <figure><img src="${jpeg(s.after)}" alt="The battle screen after Build 6" width="1920" height="1080"><figcaption>After · Build 6</figcaption></figure>
+    <figure><img src="${jpeg(s.before)}" alt="${esc(before)}" width="1920" height="1080"><figcaption>${esc(before)}</figcaption></figure>
+    <figure><img src="${jpeg(s.after)}" alt="${esc(after)}" width="1920" height="1080"><figcaption>${esc(after)}</figcaption></figure>
   </div>
   <div class="spread-lists">
     <div>
-      <h4 class="gone-h">Removed — ${s.gone.length}</h4>
+      <h4 class="gone-h">${esc(s.goneTitle ?? 'Removed')} — ${s.gone.length}</h4>
       <ul class="gone">${s.gone.map(([h, p]) => `<li><b>${esc(h)}</b><span>${esc(p)}</span></li>`).join('')}</ul>
     </div>
     <div>
-      <h4 class="arrived-h">Arrived — ${s.arrived.length}</h4>
+      <h4 class="arrived-h">${esc(s.arrivedTitle ?? 'Arrived')} — ${s.arrived.length}</h4>
       <ul class="arrived">${s.arrived.map(([h, p]) => `<li><b>${esc(h)}</b><span>${esc(p)}</span></li>`).join('')}</ul>
     </div>
   </div>
@@ -120,19 +153,19 @@ function renderPlate(plate: Plate): string {
 </article>`;
 }
 
-const nav = SECTIONS.map(
+const nav = CHAPTERS.map(
   (s) => `<div class="nav-group">
     <p class="nav-title"><a href="#${s.id}">${esc(s.title)}</a></p>
     <ul>${s.plates
       .map(
         (p) =>
-          `<li><a href="#plate-${p.spread ? 'spread' : p.num}"><span>${p.num}</span>${esc(p.name)}</a></li>`,
+          `<li><a href="#${p.spread ? spreadId(p) : `plate-${p.num}`}"><span>${p.num}</span>${esc(p.name)}</a></li>`,
       )
       .join('')}</ul>
   </div>`,
 ).join('');
 
-const body = SECTIONS.map(
+const body = CHAPTERS.map(
   (s) => `<section class="chapter" id="${s.id}">
   <header class="chapter-head">
     <h2>${esc(s.title)}</h2>
@@ -415,7 +448,7 @@ footer .mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
 
 <div class="wrap">
   <header class="masthead">
-    <p class="kicker">Shadow Armada · build 6 · captured at 1920×1080</p>
+    <p class="kicker">Shadow Armada · build 7 · captured at 1920×1080</p>
     <h1>Every screen,<br>and what <em>every part of it</em> is for.</h1>
     <p class="lede">A hidden-information naval duel wagered on Solana, documented plate by plate:
       ${plateCount} screens photographed from the running game, with ${pinCount} callouts naming
@@ -423,7 +456,7 @@ footer .mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
     <div class="tally">
       <div><b>${plateCount}</b><span>Plates</span></div>
       <div><b>${pinCount}</b><span>Callouts</span></div>
-      <div><b>${SECTIONS.length}</b><span>Chapters</span></div>
+      <div><b>${CHAPTERS.length}</b><span>Chapters</span></div>
       <div><b>1920×1080</b><span>Capture</span></div>
     </div>
   </header>
@@ -478,3 +511,8 @@ writeFileSync('SCREEN_GUIDE.html', html, 'utf8');
 console.log(
   `wrote SCREEN_GUIDE.html — ${(html.length / 1024 / 1024).toFixed(1)} MB, ${plateCount} plates, ${pinCount} callouts`,
 );
+if (missing.length) {
+  console.warn(
+    `  ! ${missing.length} plate(s) dropped — the sweep took no frame for: ${missing.join(', ')}`,
+  );
+}

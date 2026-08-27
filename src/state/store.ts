@@ -30,6 +30,7 @@ import {
   seasonState,
 } from './profile';
 import { chain } from '../chain/client';
+import { ratingLine, roundSettlement, settlement, type Settlement } from './settlement';
 
 /**
  * The client's whole state.
@@ -100,6 +101,11 @@ interface Store {
   /** Queued phase beats. The head is the one on screen. */
   beats: Beat[];
   /**
+   * The end-of-match banner, while it is up. Non-null blocks the move to the
+   * result screen: the moment has to land before the analysis arrives.
+   */
+  slam: Settlement | null;
+  /**
    * The cells this client declared this round. The event stream carries no
    * plan payload, so this is the only way the feedback layer can put BLOCKED
    * on the cells a Mirror ate — and it is the player's own declaration, which
@@ -149,6 +155,7 @@ interface Store {
   /** Queue beats, unless the player has turned them off. */
   showBeats(...beats: Beat[]): void;
   advanceBeat(): void;
+  dismissSlam(): void;
   fail(what: string, detail?: unknown, retry?: () => void): void;
   clearError(): void;
   noteAway(): void;
@@ -172,6 +179,25 @@ interface Store {
 }
 
 const SETTINGS_KEY = 'shadow-armada:settings';
+
+/** What runs once the end-of-match banner is done. */
+let afterSlam: (() => void) | null = null;
+
+/**
+ * Raise the banner, and hold the given continuation until it is dismissed.
+ *
+ * The result screen is the *analysis*; this is the moment. Deferring rather
+ * than racing means a player who clicks through immediately gets the same
+ * sequence as one who lets it play, just faster.
+ */
+function slamThen(s: Settlement, then: () => void): void {
+  if (!useStore.getState().settings.transitions) {
+    then();
+    return;
+  }
+  afterSlam = then;
+  useStore.setState({ slam: s });
+}
 
 const BOT_NAMES = ['Deckhand', 'Mate', 'Officer', 'Admiral'];
 
@@ -241,6 +267,7 @@ export const useStore = create<Store>((set, get) => ({
   lastRoundEvents: [],
   clock: 20,
   beats: [],
+  slam: null,
   lastAim: [],
   matchIdOnChain: null,
   chainNotice: null,
@@ -269,6 +296,18 @@ export const useStore = create<Store>((set, get) => ({
 
   advanceBeat() {
     set({ beats: get().beats.slice(1) });
+  },
+
+  /**
+   * The banner steps aside and whatever it was holding back runs. The
+   * continuation is stashed rather than duplicated, so the slam has exactly
+   * one exit whether it timed out or was clicked away.
+   */
+  dismissSlam() {
+    const after = afterSlam;
+    afterSlam = null;
+    set({ slam: null });
+    after?.();
   },
 
   /**
@@ -635,9 +674,15 @@ export const useStore = create<Store>((set, get) => ({
             ...profile.history,
           ].slice(0, 30),
         },
-        screen: 'result',
         firstRun: false,
       });
+      // The moment, then the analysis. The number on the banner is the number
+      // on the receipt because both come out of `settlement()`.
+      const s = settlement(get().mode, get().stake, result);
+      slamThen(
+        { ...s, money: s.money ?? ratingLine(delta) },
+        () => set({ screen: 'result' }),
+      );
     }
   },
 
@@ -693,10 +738,12 @@ export const useStore = create<Store>((set, get) => ({
       // the pot, exactly as a disconnect past the grace period would.
       void chain.settleBracket(t.bracketId, 'out', t.stake).catch(() => undefined);
     }
+    afterSlam = null;
     set({
       match: null,
       playback: null,
       beats: [],
+      slam: null,
       screen: 'menu',
       matchIdOnChain: null,
       tournament: null,
@@ -747,6 +794,9 @@ function finishTournamentMatch(
   const idx = t.bracket.matches.findIndex(
     (m) => m.winner === null && m.seats[0] !== null && m.seats[1] !== null && m.seats.includes(0),
   );
+  // Which round just ended, before the bracket is advanced past it.
+  const roundName: 'quarter-final' | 'semi-final' | 'final' =
+    idx < 4 ? 'quarter-final' : idx < 6 ? 'semi-final' : 'final';
   let bracket = t.bracket;
   if (idx >= 0) {
     const m = bracket.matches[idx];
@@ -775,18 +825,29 @@ function finishTournamentMatch(
       .then(() => set({ lastTx: chain.lastTxSignature() }))
       .catch((err) => get().fail('Bracket settlement did not go through', err));
   }
-  set({
-    ...record,
-    match: null,
-    screen: 'bracket',
-    tournament: {
-      ...t,
-      bracket,
-      yourPlace,
-      settled: t.settled || settledNow,
-      suddenDeath: false,
-    },
-  });
+  const land = (): void =>
+    set({
+      ...record,
+      match: null,
+      screen: 'bracket',
+      tournament: {
+        ...t,
+        bracket,
+        yourPlace,
+        settled: t.settled || settledNow,
+        suddenDeath: false,
+      },
+    });
+
+  // A bracket round used to simply redraw. Winning a quarter-final carries
+  // real consequence — it locks in a floor on what you take home — and that
+  // deserves to land before the grid updates underneath it. The final keeps
+  // its own CHAMPION screen as the finale, so it is not slammed twice.
+  if (roundName === 'final' && result === 'win') {
+    land();
+    return;
+  }
+  slamThen(roundSettlement(t.stake, roundName, result === 'win'), land);
 }
 
 /**

@@ -177,7 +177,10 @@ function BothCommitted({ mine, theirs }: { mine: string | null; theirs: string |
           ['You', mine],
           ['Them', theirs],
         ].map(([who, hash]) => (
-          <div key={who} className={`seal ${sealed ? 'shut' : ''}`}>
+          <div
+            key={who}
+            className={`seal ${sealed ? 'shut' : ''} ${who === 'You' ? 'seal-own' : ''}`}
+          >
             <span className="seal-who">{who}</span>
             <span className="mono seal-hash">{(hash ?? '').slice(0, 24) || '—'}…</span>
           </div>

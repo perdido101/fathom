@@ -151,6 +151,44 @@ half over a real WebSocket, with two new harnesses:
 | What the acceptance clients are | stated | headless Node processes speaking the production protocol through the production `NetClient` — the identical class the browser store uses; wallet keypairs live in the harness and co-sign escrow transactions the way a matchmaking flow assembles them. What this does not prove: DOM rendering over the wire (covered separately by the browser smoke) and a real network between machines (that is what staging is for — docs/DEPLOY.md) |
 | Server restart mid-match | documented | in-memory by design; matches die, stakes never strand (on-chain reclaim paths); docs/DEPLOY.md |
 
+## Build 7 — the ownership audit
+
+Build 6 removed the caption `Your waters · hull 9/9` from under the player's
+own board. It was right about the hull number, which the top-bar pips already
+carried, and wrong about everything else: that string was the only thing on
+the battle screen saying which board belonged to whom.
+
+So Build 7 asked the same question of every screen that shows two of
+anything. **Can a player who has never seen this screen tell which half is
+theirs, without being told and without remembering?** A signal counts if it
+is *structural* — position within a divided layout, colour, weight, a mark —
+and does not count if it rests on the player recalling a convention from an
+earlier screen.
+
+| Screen | Signals carrying "this is yours" | Verdict |
+| --- | --- | --- |
+| Battle | Vertical position (their world above the division, yours below, in one continuous cluster); a second water (green vs blue, **11.1% apart in greyscale**); your ships and hand and commit all below the line; hull pips coloured to match and named | **FIXED** — was three corners, two identical blue boards, and your ships rendering inside their half. See the before/after spread in the screen guide |
+| Deployment | One board only, and it is yours — now rendered in the same green as your battle water, which is where a player first meets the association | PASS (improved) |
+| Ship draft / card draft | Your pick is the card you clicked, and it lifts; theirs slides in face-down carrying the word `THEIRS` on the back | PASS |
+| Both-committed beat | Two seals side by side, labelled `You` / `Them`, and the one that is yours shuts in green | PASS |
+| Result | Two boards, headed `Your fleet` and `<name>'s fleet`, and the boards are the battle screen's two waters — the heading and the colour agree | PASS |
+| Bracket (live) | Your path outlined in gold, your seat starred and set in a heavier weight in every match box it appears in | PASS |
+| Bracket (forming) | Eight seats, all identical, yours distinguished by **nothing at all** | **FIXED** — seat 0 now takes the gold border and the star it already has everywhere else (`Bracket.tsx`, `Forming`) |
+| Leaderboard | Your row pinned to the bottom of the ladder and highlighted | PASS |
+
+Two fixes, six passes. The greyscale claim is not an assurance: `npm run
+colourblind` renders the battle screen under deuteranopia, protanopia,
+tritanopia and full greyscale filters, measures mean board luminance from the
+declared gradient stops, and fails the run below 10% separation. Measured:
+their water 123.5, yours 151.8 — **28.3/255, 11.1%**. Plate 51 in the screen
+guide is the greyscale frame itself.
+
+What was deliberately *not* done: the label was not added back, in any form.
+A `YOUR SIDE` pill on the waterline was built during this build and then
+removed, because it is the same mistake the hull caption was — a string
+apologising for a layout. The requirement is that a new player can tell whose
+board is whose without being told, and a label is being told.
+
 ## Console cleanliness
 
 `npm run smoke`, `npm run screens`, and `scripts/audit-ui.mjs` all finish with

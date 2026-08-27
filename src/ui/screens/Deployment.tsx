@@ -96,7 +96,11 @@ export function Deployment(): ReactElement | null {
   return (
     <div className="screen" style={{ flexDirection: 'row', gap: 30, alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 'min(62vh, 640px)' }}>
+        {/* Your water, in your water's colour. This is where the game first
+            teaches the tint: the board you place on here is the same green
+            that sits under the division for the rest of the match. */}
         <Board
+          side="mine"
           marks={{}}
           hulls={hulls}
           aim={preview}

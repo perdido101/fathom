@@ -240,6 +240,92 @@ await record('ship-sink', async (page) => {
   }
 });
 
+/**
+ * Play out a match until the end-of-match banner is up, and stay on it.
+ *
+ * The banner holds two seconds and then hands to the result screen, so the
+ * camera has to still be running when it lands — this stops driving the
+ * moment `.slam` appears and simply waits.
+ */
+async function playToSlam(page, max = 26) {
+  const t = { timeout: 6000 };
+  for (let r = 0; r < max; r++) {
+    await skipBeats(page);
+    if (await seen(page, '.slam')) break;
+    await page
+      .locator('.board')
+      .first()
+      .locator('.cell')
+      .nth((r * 7 + 2) % 36)
+      .click(t)
+      .catch(() => undefined);
+    await chargeFirst(page);
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) break;
+    await commit.click(t).catch(() => undefined);
+    await page.waitForTimeout(900);
+    if (await seen(page, '.slam')) break;
+    const overlay = page.locator('.overlay').first();
+    if (await overlay.isVisible().catch(() => false)) {
+      await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+    if (await seen(page, '.slam')) break;
+  }
+  // Let it hold, then let the result screen arrive underneath it.
+  await page.waitForTimeout(2600);
+}
+
+/**
+ * Which opponent you face is a dial the player owns in Settings, so setting
+ * it is not staging. A victory clip and a defeat clip both have to exist, and
+ * which one a match produces is not something a harness can ask for.
+ */
+async function setBot(page, level) {
+  await page.evaluate((l) => window.__store.getState().setSettings({ botLevel: l }), level);
+  await page.waitForTimeout(120);
+}
+
+// 8. NEW — the winning moment. The verdict at display scale and the number
+// immediately beneath it, both rendered from one call to settlement().
+await record('victory-slam', async (page) => {
+  await intoBattle(page);
+  await setBot(page, 1);
+  await playToSlam(page);
+});
+
+// 9. NEW — and the losing one. Same scale, same timing, different colour and
+// a different sound: a defeat slam is built as carefully as a victory one.
+await record('defeat-slam', async (page) => {
+  await intoBattle(page);
+  await setBot(page, 4);
+  await playToSlam(page);
+});
+
+// 10. NEW — a bracket round landing before the grid redraws, announcing the
+// floor it secured rather than the prize it might still win.
+await record('round-win-slam', async (page) => {
+  await page.getByRole('button', { name: /Tournament/ }).click();
+  await page.waitForTimeout(300);
+  await page.getByRole('button', { name: /Take a seat/ }).click();
+  await page.waitForTimeout(3600);
+  const qf = page.getByRole('button', { name: /Play quarter-final/ });
+  if (!(await qf.isVisible().catch(() => false))) return;
+  await qf.click();
+  await page.waitForTimeout(500);
+  await skipBeats(page);
+  for (let i = 0; i < 3; i++) await draftPick(page, '.draft-pick');
+  await skipBeats(page);
+  for (let i = 0; i < 3; i++) await draftPick(page, 'button.gamecard');
+  await skipBeats(page);
+  await click(page, 'Auto').catch(() => undefined);
+  await click(page, 'Commit fleet').catch(() => undefined);
+  await page.waitForTimeout(500);
+  await skipBeats(page);
+  await setBot(page, 1);
+  await playToSlam(page);
+});
+
 await browser.close();
 await server.close();
 const failed = errors.filter((e) => !e.includes('favicon'));

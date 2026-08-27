@@ -9,14 +9,17 @@
  * the desktop design and, since Build 6, is where a disabled control says
  * why it is disabled.
  *
- * Nothing here is staged that a player cannot reach by playing, with two
+ * Nothing here is staged that a player cannot reach by playing, with three
  * declared exceptions marked at their call sites: the champion bracket and
  * the connection states, both of which need forty minutes or a severed cable
- * to reach honestly and are proven by tests instead.
+ * to reach honestly and are proven by tests instead; and the two winning
+ * banners, which fire into the opponent's real hull read through the dev
+ * store handle, because a plate captioned VICTORY has to be one and no
+ * harness can ask a match to be won.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 
 const OUT = 'screens';
 rmSync(OUT, { recursive: true, force: true });
@@ -50,6 +53,50 @@ async function shot(name, note) {
   console.log(`  ${file.padEnd(42)} ${note}`);
 }
 
+/**
+ * Where the things a plate names actually are, measured from the live DOM.
+ *
+ * The screen guide pins numbered callouts onto these screenshots by
+ * percentage, and twice now a pin has landed on top of the very element it
+ * was naming. Hand-estimated coordinates against a layout that keeps moving
+ * is not a thing that can be got right by looking harder, so the sweep now
+ * reports the boxes and the guide's numbers are read off this table.
+ *
+ * A selector matching several nodes is reported as the union box — a fanned
+ * hand of three cards is one object to a reader.
+ */
+const anchorSets = {};
+async function anchors(name, map) {
+  const boxes = await page.evaluate((sel) => {
+    const out = {};
+    for (const [labelText, q] of Object.entries(sel)) {
+      const nodes = [...document.querySelectorAll(q)];
+      if (!nodes.length) {
+        out[labelText] = null;
+        continue;
+      }
+      const rs = nodes.map((n) => n.getBoundingClientRect());
+      const x0 = Math.min(...rs.map((r) => r.left));
+      const y0 = Math.min(...rs.map((r) => r.top));
+      const x1 = Math.max(...rs.map((r) => r.right));
+      const y1 = Math.max(...rs.map((r) => r.bottom));
+      out[labelText] = {
+        n: nodes.length,
+        left: +((x0 / innerWidth) * 100).toFixed(1),
+        top: +((y0 / innerHeight) * 100).toFixed(1),
+        right: +((x1 / innerWidth) * 100).toFixed(1),
+        bottom: +((y1 / innerHeight) * 100).toFixed(1),
+      };
+    }
+    return out;
+  }, map);
+  anchorSets[name] = boxes;
+  const missing = Object.entries(boxes).filter(([, b]) => b === null);
+  if (missing.length) {
+    console.log(`  ! ${name}: no match for ${missing.map(([k]) => k).join(', ')}`);
+  }
+}
+
 const click = (name, opts) => page.getByRole('button', { name, ...opts }).click();
 const wait = (ms) => page.waitForTimeout(ms);
 const visible = (loc) => loc.isVisible().catch(() => false);
@@ -81,6 +128,21 @@ async function beatShot(name, note) {
   await beat.waitFor({ state: 'visible', timeout: 5000 }).catch(() => undefined);
   if (await visible(beat)) await shot(name, note);
   await nextBeat();
+}
+
+/**
+ * Set the opponent's strength.
+ *
+ * A victory slam and a defeat slam both have to be photographed, and which
+ * one a match produces is not something a harness can ask for. This is not
+ * staging: bot strength is a dial the player owns in Settings, and the sweep
+ * turns it the way a player would to get the match it wants.
+ */
+async function setBot(level) {
+  await page.evaluate((l) => {
+    window.__store.getState().setSettings({ botLevel: l });
+  }, level);
+  await wait(120);
 }
 
 /** Charge a card: since Build 6 the card itself is the charge control. */
@@ -119,6 +181,122 @@ async function clearOverlays() {
     await gotIt.click().catch(() => undefined);
     await wait(160);
   }
+}
+
+/**
+ * Cells the opponent's ships actually occupy, read through the dev-only store
+ * handle. Declared staging, like the champion bracket and the connection
+ * states: which side wins is not something a harness can ask for politely,
+ * and a victory plate captioned VICTORY has to actually be one.
+ *
+ * The engine is untouched — these are the same cells a player who guessed
+ * perfectly would click.
+ */
+const enemyCells = () =>
+  page.evaluate(() => {
+    const ms = window.__store.getState().match;
+    return ms ? ms.players[1].ships.flatMap((s) => s.cells) : [];
+  });
+
+/**
+ * Use one of your own ship abilities, whichever of the three is available.
+ *
+ * A named event needs a REACT, a prediction, a restriction or an activation
+ * to actually fire, and the first three are the opponent's business. An
+ * activation is the one the player controls outright, so the sweep takes it
+ * rather than playing on and hoping — waiting on the bot cost the named-event
+ * plate on two runs and, once, the whole match with it.
+ *
+ * Every step is best-effort and an ability that opens an aiming panel is
+ * cancelled rather than left half-declared.
+ */
+async function useAbility() {
+  const ships = page.locator('.own-rail .col > *');
+  const n = await ships.count().catch(() => 0);
+  for (let i = 0; i < n; i++) {
+    await ships.nth(i).click().catch(() => undefined);
+    await wait(200);
+    const lock = page.getByRole('button', { name: 'Lock in' });
+    if (await visible(lock)) {
+      // It wants a target. Give it one, and take it if that was enough.
+      await page.locator('.board').first().locator('.cell').nth(20).click().catch(() => undefined);
+      await wait(180);
+      if (await lock.isEnabled().catch(() => false)) {
+        await lock.click().catch(() => undefined);
+        await wait(200);
+        return true;
+      }
+      await click('Cancel').catch(() => undefined);
+      await wait(150);
+      continue;
+    }
+    // A no-target ability declares on the click; the prompt grows a pill.
+    if (await visible(page.locator('.prompt-line .pill'))) return true;
+  }
+  return false;
+}
+
+/** Dismiss a first-time card without touching the banner behind it. */
+async function dismissExplainer() {
+  const gotIt = page.getByRole('button', { name: 'Got it' });
+  if (await visible(gotIt)) {
+    await gotIt.click().catch(() => undefined);
+    await wait(180);
+  }
+}
+
+/**
+ * Play rounds until the end-of-match banner is up, then photograph it.
+ *
+ * The banner is raised the instant playback finishes and holds two seconds,
+ * so it has to be caught right after the resolve overlay is dismissed rather
+ * than at the top of the next loop — where it has already gone. A first-time
+ * card raised by the same round would sit on top of it, so that is cleared
+ * first: `.slam` is itself an `.overlay`, and a blanket overlay click would
+ * dismiss the thing being photographed.
+ *
+ * `aim` is a list of cells to fire the free shot into, in order. Passing the
+ * opponent's real hull settles the match in nine rounds and settles it your
+ * way; passing nothing walks a spread and takes whatever the bot gives.
+ */
+async function playToSlam(name, note, { max = 26, aim = null } = {}) {
+  for (let r = 0; r < max; r++) {
+    await skipBeats();
+    if (await visible(page.locator('.slam'))) break;
+    const cell = aim ? aim[r % aim.length] : (r * 7 + 2) % 36;
+    await page
+      .locator('.board')
+      .first()
+      .locator('.cell')
+      .nth(cell)
+      .click()
+      .catch(() => undefined);
+    await chargeFirst();
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) break;
+    await commit.click();
+    await wait(420);
+    if (await visible(page.locator('.slam'))) break;
+    const overlay = page.locator('.overlay').first();
+    if (await visible(overlay)) {
+      await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+    }
+    await wait(260);
+    if (await visible(page.locator('.slam'))) break;
+    await dismissExplainer();
+    await wait(2500);
+  }
+  const up = await visible(page.locator('.slam'));
+  if (up) {
+    // A first-time card raised by the last round would cover the number.
+    await dismissExplainer();
+    // Let the number finish arriving under the verdict.
+    await wait(320);
+    await shot(name, note);
+    await page.locator('.slam').click({ position: { x: 40, y: 40 } }).catch(() => undefined);
+    await wait(320);
+  }
+  return up;
 }
 
 /** One pick in a draft, waiting out the five-beat sequence. */
@@ -220,6 +398,10 @@ try {
   await page.getByRole('button', { name: /0\.05/ }).first().click();
   await wait(200);
 
+  // Against the Deckhand, so the staked match ends in a victory and the
+  // banner carries the money rather than the rating.
+  await setBot(1);
+
   // The escrow forming.
   await page.getByRole('button', { name: /Find match/ }).click();
   await wait(1400);
@@ -276,6 +458,22 @@ try {
   await beatShot('23-beat-phase-battle', 'the last card before the first round');
   await wait(400);
   await shot('24-battle', 'the clock is the largest thing on screen; nothing is said twice');
+  await anchors('24-battle', {
+    'Round counter': '.battle-grid > .panel.tight > .pill:first-child',
+    'Their hull': '.battle-grid > .panel.tight > span:nth-of-type(2)',
+    'The clock': '.big-num',
+    'Your hull': '.battle-grid > .panel.tight > span:nth-of-type(4)',
+    'The pot': '.battle-grid > .panel.tight > .pill.gold',
+    'Their fleet': '.foe-rail > .row:nth-of-type(1)',
+    'Their cards': '.foe-rail > .row:nth-of-type(2)',
+    'Their water': '.board:not(.own)',
+    'The prompt': '.their-region > .flank-start',
+    'The division': '.your-region',
+    'Your water': '.board.own',
+    'Your ships': '.own-rail > .col',
+    'Your hand': '.hand-slot',
+    Commit: '.commit-drain',
+  });
 
   // Aim the free shot + charge, then photograph the planned state.
   await page.locator('.board').first().locator('.cell').nth(8).click();
@@ -283,6 +481,12 @@ try {
   await chargeFirst();
   await wait(220);
   await shot('25-battle-planned', 'free shot aimed, a card charged, the gem pulsing');
+  await anchors('25-battle-planned', {
+    'The aimed cell': '.board:not(.own) .cell.pick',
+    'Plan readout': '.their-region > .flank-start',
+    'Charged card': '.hand-slot:has(.gem.pulse)',
+    Armed: '.commit-drain',
+  });
 
   // The one control a card carries, and the reason when it has none. The
   // third card is the one holding no charges — Ambush is legal at zero.
@@ -322,7 +526,14 @@ try {
   // round one will oblige.
   let gotNamed = false;
   let gotExplainer = false;
-  for (let i = 0; i < 12 && !(gotNamed && gotExplainer); i++) {
+  // Eight rounds, and the number matters. This hunt and the victory banner
+  // share one match with a twenty-round cap, and a named event needs a REACT,
+  // a prediction, a restriction or an ability to actually fire — so on a run
+  // where none of them does, the loop spends every round it is given. Raising
+  // it to twenty to improve the odds cost *both* plates: the match ended in
+  // here and the banner had come and gone before anything asked for it.
+  // Eight leaves twelve, and nine sink a fleet.
+  for (let i = 0; i < 8 && !(gotNamed && gotExplainer); i++) {
     if (!gotExplainer && (await visible(page.locator('.explainer')))) {
       await shot('31-explainer', 'first time only, per mechanic, per player — then never again');
       gotExplainer = true;
@@ -338,6 +549,9 @@ try {
       .nth((i * 7 + 2) % 36)
       .click()
       .catch(() => undefined);
+    // An activation is a named event, and it is the only one of the eleven
+    // that does not depend on what the opponent does.
+    if (!gotNamed) await useAbility();
     await chargeFirst();
     const commit = page.getByRole('button', { name: /^COMMIT/ });
     if (!(await commit.isEnabled().catch(() => false))) break;
@@ -357,26 +571,36 @@ try {
   }
   await clearOverlays();
 
-  await playRounds(24);
-  await wait(400);
-  await shot('33-result-settlement', 'celebration + receipt: pot, rake, net, tx, replay verified');
+  // The moment, then the analysis. This match is staked, so the banner
+  // carries the money — and it is the same figure the receipt prints.
+  //
+  // Fired into the opponent's real hull, because a plate captioned VICTORY
+  // has to actually be one and a weak bot is not a guarantee. Declared at the
+  // top of this file with the other two staged frames.
+  await playToSlam(
+    '33-slam-victory',
+    'the verdict, and what your balance just did — the same figure the receipt prints',
+    { aim: await enemyCells() },
+  );
+  await wait(500);
+  await shot('34-result-settlement', 'the receipt: pot, rake, net, tx, replay verified');
 
   await click('Menu');
   await wait(400);
   await click('Leaderboard');
   await wait(300);
-  await shot('34-leaderboard', 'the ladder, and your row pinned to the bottom of it');
+  await shot('35-leaderboard', 'the ladder, and your row pinned to the bottom of it');
   await click('Back');
   await click('Season', { exact: true });
   await wait(300);
-  await shot('35-season', 'pool, days left, the payout curve, projected payout at your rank');
+  await shot('36-season', 'pool, days left, the payout curve, projected payout at your rank');
   await click('Back');
   await click('Settings');
   await wait(300);
-  await shot('36-settings', 'wallet, session key, beats, first-time explanations, chain journal');
+  await shot('37-settings', 'wallet, session key, beats, first-time explanations, chain journal');
   await click('Art credits and licences');
   await wait(300);
-  await shot('37-credits', 'the attribution the icon licence requires');
+  await shot('38-credits', 'the attribution the icon licence requires');
   await click('back');
   await wait(200);
   await click('Back');
@@ -384,12 +608,35 @@ try {
   // Tournaments: the tier picker, the bracket forming, and the bracket live.
   await page.getByRole('button', { name: /Tournament/ }).click();
   await wait(300);
-  await shot('38-tournament-tiers', 'eight seats a bracket, the whole curve priced before entry');
+  await shot('39-tournament-tiers', 'eight seats a bracket, the whole curve priced before entry');
   await page.getByRole('button', { name: /Take a seat/ }).click();
   await wait(1100);
-  await shot('39-bracket-forming', 'seats staking in view — a bracket only starts full');
+  await shot('40-bracket-forming', 'seats staking in view — a bracket only starts full');
   await wait(2400);
-  await shot('40-bracket-live', 'eight seats, three rounds, your path in gold, pot always visible');
+  await shot('41-bracket-live', 'eight seats, three rounds, your path in gold, pot always visible');
+
+  // A real quarter-final, played out, for the round-win banner. The bracket
+  // used to simply redraw here; a round win locks in a floor on what you take
+  // home, and that deserves to land before the grid moves underneath it.
+  const qf = page.getByRole('button', { name: /Play quarter-final/ });
+  if (await visible(qf)) {
+    await qf.click();
+    await wait(500);
+    await skipBeats();
+    for (let i = 0; i < 3; i++) await draftPick('.draft-pick');
+    await skipBeats();
+    for (let i = 0; i < 3; i++) await draftPick('button.gamecard');
+    await skipBeats();
+    await click('Auto').catch(() => undefined);
+    await click('Commit fleet').catch(() => undefined);
+    await wait(500);
+    await skipBeats();
+    await playToSlam(
+      '42-slam-round-win',
+      'a bracket round, landing before the grid redraws — with the floor it just secured',
+      { aim: await enemyCells() },
+    );
+  }
 
   // STAGED (1 of 2): the champion moment. The real path is three straight
   // wins and is proven by audit-ui; the screenshot needs the state, not the
@@ -413,14 +660,34 @@ try {
     });
   });
   await wait(600);
-  await shot('41-champion', 'the loudest screen in the game — 55% of the pot');
+  await shot('43-champion', 'the loudest screen in the game — 55% of the pot');
   await page.evaluate(() => window.__store.getState().leaveMatch());
   await wait(400);
+
+  // A defeat, against the Admiral. Built to exactly the same specification as
+  // the victory: most players lose about half their matches, and a loss that
+  // is visually skimped reads as the product being embarrassed by it.
+  await setBot(4);
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await wait(400);
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('.draft-pick');
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('button.gamecard');
+  await skipBeats();
+  await click('Auto').catch(() => undefined);
+  await click('Commit fleet').catch(() => undefined);
+  await wait(500);
+  await skipBeats();
+  await playToSlam('44-slam-defeat', 'the same scale, the same timing, a different colour');
+  await page.evaluate(() => window.__store.getState().leaveMatch());
+  await wait(300);
+  await setBot(3);
 
   // The desktop gate.
   await page.setViewportSize({ width: 1024, height: 640 });
   await wait(300);
-  await shot('42-desktop-gate', 'below 1280×720: logo, one line, nothing else');
+  await shot('45-desktop-gate', 'below 1280×720: logo, one line, nothing else');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await wait(200);
 
@@ -434,10 +701,10 @@ try {
     }, patch);
   await setNet({ status: 'reconnecting' });
   await wait(300);
-  await shot('43-reconnecting', 'the seat is held server-side; the client only says so');
+  await shot('46-reconnecting', 'the seat is held server-side; the client only says so');
   await setNet({ status: 'lost' });
   await wait(300);
-  await shot('44-connection-lost', 'unreachable, said plainly, with the one useful button');
+  await shot('47-connection-lost', 'unreachable, said plainly, with the one useful button');
   await setNet({ status: 'online' });
 
   // Opponent disconnected: a live battle with the grace-period banner.
@@ -458,7 +725,7 @@ try {
   // plan window rather than a stalled one.
   await page.evaluate(() => window.__store.setState({ netDeadlineAt: Date.now() + 14000 }));
   await wait(400);
-  await shot('45-opponent-disconnected', 'their problem, your grace period — the match holds');
+  await shot('48-opponent-disconnected', 'their problem, your grace period — the match holds');
   await setNet({ remote: false, oppConnected: true });
   await page.evaluate(() =>
     window.__store.setState({ netDeadlineAt: null, clock: 20 }),
@@ -468,8 +735,42 @@ try {
 
   await setNet({ lastServerError: 'rate-limited: queueing too fast' });
   await wait(300);
-  await shot('46-server-error', 'a server refusal as a sentence, not a code');
+  await shot('49-server-error', 'a server refusal as a sentence, not a code');
   await setNet({ lastServerError: null });
+
+  // The ownership claim, under a filter. Position is the primary signal and
+  // the two waters are the reinforcement; the brief asked that both carry it,
+  // so the guide gets the greyscale frame rather than the assurance.
+  await setNet({ lastServerError: null });
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await wait(400);
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('.draft-pick');
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('button.gamecard');
+  await skipBeats();
+  await click('Auto').catch(() => undefined);
+  await click('Commit fleet').catch(() => undefined);
+  await wait(500);
+  await skipBeats();
+  await clearOverlays();
+  await page.evaluate(() => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'cvd-filter';
+    svg.setAttribute('style', 'position:absolute;width:0;height:0');
+    svg.innerHTML =
+      '<filter id="cvd"><feColorMatrix type="matrix" values="0.299 0.587 0.114 0 0  0.299 0.587 0.114 0 0  0.299 0.587 0.114 0 0  0 0 0 1 0"/></filter>';
+    document.body.appendChild(svg);
+    document.documentElement.style.filter = 'url(#cvd)';
+  });
+  await wait(400);
+  await shot('51-ownership-greyscale', 'every hue removed: the two waters still separate, and so do the halves');
+  await page.evaluate(() => {
+    document.documentElement.style.filter = '';
+    document.getElementById('cvd-filter')?.remove();
+  });
+  await page.evaluate(() => window.__store.getState().leaveMatch());
+  await wait(300);
 
   await page.evaluate(() =>
     window.__store.getState().fail(
@@ -479,7 +780,7 @@ try {
     ),
   );
   await wait(300);
-  await shot('47-queue-timeout', 'a staked player never silently faces a bot');
+  await shot('50-queue-timeout', 'a staked player never silently faces a bot');
   await page.evaluate(() => window.__store.getState().clearError());
 } catch (err) {
   errors.push(`sweep aborted: ${err instanceof Error ? err.message.split('\n')[0] : err}`);
@@ -489,7 +790,10 @@ try {
   const failed = errors.filter(
     (e) => !e.includes('favicon') && !e.includes('Nobody joined in time'),
   );
+  mkdirSync('sim-out', { recursive: true });
+  writeFileSync('sim-out/anchors.json', `${JSON.stringify(anchorSets, null, 2)}\n`);
   console.log(`\n${taken.length} screens captured into ${OUT}/`);
+  console.log(`anchor boxes for ${Object.keys(anchorSets).length} plate(s) → sim-out/anchors.json`);
   if (failed.length) {
     console.error(`${failed.length} console error(s):`);
     for (const e of failed.slice(0, 8)) console.error(`  ${e}`);

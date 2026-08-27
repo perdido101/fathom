@@ -182,6 +182,12 @@ function Forming({ filled, entrants }: { filled: number; entrants: string[] }): 
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
         {entrants.map((name, seat) => {
           const staked = seat < filled;
+          // Seat 0 is you. Every other tournament surface says so — the star
+          // and the heavier weight in a match box, the gold path through the
+          // bracket — and this one left your seat as one of eight identical
+          // panels, told apart by remembering which end you were. Build 7's
+          // ownership audit found exactly one screen doing that.
+          const mine = seat === 0;
           return (
             <div
               key={seat}
@@ -190,11 +196,18 @@ function Forming({ filled, entrants }: { filled: number; entrants: string[] }): 
                 width: 150,
                 textAlign: 'center',
                 opacity: staked ? 1 : 0.45,
-                border: staked ? '3px solid var(--confirm)' : '3px dashed var(--panel-trim)',
+                border: mine
+                  ? '4px solid var(--gold)'
+                  : staked
+                    ? '3px solid var(--confirm)'
+                    : '3px dashed var(--panel-trim)',
                 transition: 'opacity var(--t-med), border-color var(--t-med)',
               }}
             >
-              <p style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>{staked ? name : '—'}</p>
+              <p style={{ fontWeight: mine ? 900 : 800, fontSize: 'var(--fs-fine)' }}>
+                {mine && staked ? '★ ' : ''}
+                {staked ? name : '—'}
+              </p>
               {/* Each seat printed the stake amount. Every seat stakes the
                   same figure, and it is in the title and the pot row. */}
               <p style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: staked ? 'var(--confirm-deep)' : 'var(--ink-faint)' }}>

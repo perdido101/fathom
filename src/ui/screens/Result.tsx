@@ -5,6 +5,7 @@ import { SHIPS } from '../../engine/ships';
 import { Board } from '../components/Board';
 import { GameCard, ShipCard } from '../components/GameCard';
 import { arenaPayout } from '../../state/profile';
+import { settlement } from '../../state/settlement';
 import { transcriptOf, verify } from '../../engine/verify';
 import { chain } from '../../chain/client';
 
@@ -35,6 +36,7 @@ export function Result(): ReactElement | null {
   const drew = outcome?.kind === 'draw';
   const delta = profile.history[0]?.delta ?? 0;
   const payout = arenaPayout(stake);
+  const net = settlement(mode, stake, won ? 'win' : drew ? 'draw' : 'loss');
 
   const key = chain.sessionKey().publicKeyHex;
   const audit = verify(transcriptOf(ms, 'local', [key, key]));
@@ -74,7 +76,11 @@ export function Result(): ReactElement | null {
           <div key={p} className="panel" style={{ flex: 1.1, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <h3>{p === 0 ? 'Your fleet' : `${view.foe.name}'s fleet`}</h3>
             <div style={{ width: 'min(100%, 240px)', alignSelf: 'center' }}>
+              {/* The heading says whose fleet this is; the water agrees with
+                  it. Two identical blue boards told apart by a caption is the
+                  arrangement Build 7 took off the battle screen. */}
               <Board
+                side={p === 0 ? 'mine' : 'foe'}
                 marks={{}}
                 hulls={(reveal?.placements[p] ?? []).map((cells, i) => ({
                   cells,
@@ -119,9 +125,13 @@ export function Result(): ReactElement | null {
                 <>
                   <ReceiptRow label="Pot" value={`◎ ${payout.pot.toFixed(2)}`} />
                   <ReceiptRow label="Rake (5%)" value={`◎ ${payout.rake.toFixed(4)}`} />
+                  {/* The same call the end-of-match banner made. A receipt
+                      that disagrees with the celebration is the worst bug a
+                      wagered game can ship, so there is one place to compute
+                      it and `settlement.test.ts` holds the two together. */}
                   <ReceiptRow
                     label={won ? 'To you' : 'To them'}
-                    value={`◎ ${payout.toWinner.toFixed(4)}`}
+                    value={`◎ ${Math.abs(net.figure ?? payout.toWinner).toFixed(4)}`}
                     gold
                   />
                 </>

@@ -77,6 +77,18 @@ const ONLY = (() => {
   return i < 0 ? null : process.argv[i + 1];
 })();
 
+/**
+ * The seed prefix. Match seeds are `sa-<pairing>-<i>` by default, which makes
+ * every run reproducible — and means re-running after a balance change
+ * re-measures the *same* matches. `--seed` draws a genuinely different set,
+ * which is what confirming a change on fresh seeds actually requires.
+ */
+const SEED = (() => {
+  const i = process.argv.indexOf('--seed');
+  return i < 0 ? 'sa' : process.argv[i + 1];
+})();
+if (SEED !== 'sa') console.log(`MEASURING on a fresh seed set — prefix "${SEED}"`);
+
 interface Pairing {
   levels: [Level, Level];
   label: string;
@@ -118,7 +130,7 @@ function main(): void {
     const records = [];
     for (let i = 0; i < MATCHES; i++) {
       records.push(
-        playBotMatch(`sa-${pairing.label}-${i}`, levels, { randomDraft: pairing.randomDraft }),
+        playBotMatch(`${SEED}-${pairing.label}-${i}`, levels, { randomDraft: pairing.randomDraft }),
       );
     }
     const report = analyse(records, levels, pairing.randomDraft === true);

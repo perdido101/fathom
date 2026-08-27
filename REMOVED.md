@@ -138,3 +138,34 @@ Recorded here because they look like duplicates and are not:
 - **Both hull pip rows** in the battle top bar, yours and theirs. It reads as
   one element repeated, but it is two different players' hull, and the pair is
   the only place either number appears.
+
+---
+
+# Build 7 — what the ownership pass removed
+
+Build 6 removed one caption too many. This build did not put it back; it
+removed the arrangement that made the caption necessary, and a few more
+things on the way.
+
+| Removed | Why |
+| --- | --- |
+| **The `YOUR SIDE` pill on the waterline** | Built during this build and deleted before it shipped. It is the `Your waters · hull 9/9` caption again — a string apologising for a layout. If the division, the cluster and the second water do not carry ownership, a pill does not fix it; it just hides that they failed. |
+| **The dead water between your board and the bottom of the screen** | An empty band roughly 90px tall, left over from the hand sitting lower than the layout needed. Closing it is what made room for the hand at full card size. |
+| **The gap between the decision and its confirmation** | COMMIT sat at the far right of the screen from a hand at the far left. Not an element removed so much as eighteen inches of eye travel, made twenty times a match. |
+| **The second blue board** | Your water is green now. The two boards were the same colour for six builds, which meant ownership rested entirely on remembering which one was which. |
+
+## What arrived, and what it replaced
+
+| Arrived | Replaced |
+| --- | --- |
+| A horizontal division across the screen, with everything above it theirs and everything below it yours | Four corners and no rule |
+| A second water, 11.1% apart in greyscale | A caption |
+| The hand at `lg`, card rule text legible at 1920×1080 | The hand as the smallest readable object on the screen |
+| The victory / defeat / draw slam, and the bracket round-win slam | A cut straight from the last shot to an analytical page of fleets and receipts |
+| A star and a gold border on your seat in the forming bracket | Eight identical panels |
+
+The slam is the one addition in two builds that is not a replacement — there
+was no end-of-match *moment* before it, only an end-of-match *screen*. It is
+also the only thing here that holds the player up, which is why it lasts two
+seconds, dismisses on a click, shortens to 700ms under fast-resolve, and does
+not appear at all when transitions are off.

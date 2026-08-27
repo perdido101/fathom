@@ -3,7 +3,7 @@
  * pins can be checked against the screens they annotate.
  */
 import { chromium } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const browser = await chromium.launch({
@@ -32,7 +32,9 @@ await page.screenshot({ path: 'sim-out/guide-top.png' });
 for (const [sel, name] of [
   ['#plate-24', 'guide-battle'],
   ['#plate-01', 'guide-menu'],
-  ['#plate-spread', 'guide-spread'],
+  ['#plate-ownership', 'guide-ownership'],
+  ['#plate-before-after', 'guide-spread'],
+  ['#plate-33', 'guide-slam'],
   ['#plate-31', 'guide-explainer'],
   ['#tells', 'guide-chapter'],
 ]) {
@@ -48,6 +50,10 @@ for (const [sel, name] of [
  * the pins are absolutely-positioned HTML, and Word has no equivalent, so it
  * gets the composite rather than the bare capture.
  */
+// Cleared first: a plate the sweep failed to photograph this time would
+// otherwise be served a stale composite from the last run, and the Word
+// build would carry a plate the HTML had dropped.
+rmSync('sim-out/pins', { recursive: true, force: true });
 mkdirSync('sim-out/pins', { recursive: true });
 let figures = 0;
 for (const fig of await page.$$('.plate figure.shot')) {

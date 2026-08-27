@@ -15,10 +15,32 @@
   --sky-top: #6fc3f7;
   --sky-deep: #2e7fd9;
 
-  /* The sea. Boards and ambient water. */
+  /*
+   * The sea, in two waters.
+   *
+   * Build 7 made ownership structural rather than labelled: their world sits
+   * above the division, yours below it, and the two boards no longer share a
+   * colour. Position is the primary signal and tone is the reinforcement —
+   * which is why the pair also differs in *lightness*, not only hue. Your
+   * water reads consistently lighter than theirs in greyscale, so it survives
+   * a colourblind simulation instead of relying on blue-versus-green.
+   */
   --water: #23b5e8;
   --water-deep: #1682b8;
   --water-edge: #0f6da0;
+
+  /* Your water: shallower, warmer, and lighter at both ends of the gradient. */
+  --own-water: #5fd9b8;
+  --own-water-deep: #2aa88a;
+  --own-water-edge: #1c7d66;
+
+  /*
+   * "Yours", as a colour. Your hull pips take it so the top bar reads the
+   * same way round as the screen does. Deliberately the teal of your water
+   * rather than the confirm green: green already means "go" on every button
+   * in the product, and a hull readout is not a button.
+   */
+  --own: #2aa88a;
 
   /* Surfaces. Light, near-white, big soft corners. */
   --panel: #f5faff;
@@ -452,6 +474,12 @@ button {
   background: linear-gradient(180deg, var(--water) 0%, var(--water-deep) 100%);
   border: 3px solid var(--panel-trim);
   box-shadow: inset 0 4px 18px rgba(15, 109, 160, 0.5), var(--shadow-soft);
+}
+
+/* Your water. Same object, different sea. */
+.board.own {
+  background: linear-gradient(180deg, var(--own-water) 0%, var(--own-water-deep) 100%);
+  box-shadow: inset 0 4px 18px rgba(28, 125, 102, 0.45), var(--shadow-soft);
 }
 
 .cell {
@@ -1271,9 +1299,19 @@ button.draft-pick:hover,
 
 .seal.shut {
   border-style: solid;
-  border-color: var(--confirm);
-  background: rgba(46, 213, 115, 0.14);
+  border-color: var(--water-deep);
+  background: rgba(22, 130, 184, 0.12);
   transform: scale(1.03);
+}
+
+/*
+ * Your commitment takes your water's colour, theirs takes theirs. The two
+ * hashes were told apart by the words "You" and "Them" alone — the same
+ * arrangement the battle screen stopped relying on.
+ */
+.seal-own.shut {
+  border-color: var(--own);
+  background: rgba(42, 168, 138, 0.14);
 }
 
 .seal-who {
@@ -1433,4 +1471,182 @@ button.draft-pick:hover,
  */
 .hand-slot .tip {
   bottom: calc(100% + 58px);
+}
+
+/* ---------------------------------------------------------------------------
+ * Ownership, made structural (Build 7).
+ *
+ * Build 6 removed the "Your waters · hull 9/9" caption, which was correct
+ * about the hull number and wrong about everything else: that string was the
+ * only thing on screen saying which board belonged to whom. The answer was
+ * not to put the label back. It was to stop needing one.
+ *
+ * Vertical position now carries ownership. Everything above the division is
+ * theirs; everything below it is yours, in one continuous cluster — board,
+ * ships, hand and the button that commits them. Nothing is labelled, and a
+ * player who has never seen the screen can still tell the two halves apart.
+ * ------------------------------------------------------------------------- */
+
+.their-region,
+.your-region {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  gap: 16px;
+}
+
+/*
+ * The division. A tone change and a rule, not an object: the point is that a
+ * player reads it without noticing they read it.
+ */
+.your-region {
+  border-top: 4px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, rgba(14, 78, 66, 0.14) 0%, rgba(14, 78, 66, 0.05) 100%);
+  box-shadow: inset 0 3px 12px rgba(255, 255, 255, 0.25);
+  padding: 12px 18px 10px;
+}
+
+/*
+ * There was a "YOUR SIDE" pill on this boundary for one iteration. It came
+ * out for the same reason the hull caption did: a label that explains a
+ * layout is a layout that has not done its job. The division, the second
+ * water and the clustering carry it, and if they do not, the answer is to
+ * make them louder rather than to caption them.
+ */
+
+/*
+ * The flanks pull inward toward the board rather than sitting at the screen
+ * edges. A board centred in a 1fr column with 350px of empty water either
+ * side reads as three unrelated things, not as one player's half.
+ *
+ * Named classes rather than :first-child / :last-child — the waterline is an
+ * absolutely-positioned child of the same container, and positional selectors
+ * silently picked it instead of the rail.
+ */
+.flank-end {
+  justify-self: end;
+}
+
+.flank-start {
+  justify-self: start;
+}
+
+/* Their rail: name, fleet and hand, stacked beside their board. */
+.foe-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  text-align: right;
+  padding-right: 18px;
+}
+
+/*
+ * Your rail: board and fleet side by side rather than stacked. Stacked, it
+ * was taller than the region and pushed the hand off the bottom of the
+ * screen — the hand being the thing the region exists to make bigger.
+ */
+.own-rail {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  padding-right: 18px;
+}
+
+/* ---------------------------------------------------------------------------
+ * The winning moment (Build 7).
+ *
+ * There was a result screen and no result moment. This is the beat between
+ * the last enemy cell dying and the analysis arriving: the verdict at display
+ * scale, and under it the one number a player actually cares about.
+ *
+ * A defeat is built to exactly the same specification as a victory — same
+ * scale, same timing, different colour. Most players lose about half their
+ * matches, and a loss that is visually skimped reads as the product being
+ * embarrassed by it.
+ * ------------------------------------------------------------------------- */
+
+.slam {
+  cursor: pointer;
+  gap: 6px;
+  background: rgba(18, 58, 94, 0.62);
+}
+
+@keyframes slam-wash {
+  0% { opacity: 0; transform: scale(0.6); }
+  35% { opacity: 0.5; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.slam-wash {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  animation: slam-wash 900ms ease-out both;
+}
+
+.slam-wash-up { background: radial-gradient(circle at 50% 45%, var(--gold) 0%, transparent 46%); }
+.slam-wash-down { background: radial-gradient(circle at 50% 45%, var(--danger) 0%, transparent 46%); }
+.slam-wash-flat { background: radial-gradient(circle at 50% 45%, #ffffff 0%, transparent 46%); }
+
+.slam-headline {
+  font-size: var(--fs-display);
+  letter-spacing: 0.09em;
+  color: var(--ink-on-bright);
+  line-height: 1;
+  text-shadow:
+    -3px -3px 0 rgba(18, 58, 94, 0.9),
+    3px -3px 0 rgba(18, 58, 94, 0.9),
+    -3px 3px 0 rgba(18, 58, 94, 0.9),
+    3px 3px 0 rgba(18, 58, 94, 0.9),
+    0 12px 34px rgba(18, 58, 94, 0.55);
+}
+
+.slam-headline-up { color: var(--gold); }
+.slam-headline-down { color: #ff8f9b; }
+.slam-headline-flat { color: #ffffff; }
+
+/* The number, immediately beneath. It is the same figure the receipt prints. */
+@keyframes slam-money {
+  0% { opacity: 0; transform: translateY(16px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.slam-money {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-hero);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  animation: slam-money 420ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  animation-delay: 240ms;
+  text-shadow: 0 4px 18px rgba(18, 58, 94, 0.5);
+}
+
+.slam-money-up { color: var(--gold); }
+.slam-money-down { color: #ffd0d5; }
+.slam-money-flat { color: #ffffff; }
+
+.slam-sub {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: var(--fs-lead);
+  color: rgba(255, 255, 255, 0.9);
+  animation: fade var(--t-med) ease both;
+  animation-delay: 420ms;
+  text-align: center;
+  max-width: var(--measure);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slam-wash,
+  .slam-money,
+  .slam-headline {
+    animation: fade 160ms ease both !important;
+  }
 }

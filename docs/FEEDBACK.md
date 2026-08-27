@@ -122,7 +122,7 @@ decays to zero instead of becoming permanent noise.
 | **Kiln** | Kiln's ability is activated by either player | Immediately fire a card in your hand as though it held 3 more charges. It is consumed. | The chosen card fires at three charges more than it holds, and is consumed doing it. |
 | **Leech** | Leech's ability is activated by either player | Steal 3 charges from their cards onto yours. You choose. | Three charges cross the table. Their bank falls and yours rises in the same instant. |
 | **Beacon** | Beacon's ability is activated by either player | Name a row or a column; learn how many ship cells occupy it. Then fire 2 cells anywhere. | An exact count for one row or one column, and two free cells to act on what it says. |
-| **Ember** | Ember's ability is activated by either player | Fire 3 cells anywhere. Gain 2 charges for each one that hits. | Every cell that lands pays two charges back, so a good Ember funds the card after it. |
+| **Ember** | Ember's ability is activated by either player | Fire 2 cells anywhere. Gain 2 charges for each one that hits. | Every cell that lands pays two charges back, so a good Ember funds the card after it. |
 | **Pin** | Pin's ability is activated by either player | Fire 1 cell. If it hits, they cannot fire a card next round. | One cell. If it lands, not one of their cards may fire next round. |
 
 ### The four REACTs
