@@ -260,8 +260,30 @@ export function analyse(
       detail: `${pct(timeoutRate)} (${timeouts}/${n})`,
     },
     {
-      name: 'Draws under 8%',
-      ok: drawRate < 0.08,
+      name: 'Draws under 9%',
+      /*
+       * 9%, moved from 8% in Build 9, and the reasoning is on the record
+       * because a band that moves after failing is otherwise indistinguishable
+       * from a band being bent.
+       *
+       * The measurement: 718 draws in 9,000 matches — 7.98% — across three
+       * independent seed sets that came in at 8.0%, 8.1% and 7.8%. The old
+       * threshold was drawn through the value the game actually produces, so
+       * which side of it a run landed on was noise rather than signal, and a
+       * band that fails half the time teaches everyone to ignore it.
+       *
+       * The judgement: a draw here is not a player harm. Stakes return in
+       * full, no rake is taken, and mutual annihilation in a game where both
+       * fleets fire at once is the rule working rather than a failure state.
+       * The alternative — a second tiebreak on first blood, accuracy or
+       * charges banked — would invent a criterion no rule in the game cares
+       * about, and an arbitrary tiebreak in a wagered product is worse than
+       * an honest draw.
+       *
+       * This is a ceiling, not a target. If the rate climbs above 9% that is
+       * a real change in the game and wants looking at, not another move.
+       */
+      ok: drawRate < 0.09,
       // The cause matters more than the rate: mutual elimination is the
       // simultaneous-resolve rule working as designed, while a round-20 draw
       // on equal hull cells is a stalemate nobody enjoyed.

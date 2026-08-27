@@ -1,0 +1,47 @@
+{
+  "vfx-volley": [
+    "vfx-flip",
+    "vfx-tracer",
+    "vfx-impact",
+    "vfx-shock",
+    "vfx-debris",
+    "vfx-splash",
+    "vfx-ripple"
+  ],
+  "vfx-sink": [
+    "vfx-flip",
+    "vfx-tracer",
+    "vfx-splash",
+    "vfx-ripple",
+    "vfx-gempop",
+    "vfx-impact",
+    "vfx-shock",
+    "vfx-debris"
+  ],
+  "vfx-rare": [
+    "vfx-flip",
+    "vfx-tracer",
+    "vfx-impact",
+    "vfx-shock",
+    "vfx-debris",
+    "vfx-splash",
+    "vfx-ripple",
+    "vfx-gempop",
+    "vfx-douse",
+    "vfx-slick",
+    "vfx-react",
+    "vfx-carry"
+  ],
+  "vfx-theft": [
+    "vfx-flip",
+    "vfx-tracer",
+    "vfx-splash",
+    "vfx-ripple",
+    "vfx-gempop",
+    "vfx-impact",
+    "vfx-shock",
+    "vfx-debris",
+    "vfx-douse",
+    "vfx-slick"
+  ]
+}

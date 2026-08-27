@@ -8,6 +8,9 @@ import { Board } from '../components/Board';
 import { GameCard, CardBack, ShipCard } from '../components/GameCard';
 import { Sound } from '../sfx/SoundManager';
 import { WhyNot } from '../feedback/Feedback';
+import { cardAnchor } from '../feedback/store';
+import { useVfx } from '../vfx/store';
+import { VFX_LIFE } from '../vfx/derive';
 import { whyCannotCommit, whyCannotFire } from '../feedback/reasons';
 import {
   bumpAllocation,
@@ -260,8 +263,17 @@ export function Battle(): ReactElement | null {
     }
     if (blocked.noCharge) return;
     setChargeTo(uid);
-    // The click's pitch rises with the count the card will hold.
+    // The click's pitch rises with the count the card will hold, and so does
+    // the ring that lands on the gem: a fifth charge is visibly and audibly
+    // heavier than a first, which is the one thing the numeral cannot say.
     Sound.play('charge-placed', { rate: 1 + 0.09 * Math.min(charges + 1, 8) });
+    useVfx.getState().spawn({
+      kind: 'gempop',
+      anchor: cardAnchor('me', uid),
+      delay: 0,
+      life: VFX_LIFE.gempop,
+      weight: Math.min(1, 0.3 + (charges + 1) * 0.09),
+    });
   }
 
   function onEnemyCardTap(uid: number): void {
@@ -298,16 +310,28 @@ export function Battle(): ReactElement | null {
         display: 'grid',
         // Three bands, and the middle one is the argument: everything above
         // the division belongs to them, everything below it to you.
-        gridTemplateRows: '72px minmax(0, 1fr) clamp(340px, 38vh, 420px)',
+        gridTemplateRows: '60px minmax(0, 1fr) clamp(340px, 38vh, 420px)',
         gap: 10,
         padding: '10px 16px 12px',
         minHeight: 0,
         position: 'relative',
       }}
     >
-      {/* --- top bar: round, hull pips, the clock, the stake --------------- */}
+      {/* --- the neutral strip: round, the clock, the stake -----------------
+          Both hull rows left here in Build 9, down to the fleets they belong
+          to. What is left is the three things that belong to neither player:
+          which round it is, how long you have, and what is on the table.
+
+          The strip itself stays, and the reason is the clock. It is the
+          screen's one level-1 element at 64px, and it is deliberately
+          nobody's — the plan window is the same twenty seconds for both
+          players. Housing it inside either half would put a neutral object in
+          one player's territory, which is exactly the mistake Build 8 spent
+          itself fixing with the prompt. So the strip is not dead chrome; it
+          is the neutral ground, and it shrank to 60px now that only the clock
+          sets its height. */}
       <div
-        className="panel tight"
+        className="panel tight neutral-strip"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -319,9 +343,6 @@ export function Battle(): ReactElement | null {
           Round&nbsp;<span className="num">{view.round}</span>
           <span style={{ color: 'var(--ink-faint)' }}>/{view.roundCap}</span>
         </span>
-        {/* Their hull sits on the left with the rest of their world, yours on
-            the right — the top bar reads the same way round as the screen. */}
-        <HullPips label={foe.name} value={foe.hullRemaining} colour="var(--danger)" />
         <div className="spacer" />
         {/* The screen's one level-1 element. Every decision a player makes
             here is a decision about how to spend this number. */}
@@ -332,7 +353,6 @@ export function Battle(): ReactElement | null {
           {playingBack ? '—' : `${clock}`}
         </span>
         <div className="spacer" />
-        <HullPips label="You" value={me.hullRemaining} colour="var(--own)" />
         {mode === 'arena' || mode === 'tournament' ? (
           <span className="pill gold">
             ◎ {(stake * (mode === 'tournament' ? 8 : 2)).toFixed(2)} pot
@@ -354,6 +374,10 @@ export function Battle(): ReactElement | null {
             {foe.name}
             {!foe.connected && ' · away'}
           </span>
+          {/* Their hull, with the fleet it counts. It was in the top strip
+              until Build 9, which put a fact about them in neutral ground
+              and left this column short. */}
+          <HullPips value={foe.hullRemaining} colour="var(--danger)" align="end" />
           {foe.ships.map((s, i) => (
             <span key={i} className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
               <ShipCard
@@ -363,6 +387,7 @@ export function Battle(): ReactElement | null {
                 sunk={s.sunk}
                 used={s.abilityUsed}
                 size="md"
+                anchor={s.defId ? `ship:foe:${s.defId}` : undefined}
               />
             </span>
           ))}
@@ -468,6 +493,10 @@ export function Battle(): ReactElement | null {
             />
           </div>
           <div className="col" style={{ gap: 6 }}>
+            {/* Your hull, with your fleet — the same relationship theirs has
+                above the division, in the same column. Hull lives with the
+                ships it counts, on both sides of the line. */}
+            <HullPips value={me.hullRemaining} colour="var(--own)" />
             {me.ships.map((s) => {
               const def = SHIPS[s.defId];
               const usable = !s.sunk && !s.abilityUsed && def.type !== 'REACT';
@@ -480,6 +509,7 @@ export function Battle(): ReactElement | null {
                   used={s.abilityUsed}
                   selected={ability?.defId === s.defId}
                   size="sm"
+                  anchor={`ship:me:${s.defId}`}
                   onClick={() => usable && beginAbility(s.defId)}
                 />
               );
@@ -689,7 +719,11 @@ export function Battle(): ReactElement | null {
                   className="btn go huge commit-drain"
                   disabled={!ready || playingBack}
                   onClick={commit}
-                  style={{ minWidth: 230 }}
+                  /* Fills its column rather than sitting 60px short of the
+                     prompt above it. Build 9 asked what the space to the
+                     right of COMMIT was for; between the button and the
+                     prompt, the answer was nothing. */
+                  style={{ width: '100%' }}
                 >
                 {/* The second timer bar came out in Build 6. Pressure near the
                     decision now lives *in* the decision: one element, two jobs. */}
@@ -727,35 +761,42 @@ export function Battle(): ReactElement | null {
   );
 }
 
-/** Nine hull cells as pips, filled while they stand. */
+/**
+ * Nine hull cells as pips, filled while they stand.
+ *
+ * No label. Build 9 moved both rows out of the neutral strip and down beside
+ * the fleets they count — theirs above the division with their ships, yours
+ * below it with yours — and a row of pips sitting inside a player's own
+ * cluster does not need a name on it. The label was the top bar's problem:
+ * two identical pip rows in one strip had to be told apart somehow.
+ */
 function HullPips({
-  label: who,
   value,
   colour,
+  align = 'start',
 }: {
-  label: string;
   value: number;
   colour: string;
+  align?: 'start' | 'end';
 }): ReactElement {
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'var(--fs-fine)' }}>
-        {who}
-      </span>
-      <span style={{ display: 'flex', gap: 3 }} aria-label={`${value} of 9 hull cells`}>
-        {Array.from({ length: 9 }, (_, i) => (
-          <i
-            key={i}
-            style={{
-              width: 10,
-              height: 14,
-              borderRadius: 3,
-              background: i < value ? colour : 'rgba(18,58,94,0.15)',
-              border: '2px solid rgba(255,255,255,0.7)',
-            }}
-          />
-        ))}
-      </span>
+    <span
+      className="hull-row"
+      style={{ alignSelf: align === 'end' ? 'flex-end' : 'flex-start' }}
+      aria-label={`${value} of 9 hull cells`}
+    >
+      {Array.from({ length: 9 }, (_, i) => (
+        <i
+          key={i}
+          style={{
+            width: 11,
+            height: 16,
+            borderRadius: 3,
+            background: i < value ? colour : 'rgba(18,58,94,0.15)',
+            border: '2px solid rgba(255,255,255,0.7)',
+          }}
+        />
+      ))}
     </span>
   );
 }

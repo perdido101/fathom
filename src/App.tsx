@@ -1,4 +1,4 @@
-import { useEffect, type ReactElement } from 'react';
+import { type CSSProperties, useEffect, type ReactElement } from 'react';
 import { useStore } from './state/store';
 import { MainMenu, Queue, Escrow, Leaderboard, Season, SettingsScreen } from './ui/screens/Menus';
 import { HowToPlay } from './ui/screens/HowToPlay';
@@ -15,6 +15,9 @@ import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
 import { WalletChip, Wordmark } from './ui/components/WalletChip';
 import { FeedbackLayer } from './ui/feedback/Feedback';
+import { VfxLayer } from './ui/vfx/VfxLayer';
+import { useVfx } from './ui/vfx/store';
+import { Music, type TrackId } from './ui/music/MusicManager';
 
 /**
  * The 16:9 shell.
@@ -49,8 +52,30 @@ export function App(): ReactElement {
     return () => document.removeEventListener('visibilitychange', onHide);
   }, []);
 
+  /*
+   * The jolt. One transform on the root element, driven by a store value that
+   * decays on its own — nothing inside re-renders, and two hits landing 55ms
+   * apart do not cancel each other.
+   */
+  const shake = useVfx((s) => s.shake);
+
+  /*
+   * One track per screen, decided in one place.
+   *
+   * Music is a *state*, not an event, which is why it does not live in the
+   * cue list and why `Music.play` is idempotent — this effect runs on every
+   * screen change and a track that restarted each time would be unusable.
+   * A screen whose track has no file simply runs silent.
+   */
+  useEffect(() => {
+    Music.play(trackFor(screen));
+  }, [screen]);
+
   return (
-    <div className="app">
+    <div
+      className={`app ${shake > 0 ? 'quaking' : ''}`}
+      style={shake > 0 ? ({ ['--q' as string]: shake } as CSSProperties) : undefined}
+    >
       {/* The desktop gate. Logo, one line, nothing else. */}
       <div className="desktop-gate">
         <Wordmark hero />
@@ -111,7 +136,33 @@ export function App(): ReactElement {
 
       {/* Above everything, including the resolve overlay: a floater has to be
           able to rise off the cell the overlay is narrating. */}
+      <VfxLayer />
       <FeedbackLayer />
     </div>
   );
+}
+
+/**
+ * Which track belongs to which screen.
+ *
+ * Grouped rather than one-per-screen on purpose: the leaderboard, the season
+ * page and the settings screen are all "out of a match", and cross-fading
+ * between three near-identical menu tracks as a player clicks around would be
+ * worse than one that simply keeps playing.
+ */
+function trackFor(screen: string): TrackId {
+  switch (screen) {
+    case 'shipDraft':
+    case 'cardDraft':
+      return 'draft';
+    case 'deploy':
+      return 'deploy';
+    case 'battle':
+      return 'battle';
+    case 'bracket':
+    case 'tournamentTiers':
+      return 'bracket';
+    default:
+      return 'menu';
+  }
 }

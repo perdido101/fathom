@@ -231,7 +231,7 @@ function figureFor(plate: Plate): string | null {
 
 function titlePage(): (Paragraph | Table)[] {
   return [
-    para([text('ARMADA · build 8 · captured at 1920×1080', {
+    para([text('ARMADA · build 9 · captured at 1920×1080', {
       size: 9, bold: true, color: GOLD, font: DISPLAY, caps: true,
     })], { spacing: 400 }),
     new Paragraph({

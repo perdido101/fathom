@@ -3,6 +3,7 @@ import { useStore, type Beat } from '../../state/store';
 import { SHIPS } from '../../engine/ships';
 import { ShipCard } from '../components/GameCard';
 import { Icon } from '../art/Icon';
+import { Sound } from '../sfx/SoundManager';
 
 /**
  * The beats between phases.
@@ -63,6 +64,9 @@ export function PhaseBeats(): ReactElement | null {
   useEffect(() => {
     if (!beat) return undefined;
     setKey((k) => k + 1);
+    // A card raising is a discrete event: something changed phase. The
+    // match-found beat has its own cue from the store and skips this one.
+    if (beat.kind !== 'matchFound') Sound.play('phase-card', { gain: 0.7 });
     const id = setTimeout(advance, holdMs());
     return () => clearTimeout(id);
   }, [beat, advance]);

@@ -448,7 +448,7 @@ footer .mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
 
 <div class="wrap">
   <header class="masthead">
-    <p class="kicker">ARMADA · build 8 · captured at 1920×1080</p>
+    <p class="kicker">ARMADA · build 9 · captured at 1920×1080</p>
     <h1>Every screen,<br>and what <em>every part of it</em> is for.</h1>
     <p class="lede">A hidden-information naval duel wagered on Solana, documented plate by plate:
       ${plateCount} screens photographed from the running game, with ${pinCount} callouts naming

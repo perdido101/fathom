@@ -25,25 +25,89 @@ const PACKS = {
   'impact-sounds': 'Impact Sounds',
   'sci-fi-sounds': 'Sci-Fi Sounds',
   'digital-audio': 'Digital Audio',
+  'ui-audio': 'UI Audio',
+  'casino-audio': 'Casino Audio',
 };
 
-/** cue -> [pack, file inside the pack's Audio/ folder] */
+/**
+ * cue -> [pack, file inside the pack's Audio/ folder].
+ *
+ * Build 9 took this from 15 entries to 50. Two packs were added to do it:
+ * Casino Audio, which is where a card game's card and chip sounds actually
+ * live, and UI Audio for the two interface cues that had to be quieter than
+ * anything Interface Sounds offers.
+ *
+ * Every pack here is CC0 (public domain), so no attribution is required. It
+ * is recorded anyway, by the same script that does the downloading, so the
+ * credits cannot drift from what shipped.
+ */
 const CHOICES = {
+  // --- interface -----------------------------------------------------------
+  'ui-press': ['interface-sounds', 'click_002.ogg'],
+  'ui-cancel': ['interface-sounds', 'back_001.ogg'],
+  'ui-hover': ['ui-audio', 'rollover1.ogg'],
+  'ui-select': ['interface-sounds', 'select_003.ogg'],
+  'ui-screen': ['interface-sounds', 'scroll_003.ogg'],
+  'ui-modal-open': ['interface-sounds', 'open_001.ogg'],
+  'ui-modal-close': ['interface-sounds', 'close_001.ogg'],
+  'ui-slider': ['interface-sounds', 'tick_002.ogg'],
+  'ui-toggle': ['interface-sounds', 'switch_002.ogg'],
+  'ui-refused': ['interface-sounds', 'error_004.ogg'],
+  'wallet-connected': ['interface-sounds', 'confirmation_002.ogg'],
+  'error-shown': ['interface-sounds', 'error_006.ogg'],
+
+  // --- draft ---------------------------------------------------------------
+  'draft-deal': ['casino-audio', 'card-fan-1.ogg'],
+  'draft-pick': ['casino-audio', 'card-place-2.ogg'],
+  'draft-theirs': ['casino-audio', 'card-slide-3.ogg'],
+  'draft-collision': ['casino-audio', 'card-shove-2.ogg'],
+  'draft-resolve': ['casino-audio', 'card-slide-7.ogg'],
+  'draft-pack': ['casino-audio', 'cards-pack-open-1.ogg'],
+
+  // --- deployment ----------------------------------------------------------
+  'ship-pickup': ['impact-sounds', 'impactMetal_light_001.ogg'],
+  'ship-rotate': ['interface-sounds', 'switch_005.ogg'],
+  'ship-placed': ['impact-sounds', 'impactPlate_medium_000.ogg'],
+  'place-refused': ['impact-sounds', 'impactWood_medium_003.ogg'],
+  'deploy-auto': ['interface-sounds', 'scratch_002.ogg'],
+  'deploy-commit': ['sci-fi-sounds', 'doorClose_001.ogg'],
+
+  // --- combat --------------------------------------------------------------
   'charge-placed': ['interface-sounds', 'click_002.ogg'],
   'card-fired': ['sci-fi-sounds', 'laserLarge_001.ogg'],
   'basic-attack': ['sci-fi-sounds', 'laserRetro_001.ogg'],
+  volley: ['sci-fi-sounds', 'thrusterFire_002.ogg'],
   hit: ['sci-fi-sounds', 'impactMetal_002.ogg'],
   miss: ['impact-sounds', 'impactSoft_heavy_001.ogg'],
   'ship-sunk': ['sci-fi-sounds', 'explosionCrunch_002.ogg'],
   'ability-activated': ['digital-audio', 'phaseJump1.ogg'],
   'react-triggered': ['digital-audio', 'zap1.ogg'],
-  'charges-stolen': ['digital-audio', 'phaserDown2.ogg'],
+  'charges-stolen': ['casino-audio', 'chips-handle-2.ogg'],
   'prediction-triggered': ['impact-sounds', 'impactBell_heavy_002.ogg'],
-  'round-start': ['digital-audio', 'twoTone1.ogg'],
+  'shot-blocked': ['sci-fi-sounds', 'forceField_001.ogg'],
+
+  // --- the shape of a round ------------------------------------------------
+  'match-found': ['digital-audio', 'twoTone1.ogg'],
+  'phase-card': ['interface-sounds', 'maximize_003.ogg'],
+  'round-start': ['digital-audio', 'threeTone1.ogg'],
+  'resolve-step': ['interface-sounds', 'tick_001.ogg'],
   'timer-warning': ['interface-sounds', 'click_005.ogg'],
+  'timer-expired': ['interface-sounds', 'error_008.ogg'],
+  'plan-committed': ['interface-sounds', 'drop_002.ogg'],
+
+  // --- money ---------------------------------------------------------------
+  'stake-confirmed': ['casino-audio', 'chip-lay-1.ogg'],
+  'escrow-forming': ['casino-audio', 'chips-stack-3.ogg'],
+  'escrow-complete': ['casino-audio', 'chips-collide-2.ogg'],
+  settlement: ['interface-sounds', 'bong_001.ogg'],
+  payout: ['casino-audio', 'chips-handle-5.ogg'],
+
+  // --- outcomes ------------------------------------------------------------
   victory: ['digital-audio', 'powerUp1.ogg'],
   defeat: ['digital-audio', 'lowDown.ogg'],
   draw: ['digital-audio', 'twoTone2.ogg'],
+  'round-won': ['digital-audio', 'zapThreeToneUp.ogg'],
+  champion: ['digital-audio', 'powerUp11.ogg'],
 };
 
 function fetchText(url) {

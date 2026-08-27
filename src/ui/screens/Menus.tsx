@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { useStore } from '../../state/store';
 import {
   ARENA_RAKE,
@@ -251,6 +251,12 @@ function RankedJoinModal({
   onClose: () => void;
   onConfirm: () => void;
 }): ReactElement {
+  // A panel arriving over the screen, and leaving it. Two events, two cues.
+  useEffect(() => {
+    Sound.play('ui-modal-open');
+    return () => Sound.play('ui-modal-close');
+  }, []);
+
   const balance = chain.balanceSol();
   const short = balance !== null && balance < SEASON_ENTRY_SOL;
   return (
@@ -812,24 +818,23 @@ export function SettingsScreen(): ReactElement {
 
           <div className="panel">
             <h3 style={{ marginBottom: 10 }}>Play</h3>
-            <Toggle label="Sound" on={settings.sound} onChange={(v) => setSettings({ sound: v })} />
-            <div className="row" style={{ gap: 10, alignItems: 'center', margin: '6px 0' }}>
-              <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)', minWidth: 110 }}>Master volume</span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={Math.round(settings.volume * 100)}
-                disabled={!settings.sound}
-                onChange={(e) => setSettings({ volume: Number(e.target.value) / 100 })}
-                onMouseUp={() => Sound.play('charge-placed')}
-                style={{ flex: 1, accentColor: 'var(--gold)' }}
-                aria-label="Master volume"
-              />
-              <span className="num" style={{ fontSize: 'var(--fs-fine)', width: 34, textAlign: 'right' }}>
-                {Math.round(settings.volume * 100)}%
-              </span>
-            </div>
+            {/* Two channels, two sliders. A player who wants the battle track
+                down usually still wants to hear a shot land, and one slider
+                forces them to choose between the two. Both persist. */}
+            <Toggle label="Effects" on={settings.sound} onChange={(v) => setSettings({ sound: v })} />
+            <VolumeSlider
+              label="Effects volume"
+              value={settings.volume}
+              disabled={!settings.sound}
+              onChange={(v) => setSettings({ volume: v })}
+            />
+            <Toggle label="Music" on={settings.music} onChange={(v) => setSettings({ music: v })} />
+            <VolumeSlider
+              label="Music volume"
+              value={settings.musicVolume}
+              disabled={!settings.music}
+              onChange={(v) => setSettings({ musicVolume: v })}
+            />
             <Toggle
               label="Fast resolve (~1s)"
               on={settings.fastResolve}
@@ -953,5 +958,44 @@ function Toggle({
         />
       </span>
     </button>
+  );
+}
+
+/**
+ * One volume slider, used twice.
+ *
+ * It sounds on release rather than on drag: dragging is not an event, letting
+ * go is — and a tick per pixel would be the noise every rule in
+ * `docs/AUDIO.md` exists to prevent.
+ */
+function VolumeSlider({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  disabled: boolean;
+  onChange: (v: number) => void;
+}): ReactElement {
+  return (
+    <div className="row" style={{ gap: 10, alignItems: 'center', margin: '6px 0' }}>
+      <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)', minWidth: 110 }}>{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={Math.round(value * 100)}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value) / 100)}
+        onMouseUp={() => Sound.play('ui-slider')}
+        style={{ flex: 1, accentColor: 'var(--gold)' }}
+        aria-label={label}
+      />
+      <span className="num" style={{ fontSize: 'var(--fs-fine)', width: 34, textAlign: 'right' }}>
+        {Math.round(value * 100)}%
+      </span>
+    </div>
   );
 }

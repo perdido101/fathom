@@ -274,6 +274,7 @@ export function ShipCard({
   size = 'md',
   onClick,
   className,
+  anchor,
 }: {
   defId: string | null;
   length: number;
@@ -281,9 +282,11 @@ export function ShipCard({
   sunk?: boolean;
   used?: boolean;
   selected?: boolean;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
   className?: string;
+  /** For the VFX layer: where an ability burst or a REACT snap lands. */
+  anchor?: string;
 }): ReactElement {
   const def = defId && revealed ? SHIPS[defId] : null;
   const typeColour =
@@ -294,7 +297,14 @@ export function ShipCard({
         : def?.type === 'REACT'
           ? 'var(--predict)'
           : 'rgba(255,255,255,0.6)';
-  const h = size === 'sm' ? 52 : 72;
+  /*
+   * `lg` exists for one placement: the opponent's fleet on the battle screen.
+   * Build 8 left their card backs — which carry a single number — as the
+   * largest thing on their side, while their ship cards, which carry a
+   * length, a type, a reveal state and whether the ability is spent, were
+   * smaller. Weight and information density now agree.
+   */
+  const h = size === 'sm' ? 52 : size === 'lg' ? 96 : 72;
 
   // A ship card with no click handler renders as a span, because it often
   // sits inside something that is itself a button — a draft pick, a result
@@ -306,6 +316,7 @@ export function ShipCard({
     <Root
       onClick={onClick}
       className={`has-tip ${className ?? ''}`}
+      data-anchor={anchor}
       aria-label={def ? def.name : `unknown ${length}-length ship`}
       style={{
         position: 'relative',
@@ -327,13 +338,13 @@ export function ShipCard({
       }}
     >
       {def && hasIcon(`ship.${def.id}`) ? (
-        <Icon name={`ship.${def.id}`} size={size === 'sm' ? 22 : 30} style={{ color: typeColour }} />
+        <Icon name={`ship.${def.id}`} size={size === 'sm' ? 22 : size === 'lg' ? 40 : 30} style={{ color: typeColour }} />
       ) : (
         <span
           style={{
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: size === 'sm' ? 'var(--fs-lead)' : 'var(--fs-sub)',
+            fontSize: size === 'sm' ? 'var(--fs-lead)' : size === 'lg' ? 'var(--fs-head)' : 'var(--fs-sub)',
             color: '#ffffff',
             textShadow: '0 2px 0 rgba(18,58,94,0.35)',
           }}
@@ -346,7 +357,7 @@ export function ShipCard({
           style={{
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: size === 'sm' ? 'var(--fs-fine)' : 'var(--fs-body)',
+            fontSize: size === 'sm' ? 'var(--fs-fine)' : size === 'lg' ? 'var(--fs-lead)' : 'var(--fs-body)',
             color: def ? 'var(--ink)' : '#ffffff',
             whiteSpace: 'nowrap',
           }}
@@ -362,8 +373,8 @@ export function ShipCard({
             <i
               key={i}
               style={{
-                width: size === 'sm' ? 8 : 10,
-                height: size === 'sm' ? 8 : 10,
+                width: size === 'sm' ? 8 : size === 'lg' ? 13 : 10,
+                height: size === 'sm' ? 8 : size === 'lg' ? 13 : 10,
                 borderRadius: 3,
                 background: sunk ? 'transparent' : def ? typeColour : 'rgba(255,255,255,0.85)',
                 border: `2px solid ${sunk ? 'var(--danger)' : def ? typeColour : 'rgba(255,255,255,0.85)'}`,

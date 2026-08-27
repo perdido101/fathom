@@ -116,6 +116,10 @@ export function Board({
     <div
       className={`board ${compact ? 'compact' : ''} ${side === 'mine' ? 'own' : ''}`}
       onMouseLeave={onHoverCell ? () => onHoverCell(null) : undefined}
+      /* The VFX layer fires projectiles *from* a board and *at* a cell, and
+         a shot with no origin is just a thing appearing on the target. This
+         is that origin — the shooter's own water. */
+      data-anchor={side ? `board:${side}` : undefined}
       style={{ gap: compact ? 3 : 5, padding: compact ? 6 : 10 }}
     >
       {cells}

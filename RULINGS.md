@@ -623,3 +623,124 @@ scope and balance is not tuned without proposing first:
 
 My recommendation is (1). The draw rate has been stable across every
 measurement since Build 6; it is the threshold that is wrong, not the game.
+
+# Build 9
+
+## The draw band, moved to 9%
+
+Accepted and applied, with the reasoning recorded in `src/sim/report.ts`
+beside the number so that a band which moved after failing is not mistaken
+for a band being bent.
+
+The measurement said the threshold was drawing a line through the value the
+game produces: 7.98% across 9,000 matches, with three independent seed sets
+landing at 8.0%, 8.1% and 7.8%. A band that fails half the time teaches
+everyone to ignore it.
+
+The judgement — Aris's, recorded because it is the load-bearing half — is
+that **a draw here is not a player harm.** Stakes return in full, no rake is
+taken, and mutual annihilation in a game where both fleets fire at once is the
+rule working rather than a failure state. No second tiebreak: it would have to
+invent a criterion no rule in the game cares about (first blood, accuracy,
+charges banked), and an arbitrary tiebreak in a wagered product is worse than
+an honest draw.
+
+9% is a ceiling, not a target. Confirmed on a fresh prefix (`--seed b9`):
+draws 7.8%, all twelve ships inside 42–58%, Ember 52.1%. If the rate ever
+climbs past 9% that is a real change in the game and wants looking at, not
+another move.
+
+## The composition, finished
+
+**The columns really are the same height now, and the number is measured.**
+Build 8 claimed the two flanking columns were "each exactly its height" and
+the plate disagreed — the *containers* were the board's height, their
+*contents* were 21.8% and 42.2% of the screen and visibly different. They are
+now identical, and the gaps that make them so (19px in the fleet column, 12px
+in the hand) are not round numbers because the two stacks have different fixed
+heights and only one pair of gaps solves it. `npm run screens` measures both
+boxes into `sim-out/anchors.json` on every run, which is what keeps this a
+fact rather than a claim.
+
+**Matching the board's full height was rejected, and here is why.** The fleet
+column would need ship cards about 150px tall against the component's 72px —
+a different component for one placement. The two flanks share a centre line
+with the board instead, which is a real relationship and an achievable one.
+
+**Weight and information density now agree.** Their card backs carry one
+number each and were the largest opponent element on screen; their ship cards
+carry a length, a type, a reveal state and whether the ability is spent, and
+were smaller. The backs came down to 76×106 and the fleet cards took the full
+width of their column. A larger `lg` ship card was tried first and rejected:
+an *unrevealed* ship card is mostly empty, and at 96px it was a big blank box
+— which is the same inversion, moved rather than fixed.
+
+## The top bar: half the proposal taken, half declined
+
+**Taken: both hull rows moved out.** Theirs sits with their fleet above the
+division, yours with your fleet below it. One rule — hull lives with the ships
+it counts — applied on both sides of the line. It also let both rows drop
+their labels: two identical rows of pips in one strip had to be told apart
+somehow, and inside a player's own cluster there is nothing to tell them apart
+from. That is a caption removed by a layout, which is the Build 7 move again.
+
+**Declined: removing the strip.** Its height is set by the clock, which is the
+screen's one level-1 element and is deliberately *nobody's* — the plan window
+is the same twenty seconds for both players. Housing a 64px neutral object
+inside either half would put it in one player's territory, which is precisely
+the mistake Build 8 spent itself fixing with the prompt. What the strip lost
+instead is its shape: it is a centred capsule rather than a full-width bar,
+because a bar across the top is the shape of a thing belonging to the product
+and this belongs to neither player. 72px to 60px, holding round, clock and
+pot.
+
+**The space right of COMMIT:** the button now fills its column. It sat 60px
+short of the prompt above it, and between the button and the prompt that space
+was for nothing. The outer margin beyond the column stays, and stays for the
+same reason the top's does — the bottom cluster is wider than the top because
+it holds one more object, your own water, which has no counterpart above the
+line.
+
+## Sound and motion
+
+**No canvas, and it is a decision rather than an omission.** The build was
+explicitly allowed a particle layer. The heaviest realistic moment is a
+four-charge Burst finding nine cells: about 55 elements alive for under a
+second, each running one compositor-only animation, none touching layout. A
+canvas buys nothing at those counts and costs a second rendering model, its
+own resize and device-pixel-ratio handling, and a reduced-motion path written
+twice. If one effect ever needs thousands of particles rather than tens, that
+trade changes.
+
+**The effects layer is derived from the same two inputs as the feedback
+layer** — the event stream, which carries no plan payload, and the view diff.
+Two consequences are visible in the output: a sink on *their* water rides the
+cells you actually hit rather than their ship's real position, and charges are
+only drawn crossing between two cards when exactly one card lost and one
+gained. Where several moved at once each card pops on its own, because
+guessing which loss paid for which gain would be inventing information.
+
+**One shake per round, not one per cell.** Nine cells landing 190ms apart
+would queue nine jolts and the screen would still be moving when the next beat
+arrived. The weight is the round's total and it fires on the first hit.
+
+**`volley` is the one cue two events share, and the sharing is the point.**
+Nine cells of one volley arriving *are* one event. Nine overlapping whistles
+is the exact noise the one-cue-per-event rule exists to prevent.
+
+**Interface sounds are attached by control type, not by screen.** A press, a
+cancel and a toggle are properties of the kind of control; wiring them at
+sixty call sites would mean sixty chances to forget one and a new button
+anywhere shipping silent. Two delegated listeners, and `data-sfx="none"` for
+the controls that fire something more specific.
+
+**Music is a separate channel, a separate slider and a separate brief.** It is
+a state rather than an event, so it is not in the cue list and never will be.
+The pipeline matches the art pipeline exactly: file present, it plays; file
+absent, silence; never a crash. Aris generates the tracks in Suno and drops
+them in; nothing in the game needs touching.
+
+**No ambience.** There is no sea-wash loop, no gull, no rigging creak. A sound
+in this product maps to a discrete event the player caused or needs to notice,
+and ambience is the one thing that reliably breaks that rule. The music is the
+atmosphere; nothing else is.

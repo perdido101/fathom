@@ -444,6 +444,34 @@ export const SECTIONS: Section[] = [
       'Twenty seconds, up to twenty times. Each round you must place exactly one charge, you may aim one free shot, and you may fire one card and use one ship ability. You are doing that while reading nine pips, three gems, a board of thirty-six cells and a clock — which is why Build 6 spent itself removing everything on this screen that said the same thing twice. What is left says each fact once, and the loudest object on it is the number you are spending. Build 7 then rebuilt the arrangement around the thing Build 6’s last removal exposed: the screen had never actually said whose board was whose. It had said so in a caption. Everything above the division is now theirs and everything below it is yours, and nothing is labelled. Build 8 finished the half that restructure left unresolved: their fleet and their hand now flank their board as two columns rather than floating beside it, and the columns line up with yours across the division.',
     plates: [
       {
+        file: 'HULLS',
+        num: '—',
+        name: 'Where a hull row belongs',
+        thesis:
+          'Build 8 left both hull readouts in the top strip, which put a fact about *them* and a fact about *you* side by side in neutral ground — and left the strip needing labels to tell two identical rows of pips apart.',
+        spread: {
+          kicker: 'The last of the composition',
+          before: 'docs/before/battle-build8.jpg',
+          after: 'screens/web/24-battle.jpg',
+          beforeCaption: 'Before · Build 8',
+          afterCaption: 'After · Build 9',
+          goneTitle: 'What moved out of the strip',
+          arrivedTitle: 'What it bought',
+          gone: [
+            ['Both hull rows, and their labels', 'Two identical rows of nine pips in one strip have to be told apart somehow, so each carried a name. Beside the fleet it counts, a row of pips needs no name at all.'],
+            ['The full-width bar', 'Holding three small objects, a strip spanning the screen was mostly empty surface — and a bar across the top is the shape of a thing belonging to the product. What is left belongs to neither player, which is a different claim and wants a different shape: a centred capsule with the water showing at both ends.'],
+            ['Twelve pixels of strip height', '72px to 60px. Only the clock sets it now, and the clock overhangs it on purpose — a 64px numeral in a 60px strip reads as sitting on the water rather than inside a box.'],
+            ['The inverted priority in their flank', 'Their card backs, which carry one number each, were the largest opponent element on screen; their ship cards, which carry a length, a type, a reveal state and whether the ability is spent, were smaller. The backs came down to 76×106 and the fleet cards took the width of their column.'],
+          ],
+          arrived: [
+            ['Hull lives with the fleet it counts', 'Theirs above the division with their ships, yours below it with yours — one rule, applied on both sides of the line, and one more thing the layout says instead of labelling.'],
+            ['Two flank groups of identical height', 'The claim Build 8 made and the plate disagreed with. The fleet column carries a name, a hull row and three ship cards; the hand carries three backs; the gaps — 19px and 12px — are the two numbers that make those stacks come out the same. Measured into sim-out/anchors.json on every sweep rather than asserted.'],
+            ['A neutral strip that is honestly neutral', 'Round, clock, pot. The three things that belong to neither player, and nothing else.'],
+            ['COMMIT filling its column', 'It sat 60px short of the prompt above it. Between the button and the prompt, that space was for nothing.'],
+          ],
+        },
+      },
+      {
         file: 'COMPOSITION',
         num: '—',
         name: 'Finishing the top half',
@@ -548,20 +576,20 @@ export const SECTIONS: Section[] = [
         thesis:
           'Their world above the division and yours below it. Their water dominant in the upper band with their fleet and hand beside it; your water, your ships, your hand and the button that commits them together in the lower one. Nothing on this screen is labelled with whose it is.',
         pins: [
-          { x: 4.7, y: 8.6, label: 'Round counter', text: 'Which round of a maximum twenty. A match that reaches the cap is decided on remaining hull cells.' },
-          { x: 13.1, y: 8.6, label: 'Their hull', text: 'Nine pips, one per hull cell across three ships, in the danger red. It sits on the left with the rest of their world — the top bar reads the same way round as the screen does. Showing it is not a leak: every fleet is nine cells and you already know which of your shots landed.' },
-          { x: 39.6, y: 3.5, label: 'The clock', text: 'The plan window, and the screen’s primary element at 64px. Under five seconds it turns red, pulses and ticks audibly. In a networked match the server owns this clock and the client renders an estimate.' },
-          { x: 74, y: 8.6, label: 'Your hull', text: 'The same nine pips in your green — the colour your water carries, four inches below. Yours is on the right because everything of yours is.' },
-          { x: 81, y: 8.6, label: 'The pot', text: 'In gold, always visible in a staked match. You never have to leave the board to remember what is riding on it.' },
-          { x: 21.4, y: 36.1, label: 'Their fleet', text: 'Their name, then three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks. The cards fill the column rather than sizing to their contents — a revealed four is wider than an unknown two, and three ragged right edges is what made this rail read as debris beside the board until Build 8.' },
-          { x: 74.8, y: 34.5, label: 'Their hand', text: 'Card backs with readable gold charge gems, on the far side of their board from their fleet. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public. This flank held one line of text until Build 8, and the line was not even theirs.' },
-          { x: 50, y: 12.5, label: 'Their water', text: 'The biggest single element on screen, in the blue, and the only place you act — and since Build 8 it fills the height of its region, with their fleet and their hand flanking it as two columns of exactly its height. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
+          { x: 30.5, y: 3.7, label: 'Round counter', text: 'Which round of a maximum twenty. A match that reaches the cap is decided on remaining hull cells.' },
+          { x: 20.4, y: 23.2, label: 'Their hull', text: 'Nine pips, one per hull cell across three ships, in the danger red — sitting with the fleet it counts rather than in the strip at the top, which is where it was until Build 9. Hull lives with its ships on both sides of the division, and a row of pips inside a player’s own cluster needs no name on it. Showing theirs is not a leak: every fleet is nine cells and you already know which of your shots landed.' },
+          { x: 46.6, y: 3.7, label: 'The clock', text: 'The plan window, and the screen’s primary element at 64px. Under five seconds it turns red, pulses and ticks audibly. In a networked match the server owns this clock and the client renders an estimate.' },
+          { x: 28.3, y: 68.3, label: 'Your hull', text: 'The same nine pips in your green, above your own fleet — the mirror of theirs, in the same column, on the other side of the line.' },
+          { x: 55.2, y: 3.7, label: 'The pot', text: 'In gold, always visible in a staked match. You never have to leave the board to remember what is riding on it.' },
+          { x: 20.4, y: 37.5, label: 'Their fleet', text: 'Their name, then three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks. The cards fill the column rather than sizing to their contents — a revealed four is wider than an unknown two, and three ragged right edges is what made this rail read as debris beside the board until Build 8.' },
+          { x: 73.6, y: 33.7, label: 'Their hand', text: 'Card backs with readable gold charge gems, on the far side of their board from their fleet. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public. This flank held one line of text until Build 8, and the line was not even theirs.' },
+          { x: 50, y: 11, label: 'Their water', text: 'The biggest single element on screen, in the blue, and the only place you act — and since Build 8 it fills the height of its region, with their fleet and their hand flanking it as two columns of exactly its height. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
           { x: 75.3, y: 70.5, label: 'The prompt', text: 'What your next click does, in words, immediately above the control that ends the round. It had a panel behind it until Build 6 and was one of the heaviest objects on the screen for one sentence; until Build 8 it was still rendering in *their* half, which is an instruction to you sitting in the opponent’s territory. While a card is aiming, the aiming panel takes this column instead.' },
           { x: 5, y: 62.6, label: 'The division', text: 'A quiet horizontal rule with a lit edge, running the width of the screen. Everything above it is theirs; everything below it is yours. This is the whole ownership argument, and it is why no part of this screen needs a label saying whose it is.' },
-          { x: 9.6, y: 80.1, label: 'Your water', text: 'Green rather than blue, and below the line: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here. The two waters are 11.1% apart in greyscale, so the pairing survives a colourblind reading.' },
-          { x: 28.8, y: 91, label: 'Your ships', text: 'Your three, face up to you, beside your own water instead of inside their half of the screen — which is where they rendered until Build 7. They sit in the same column as their fleet above the division, which is the mirroring the whole game rests on, put into the layout. Each shows its type and whether the once-per-match ability is still available.' },
-          { x: 50, y: 64, label: 'Your hand', text: 'Real cards at full size, fanned, lifting on hover — the rule text on the face is legible without hovering at 1920×1080. Clicking one charges it. Three at a time, one drawn per round while the shared pile lasts.' },
-          { x: 86.5, y: 82.8, label: 'Commit', text: 'The largest control in the product, and now adjacent to the hand it commits rather than at the far end of the screen from it. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
+          { x: 9.2, y: 80.1, label: 'Your water', text: 'Green rather than blue, and below the line: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here. The two waters are 11.1% apart in greyscale, so the pairing survives a colourblind reading.' },
+          { x: 28.3, y: 91, label: 'Your ships', text: 'Your three, face up to you, beside your own water instead of inside their half of the screen — which is where they rendered until Build 7. They sit in the same column as their fleet above the division, which is the mirroring the whole game rests on, put into the layout. Each shows its type and whether the once-per-match ability is still available.' },
+          { x: 50, y: 64.5, label: 'Your hand', text: 'Real cards at full size, fanned, lifting on hover — the rule text on the face is legible without hovering at 1920×1080. Clicking one charges it. Three at a time, one drawn per round while the shared pile lasts.' },
+          { x: 87.5, y: 82.8, label: 'Commit', text: 'The largest control in the product, and now adjacent to the hand it commits rather than at the far end of the screen from it. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
         ],
         notes: [
           'Two callouts more than Build 6 left here, and the guide would rather say so than quietly round down: the hull row split into two because the top bar now reads the same way round as the screen, and the division earned one of its own because it is the most important object on the plate.',
@@ -687,6 +715,43 @@ export const SECTIONS: Section[] = [
           'Twenty-eight in total: each of the twelve cards, each of the eight ACTIVE/NERF abilities, each of the four REACTs, plus the hull tiebreak, a draw, a timer strike and the first draw from the shared pile.',
           'The budget is one Tier-2 line and one Tier-3 card on screen at once. A mechanic crowded out stays unmarked — it is still first-time, so it gets its explanation next time rather than losing it silently.',
           'Settings shows how many of the twenty-eight have been seen and can make all of them first-time again.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'sensory',
+    title: 'Sound and motion',
+    standfirst:
+      'Fifty-three sound cues and fourteen visual effects, every one of them tied to a discrete event. No ambience, no loops, and nothing that plays because a screen is open.',
+    journey:
+      'Until Build 9 the game had fifteen sounds and a handful of animations, and the gap showed most in the round that is the whole product: shots appeared on cells with no author, a sink was over in 260ms, and a prediction landing — the rarest and best thing ARMADA produces — had one line of text and nothing else. This chapter is the audit that fixed it. Both layers are derived from the same two inputs the feedback layer uses, which is what stops either of them showing a player something the rules withhold; both run on the same clock as the resolve overlay, so an impact lands on the beat that narrates it; and both degrade rather than disappear when a player asks for less motion.',
+    plates: [
+      {
+        file: '29-floaters',
+        num: '29',
+        name: 'A round landing',
+        thesis:
+          'One frame, mid-resolve, with most of the layer visible at once: a tracer still in the air, an impact flare and its shockwave on the cell that took the hit, debris leaving it, and the HIT floater rising over the top of all of it.',
+        notes: [
+          'Every effect animates transform, opacity and filter and nothing else, so all of it stays on the compositor. The heaviest realistic moment — a four-charge Burst finding nine cells — puts about 55 elements on screen for under a second and touches layout zero times.',
+          'There is no canvas, and that is a decision rather than an omission. At those counts a canvas buys nothing and costs a second rendering model, its own resize and device-pixel-ratio handling, and a reduced-motion path that would have to be written twice. The moment one effect needs thousands of particles rather than tens, that trade changes.',
+          'The tracer is scheduled to *arrive* on its beat rather than leave on it. A projectile that launches when the overlay says “hit” lands 260ms after the word, which reads as a delay rather than as a cause.',
+          'The whole table — every effect, its trigger, its duration, and how it degrades under reduced motion — is in docs/VFX.md, generated from the layer’s own timing table so a documented duration is the duration that runs.',
+        ],
+      },
+      {
+        file: '37-settings',
+        num: '37',
+        name: 'Two channels, two sliders',
+        thesis:
+          'Effects and music are separate problems and get separate volume controls, both persisted. A player who wants the battle track down almost always still wants to hear a shot land, and one slider forces them to choose between the two.',
+        notes: [
+          'Fifty-three cues, sourced from six CC0 packs by Kenney. CC0 requires no attribution; it is recorded anyway, by the same script that does the downloading, so the credits cannot drift from what shipped.',
+          'The list is enforced rather than described. npm run audio:doc exits non-zero if a cue has no file, a file has no cue, a cue has no credit, or a cue is declared and never fired anywhere in src — the same shape of check that stops a mechanic shipping without a first-time explanation.',
+          'Two rules did the filtering. A cue maps to a discrete event the player caused or needs to notice; and two events share a cue only when they are genuinely the same event. The second is what took the list from fifteen to fifty-three — pressing a button and cancelling out of a panel no longer share a sound. It cuts the other way once: nine cells of one volley arriving are one event, and the volley cue fires once per round rather than once per cell.',
+          'Four cues carry a number in their pitch rather than in a second sound: the charge click rises with the count the card will hold, a longer hull sinks lower, the timer tick quickens, and cancel sits below press because leaving is not arriving.',
+          'Music is not in the cue list and never will be — it is a state, not an event. Eight tracks, generated in Suno from MUSIC_BRIEF.md and dropped into src/ui/music/files/. File present, it plays; file absent, silence; never a crash. The same contract the art pipeline has, for the same reason.',
         ],
       },
     ],

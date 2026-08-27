@@ -1,4 +1,4 @@
-# Functional audit — Builds 4 through 8
+# Functional audit — Builds 4 through 9
 
 > **Build 6 note.** The checklist below is unchanged in substance; the harness
 > counts and two control names were updated where Build 6 moved them. The
@@ -216,6 +216,79 @@ the columns are attached to the board on purpose — Build 7 established that a
 board centred with empty water either side reads as three unrelated things.
 The alignment across the division was judged worth more than the margin, and
 the residual is symmetric, so it reads as margin rather than as a gap.
+
+## Build 9 — the sensory audit
+
+Every interaction in the product, asked two questions: **does it make a
+sound?** and, if it happens on the board or on a card, **does it show
+anything?** The answer was no far more often than the fifteen-cue list
+suggested.
+
+| Area | Cues before | Cues after | Effects added |
+| --- | --- | --- | --- |
+| Interface | 0 (one generic click, shared) | 12 | — |
+| Draft | 2 (both borrowed from other events) | 6 | inherited |
+| Deployment | 1 (borrowed) | 6 | — |
+| Combat | 11 | 12 | 11 |
+| Round shape | 2 | 7 | inherited |
+| Money | 0 | 5 | — |
+| Outcomes | 3 | 5 | inherited |
+| **Total** | **15** | **53** | **14 new, 9 inherited** |
+
+Four findings worth naming:
+
+**Six unrelated events were sharing one cue.** `charge-placed` — the click
+meant for seating a charge on a card — was also playing for a draft pick, a
+ship placement, a stake landing, a bracket seat filling and the charge beat at
+resolve. Each has its own sound now.
+
+**Three interactions answered with nothing at all.** An illegal ship
+placement, a disabled control, and a lapsed plan window. All three now make a
+sound, and the refused-placement one matters most: the board saying no is
+still the board answering you, and Build 8 left it silent *and* wordless.
+
+**No money event had a sound.** Staking, escrow filling, settlement and payout
+were the four quietest moments in a product whose entire point is that money
+moves. They now have chips and a ledger.
+
+**The generated check.** `npm run audio:doc` exits non-zero if a cue has no
+file, a file has no cue, a cue has no credit entry, or a cue is declared and
+never fired anywhere in `src/`. `npm run vfx` does the same for effects
+against the layer's own timing table. A mechanic cannot ship without a sound
+or a visual, in exactly the way `feedback-doc.ts` stops one shipping without a
+first-time explanation.
+
+**A check that under-reported, found and fixed.** The first version of the
+cue-wiring detector grepped for `Sound.play('literal')` and reported ten cues
+unwired that were wired — it missed every ternary and every multi-line call.
+A check that cries wolf gets edited away rather than believed, so the detector
+now greps for the quoted id anywhere in `src/` and excludes only the file that
+declares them.
+
+### What the clips actually caught
+
+`npm run clips` records what it sees into `clips-vfx.json`, so the answer is
+evidence rather than a claim. **12 of the 14 effects** reached the camera:
+
+| Captured | Not captured |
+| --- | --- |
+| tracer, impact, shock, debris, splash, ripple, douse, slick, carry, gempop, flip, react | **foretold** (a read landing), **blocked** (a Mirror eating your shots) |
+
+Both misses are the same miss: a prediction only triggers when the *opponent*
+fires into a cell you read, and no harness can ask them to. The behaviour is
+pinned by engine tests and the effects are asserted in `derive.test.ts`; what
+is missing is the video, and that is stated rather than quietly omitted.
+
+Two of the three that *were* eventually captured took a causal fix rather than
+more attempts, which is the same lesson Build 8 learned about the named-event
+plate:
+
+- **The REACT** needed the strongest bot, because a weak one rarely sinks
+  anything with a death-rattle on it.
+- **The charge theft** needed the thief *drafted by name*, *charged
+  specifically*, and *aimed at a card rather than a cell* — a harness taking
+  the leftmost card each time satisfies none of the three. And when it still
+  came back empty, the code was wrong, not the harness (below).
 
 ## Console cleanliness
 

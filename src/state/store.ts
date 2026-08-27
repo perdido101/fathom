@@ -19,7 +19,10 @@ import {
 import { playBotMatch } from '../sim/runner';
 import * as net from './net';
 import { Sound } from '../ui/sfx/SoundManager';
+import { Music } from '../ui/music/MusicManager';
 import { announceRound } from '../ui/feedback/announce';
+import { playRoundVfx } from '../ui/vfx/derive';
+import { useVfx } from '../ui/vfx/store';
 import { useFeedback } from '../ui/feedback/store';
 import {
   type MatchHistoryEntry,
@@ -61,7 +64,18 @@ export type Screen =
 
 export interface Settings {
   sound: boolean;
+  /** Effects volume. Music has its own — see below. */
   volume: number;
+  /**
+   * Music, as a separate channel and a separate slider.
+   *
+   * Not a nicety: a player who wants the battle track down almost always
+   * still wants to hear a shot land, and one slider forces them to choose
+   * between the two. Defaults below the effects channel because music sits
+   * under a 20-second decision clock and must never compete with it.
+   */
+  music: boolean;
+  musicVolume: number;
   /** Skip the resolve animation, unlocked after a few matches. */
   fastResolve: boolean;
   /** The beats between phases. On by default; a click skips any single one. */
@@ -221,6 +235,8 @@ function loadSettings(): Settings {
   const fallback: Settings = {
     sound: true,
     volume: 0.8,
+    music: true,
+    musicVolume: 0.45,
     fastResolve: false,
     transitions: true,
     botLevel: 3,
@@ -232,6 +248,8 @@ function loadSettings(): Settings {
     const merged = { ...fallback, ...parsed };
     Sound.setEnabled(merged.sound);
     Sound.setVolume(merged.volume);
+    Music.setEnabled(merged.music);
+    Music.setVolume(merged.musicVolume);
     return merged;
   } catch {
     return fallback;
@@ -286,6 +304,8 @@ export const useStore = create<Store>((set, get) => ({
     // being left. A floater anchored to a board cell that no longer exists
     // would draw itself over whatever took its place.
     useFeedback.getState().clear();
+    useVfx.getState().clear();
+    Sound.play('ui-screen', { gain: 0.6, guard: 200 });
     set({ screen, error: null, busy: null });
   },
 
@@ -319,6 +339,9 @@ export const useStore = create<Store>((set, get) => ({
     const text =
       detail instanceof Error ? detail.message : detail === undefined ? null : String(detail);
     console.error('[armada]', what, text);
+    // Once, on the way in. An error that is already on screen does not
+    // re-announce itself.
+    Sound.play('error-shown', { guard: 800 });
     set({ error: { what, detail: text, retry: retry ?? null }, busy: null });
   },
 
@@ -341,6 +364,8 @@ export const useStore = create<Store>((set, get) => ({
     const settings = { ...get().settings, ...patch };
     Sound.setEnabled(settings.sound);
     Sound.setVolume(settings.volume);
+    Music.setEnabled(settings.music);
+    Music.setVolume(settings.musicVolume);
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch {
@@ -406,24 +431,24 @@ export const useStore = create<Store>((set, get) => ({
       setTimeout(() => {
         if (get().screen !== 'escrow') return;
         set({ escrow: { you: true, opponent: false, stake } });
-        Sound.play('charge-placed');
+        Sound.play('stake-confirmed');
       }, 800);
       setTimeout(() => {
         if (get().screen !== 'escrow') return;
         set({ escrow: { you: true, opponent: true, stake } });
-        Sound.play('charge-placed');
+        Sound.play('escrow-complete');
       }, 2200);
       setTimeout(() => {
         if (get().screen !== 'escrow') return;
         set({ screen: 'shipDraft', escrow: null });
         get().showBeats(foundBeat(mode, stake), { kind: 'shipDraft' });
-        Sound.play('round-start');
+        Sound.play('match-found');
       }, 3100);
       return;
     }
     set({ ...base, screen: 'shipDraft' });
     get().showBeats(foundBeat(mode, stake), { kind: 'shipDraft' });
-    Sound.play('round-start');
+    Sound.play('match-found');
   },
 
   async startTournament(stake) {
@@ -479,7 +504,8 @@ export const useStore = create<Store>((set, get) => ({
           const t = get().tournament;
           if (!t || get().screen !== 'bracket' || t.filled >= seat) return;
           set({ tournament: { ...t, filled: seat } });
-          Sound.play(seat === 8 ? 'round-start' : 'charge-placed');
+          // The last seat is the one that starts a bracket, and sounds it.
+          Sound.play(seat === 8 ? 'escrow-complete' : 'escrow-forming');
         },
         350 * (seat - 1),
       );
@@ -520,7 +546,7 @@ export const useStore = create<Store>((set, get) => ({
       },
       { kind: 'shipDraft' },
     );
-    Sound.play('round-start');
+    Sound.play('match-found');
   },
 
   submitShipPick(defId) {
@@ -587,6 +613,9 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   submitPlan(plan, aim = []) {
+    // The stamp. Both plans are held sealed until both arrive, so this is
+    // the last thing a player does in a round and it should land like it.
+    Sound.play('plan-committed');
     if (get().net.remote) {
       set({ lastAim: aim });
       net.netPlan(plan);
@@ -616,6 +645,9 @@ export const useStore = create<Store>((set, get) => ({
     // The feedback layer runs on its own clock rather than on playback, so it
     // says the same things whether or not the player skips the resolve.
     announceRound(before, clientView(state, 0), events, fast, aim);
+    // The effects run off the same two inputs and the same clock, so an
+    // impact lands on the beat the overlay narrates rather than after it.
+    playRoundVfx(before, clientView(state, 0), events, fast, aim);
     if (fast) get().finishPlayback();
   },
 
@@ -627,6 +659,9 @@ export const useStore = create<Store>((set, get) => ({
       get().finishPlayback();
       return;
     }
+    // The overlay stepping. Quiet and under everything: it marks the beat
+    // rather than announcing it, and the beat's own cue rides on top.
+    Sound.play('resolve-step', { gain: 0.35, guard: 60 });
     cue(pb.events[nextIndex]);
     set({ playback: { ...pb, index: nextIndex } });
   },
@@ -649,7 +684,14 @@ export const useStore = create<Store>((set, get) => ({
       }
       void chain
         .settle(get().matchIdOnChain, result, get().stake)
-        .then(() => set({ lastTx: chain.lastTxSignature() }))
+        .then(() => {
+          // The ledger closing, and — if anything came back — the money
+          // landing. Two events, two cues: a settlement always happens, a
+          // payout only happens when you won.
+          Sound.play('settlement');
+          if (result === 'win' && get().stake > 0) Sound.play('payout');
+          set({ lastTx: chain.lastTxSignature() });
+        })
         .catch((err) => {
         // A settlement that failed is a settlement the player must be told
         // about; it is their money waiting on the reclaim path.
@@ -844,9 +886,12 @@ function finishTournamentMatch(
   // deserves to land before the grid updates underneath it. The final keeps
   // its own CHAMPION screen as the finale, so it is not slammed twice.
   if (roundName === 'final' && result === 'win') {
+    // The loudest thing in the game, and the only cue that gets to be.
+    Sound.play('champion');
     land();
     return;
   }
+  if (result === 'win') Sound.play('round-won');
   slamThen(roundSettlement(t.stake, roundName, result === 'win'), land);
 }
 
@@ -887,7 +932,9 @@ function cue(e: ResolveEvent): void {
       Sound.play(e.hit ? 'hit' : 'miss');
       break;
     case 'sink':
-      Sound.play('ship-sunk');
+      // A four-length hull goes down lower than a two. One cue, pitched by
+      // the thing that actually differs.
+      Sound.play('ship-sunk', { rate: 1.18 - e.length * 0.06 });
       break;
     case 'react':
       Sound.play('react-triggered');
@@ -897,9 +944,20 @@ function cue(e: ResolveEvent): void {
       break;
     case 'prediction':
       if (e.triggered) Sound.play('prediction-triggered');
+      // A Mirror eats the whole round: the shots arrive and stop.
+      if (e.triggered && e.card === 'mirror') Sound.play('shot-blocked', { gain: 0.85 });
       break;
     case 'charges':
       Sound.play('charge-placed');
+      break;
+    case 'reveal':
+      // Shots in the air, once for the volley. Nine cells arriving 190ms
+      // apart would otherwise be nine overlapping whistles, which is the
+      // exact noise the one-cue-per-event rule exists to prevent.
+      Sound.play('volley', { gain: 0.7 });
+      break;
+    case 'strike':
+      Sound.play('timer-expired');
       break;
     default:
       break;

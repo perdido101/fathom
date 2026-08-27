@@ -11,14 +11,20 @@
  * phases, and a round of the feedback layer working. All three are motion by
  * definition and a still frame can only hint at them.
  *
- * The prediction trigger is still not captured: it needs the bot to fire into
+ * Build 9 added three for the effects layer: a multi-cell volley, a sink, and
+ * one that hunts the three rare effects — a REACT, a prediction landing and a
+ * charge theft — across up to three real matches against the strongest bot.
+ * What it caught is written to `clips-vfx.json` either way, because a clip
+ * harness that quietly reports only its successes is not evidence.
+ *
+ * The prediction trigger is still not reliably captured: it needs the bot to fire into
  * a Mirror read, which cannot be staged deterministically from outside. Its
  * behaviour is pinned by engine tests and its beat was verified by eye;
  * documented in FUNCTIONAL_AUDIT.md.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
-import { mkdirSync, rmSync, readdirSync, renameSync, statSync } from 'node:fs';
+import { mkdirSync, rmSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
 
 const OUT = 'clips';
 rmSync(OUT, { recursive: true, force: true });
@@ -77,6 +83,57 @@ async function skipBeats(page, limit = 5) {
 async function chargeFirst(page) {
   await page.locator('.hand-slot .gamecard').first().click({ timeout: 4000 }).catch(() => undefined);
   await page.waitForTimeout(160);
+}
+
+/**
+ * Fire a card: hover it, then take the one control it reveals.
+ *
+ * Which card is legal depends on what the draft handed you and how many
+ * charges it holds, so this tries each in turn rather than assuming the
+ * leftmost one can fire. Returns whether anything went off.
+ */
+async function fireFirst(page) {
+  const count = await page.locator('.hand-slot').count();
+  for (let i = 0; i < count; i++) {
+    await page.locator('.hand-slot').nth(i).hover().catch(() => undefined);
+    await page.waitForTimeout(220);
+    const fire = page.getByRole('button', { name: /^Fire · / }).first();
+    if (!(await fire.isVisible().catch(() => false))) continue;
+    await fire.click().catch(() => undefined);
+    await page.waitForTimeout(200);
+    /*
+     * A card that wants a target gets one — and not every card wants a cell.
+     *
+     * Siphon and Jam aim at the opponent's *cards*, not their water, and the
+     * first version of this helper only ever clicked cells: Lock in stayed
+     * disabled, the declaration was cancelled, and the charge-theft effect
+     * never once reached the camera. Try cells, then cards, then give up on
+     * this card rather than on the round.
+     */
+    const lock = page.getByRole('button', { name: 'Lock in' });
+    if (await lock.isVisible().catch(() => false)) {
+      await page.locator('.board').first().locator('.cell').nth(20).click().catch(() => undefined);
+      await page.waitForTimeout(160);
+      if (!(await lock.isEnabled().catch(() => false))) {
+        const foe = page.locator('.foe-card');
+        const n = await foe.count();
+        for (let k = 0; k < n; k++) {
+          await foe.nth(k).click().catch(() => undefined);
+          await page.waitForTimeout(140);
+          if (await lock.isEnabled().catch(() => false)) break;
+        }
+      }
+      if (await lock.isEnabled().catch(() => false)) {
+        await lock.click().catch(() => undefined);
+        await page.waitForTimeout(180);
+        return true;
+      }
+      await page.getByRole('button', { name: 'Cancel' }).click().catch(() => undefined);
+      continue;
+    }
+    return true;
+  }
+  return false;
 }
 
 /** Cells of the enemy's ships, via the dev store handle. Staging, not play. */
@@ -325,6 +382,217 @@ await record('round-win-slam', async (page) => {
   await setBot(page, 1);
   await playToSlam(page);
 });
+
+/**
+ * Play rounds, firing a charged card into a mix of hull and water, until the
+ * predicate says stop. Returns what it saw.
+ *
+ * Most of the Build 9 effects are conditional on what a real round produces —
+ * a REACT needs a ship to die, a prediction needs a read to land — so the
+ * honest harness is one that plays on and reports what it got rather than one
+ * that stages a match state and calls it a capture.
+ */
+async function playUntil(page, want, { rounds = 24 } = {}) {
+  const t = { timeout: 6000 };
+  const cells = await enemyCells(page);
+  const seen = new Set();
+  for (let r = 0; r < rounds; r++) {
+    await skipBeats(page);
+    if (await seen_(page, '.slam')) break;
+    // A mix: one cell of real hull, one of open water, so a multi-cell
+    // pattern shows impacts and splashes in the same volley.
+    const aim = r % 2 === 0 ? cells[r % cells.length] : (r * 13 + 5) % 36;
+    await page.locator('.board').first().locator('.cell').nth(aim).click(t).catch(() => undefined);
+    await page.waitForTimeout(120);
+    await fireFirst(page).catch(() => undefined);
+    await chargeFirst(page);
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) break;
+    await commit.click(t).catch(() => undefined);
+    // Watch the effect layer while the round resolves.
+    for (let k = 0; k < 60; k++) {
+      const kinds = await page.evaluate(() =>
+        [...document.querySelectorAll('.vfx')].map((e) =>
+          [...e.classList].find((c) => c.startsWith('vfx-')),
+        ),
+      );
+      kinds.forEach((x) => x && seen.add(x));
+      if (want.every((w) => seen.has(w))) return seen;
+      await page.waitForTimeout(40);
+    }
+    const ov = page.locator('.overlay').first();
+    if (await ov.isVisible().catch(() => false)) {
+      await ov.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+    const g = page.getByRole('button', { name: 'Got it' });
+    if (await g.isVisible().catch(() => false)) {
+      await g.click().catch(() => undefined);
+      await page.waitForTimeout(200);
+    }
+    await page.waitForTimeout(900);
+  }
+  return seen;
+}
+
+const seen_ = (page, sel) => page.locator(sel).isVisible().catch(() => false);
+
+/** Which effects each clip actually managed to record. */
+const vfxSeen = {};
+
+// 11. NEW — a multi-cell volley: tracers out, impacts and splashes back.
+await record('vfx-volley', async (page) => {
+  await intoBattle(page);
+  vfxSeen['vfx-volley'] = [...(await playUntil(page, ['vfx-impact', 'vfx-splash'], { rounds: 8 }))];
+});
+
+// 12. NEW — a ship going down: cells dousing in sequence, then the slick.
+await record('vfx-sink', async (page) => {
+  await intoBattle(page);
+  const shortShip = await page.evaluate(() => {
+    const ms = window.__store.getState().match;
+    const ships = ms.players[1].ships.slice().sort((a, b) => a.cells.length - b.cells.length);
+    return ships[0].cells;
+  });
+  const t = { timeout: 6000 };
+  const got = new Set();
+  for (const cell of shortShip) {
+    await skipBeats(page);
+    await page.locator('.board').first().locator('.cell').nth(cell).click(t).catch(() => undefined);
+    await page.waitForTimeout(120);
+    await chargeFirst(page);
+    await page.getByRole('button', { name: /^COMMIT/ }).click(t).catch(() => undefined);
+    for (let k = 0; k < 70; k++) {
+      const kinds = await page.evaluate(() =>
+        [...document.querySelectorAll('.vfx')].map((e) =>
+          [...e.classList].find((c) => c.startsWith('vfx-')),
+        ),
+      );
+      kinds.forEach((x) => x && got.add(x));
+      await page.waitForTimeout(40);
+    }
+    const ov = page.locator('.overlay').first();
+    if (await ov.isVisible().catch(() => false)) {
+      await ov.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+    if (got.has('vfx-douse')) break;
+    if (await seen_(page, '.slam')) break;
+  }
+  vfxSeen['vfx-sink'] = [...got];
+});
+
+/**
+ * 13. NEW — the rare ones, hunted rather than staged.
+ *
+ * A REACT needs a ship to die with a death-rattle on it; a prediction needs a
+ * read to land on a cell the opponent actually fired at; a charge theft needs
+ * a Siphon or a Jam to be drafted *and* fired. None of that can be asked for,
+ * and staging a match state to force it would be photographing a mock-up.
+ *
+ * So this plays real matches against the strongest bot — which fires more,
+ * sinks more and triggers more — and reports which of the three it caught.
+ * `clips-vfx.json` records the answer either way.
+ */
+await record('vfx-rare', async (page) => {
+  const got = new Set();
+  for (let match = 0; match < 3; match++) {
+    await page.evaluate(() => window.__store.getState().setSettings({ botLevel: 4 }));
+    await intoBattle(page);
+    const s = await playUntil(page, ['vfx-react', 'vfx-carry'], { rounds: 22 });
+    s.forEach((x) => got.add(x));
+    if (['vfx-react', 'vfx-foretold', 'vfx-carry'].every((w) => got.has(w))) break;
+    await page.evaluate(() => window.__store.getState().leaveMatch());
+    await page.waitForTimeout(400);
+  }
+  vfxSeen['vfx-rare'] = [...got];
+});
+
+/**
+ * 14. NEW — a charge theft, drafted for on purpose.
+ *
+ * Hoping for one did not work: two runs of the rare-effect hunt came back
+ * without it, because Siphon and Jam have to be *drafted*, then *charged past
+ * their cost*, then *fired at a card rather than a cell*, and a harness
+ * picking the leftmost card each time satisfies none of the three.
+ *
+ * So this drafts the thief by name — the same move `draft-collision` makes
+ * for Warhead — charges that specific card every round until it can fire, and
+ * aims it at their hand. Determinism in a capture harness comes from choosing
+ * a controllable subject, not from running longer.
+ */
+await record('vfx-theft', async (page) => {
+  const THIEF = /Siphon|Jam/;
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await page.waitForTimeout(400);
+  await skipBeats(page);
+  for (let i = 0; i < 3; i++) await draftPick(page, '.draft-pick');
+  await skipBeats(page);
+  // Take Siphon or Jam from whichever pack offers it; otherwise take anything.
+  for (let i = 0; i < 3; i++) {
+    const thief = page.locator('button.gamecard', { hasText: THIEF }).first();
+    const target = (await thief.isVisible().catch(() => false)) ? thief : page.locator('button.gamecard').first();
+    await target.click({ timeout: 6000 }).catch(() => undefined);
+    await page.waitForTimeout(2500);
+    await skipBeats(page);
+  }
+  await skipBeats(page);
+  await click(page, 'Auto');
+  await click(page, 'Commit fleet');
+  await page.waitForTimeout(500);
+  await skipBeats(page);
+
+  const got = new Set();
+  const t = { timeout: 6000 };
+  for (let r = 0; r < 14; r++) {
+    await skipBeats(page);
+    if (await seen_(page, '.slam')) break;
+    // Charge the thief specifically, not whatever sits leftmost.
+    const slots = await page.locator('.hand-slot').count();
+    let charged = false;
+    for (let i = 0; i < slots; i++) {
+      const slot = page.locator('.hand-slot').nth(i);
+      if (!THIEF.test((await slot.textContent().catch(() => '')) ?? '')) continue;
+      await slot.locator('.gamecard').click(t).catch(() => undefined);
+      charged = true;
+      break;
+    }
+    if (!charged) await chargeFirst(page);
+    await page.waitForTimeout(150);
+    // From round three on it should be able to pay for itself.
+    if (r >= 2) await fireFirst(page).catch(() => undefined);
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) break;
+    await commit.click(t).catch(() => undefined);
+    for (let k = 0; k < 70; k++) {
+      const kinds = await page.evaluate(() =>
+        [...document.querySelectorAll('.vfx')].map((e) =>
+          [...e.classList].find((c) => c.startsWith('vfx-')),
+        ),
+      );
+      kinds.forEach((x) => x && got.add(x));
+      if (got.has('vfx-carry')) break;
+      await page.waitForTimeout(40);
+    }
+    if (got.has('vfx-carry')) break;
+    const ov = page.locator('.overlay').first();
+    if (await ov.isVisible().catch(() => false)) {
+      await ov.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+    const g = page.getByRole('button', { name: 'Got it' });
+    if (await g.isVisible().catch(() => false)) {
+      await g.click().catch(() => undefined);
+      await page.waitForTimeout(200);
+    }
+    await page.waitForTimeout(800);
+  }
+  vfxSeen['vfx-theft'] = [...got];
+});
+
+writeFileSync('clips-vfx.json', `${JSON.stringify(vfxSeen, null, 2)}\n`, 'utf8');
+const allSeen = new Set(Object.values(vfxSeen).flat());
+console.log(`\neffects recorded: ${[...allSeen].sort().join(' ')}`);
 
 await browser.close();
 await server.close();

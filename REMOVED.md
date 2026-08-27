@@ -200,3 +200,36 @@ This build removed what was floating there.
 
 Nothing was added that replaces nothing. The board grew from `min(52vw, 50vh)`
 to `min(52vw, 52vh)`, which is a size change rather than an element.
+
+---
+
+# Build 9 — the last of the composition
+
+| Removed | Why |
+| --- | --- |
+| **Both hull rows from the top strip** | A fact about them and a fact about you, side by side in neutral ground. They now sit with the fleets they count, on their own sides of the division. |
+| **Both hull labels** | Two identical rows of nine pips in one strip had to be told apart somehow, so each carried a name. Beside the fleet it counts, a row of pips needs no name — which is a caption removed by a layout, the same move Build 7 made with the hull readout. |
+| **The full-width top bar** | Holding three small objects, a strip spanning the screen was mostly empty surface. And a bar across the top is the shape of a thing that belongs to the *product*; what is left belongs to neither player, which is a different claim and wants a different shape. It is a centred capsule now, with water showing at both ends. |
+| **Twelve pixels of strip height** | 72px to 60px. Only the clock sets it now. |
+| **24 pixels off their card backs, and their inverted weight** | Their backs carry one number each and were the largest opponent element on screen; their ship cards carry four facts and were smaller. 100×140 became 76×106, and the fleet cards took the full width of their column. |
+| **The ragged gap between COMMIT and the prompt above it** | The button sat 60px short of the column it shares. Between the two, that space was for nothing. |
+| **`charge-placed` as a stand-in for six other events** | A draft pick, a ship placement, a stake landing, a bracket seat filling and a charge beat all played the click meant for seating a charge on a card. Each has its own cue now — this is most of what took the list from 15 to 53. |
+
+## What arrived
+
+| Arrived | Replaced |
+| --- | --- |
+| Hull with the fleet it counts, on both sides of the line | Two labelled rows in neutral ground |
+| Two flank groups of measurably identical height | A claim the plate disagreed with |
+| 14 visual effects tied to discrete events | A cell quietly changing colour |
+| 53 sound cues, up from 15 | Six events sharing one click |
+| Two volume sliders, effects and music | One slider forcing a choice between them |
+| A music pipeline with the art pipeline's contract | Silence with no way to fix it |
+
+The effects layer is the first thing in three builds that is genuinely
+*additive* rather than a replacement — and it is worth being explicit that it
+was allowed to be. A shot appearing on a cell with no author, a sink over in
+260ms, and a prediction landing with one line of text were not restraint; they
+were absence. The rule that keeps this from becoming noise is the same one the
+feedback layer runs on: an effect maps to a discrete event, or it does not
+exist.

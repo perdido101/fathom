@@ -58,6 +58,7 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
   const [seq, setSeq] = useState<Sequence | null>(null);
   const [coach, setCoach] = useState(() => !seenOnce(COACH_KEY));
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const dealtPack = useRef<number>(-1);
 
   // Every timer this screen starts is owned here, so leaving mid-sequence —
   // a forfeit, a lapsed timer auto-picking, a disconnect — cannot land a
@@ -74,6 +75,17 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
   if (!view || !ds) return null;
 
   const livePackIndex = ds.done ? ds.packs.length - 1 : ds.index;
+  /*
+   * A pack arriving is one event, so it makes one sound — not four, one per
+   * card arcing in. The ref is what makes it once: this runs on every render
+   * and the pack index is the only thing that says a *new* pack is on the
+   * table.
+   */
+  if (!ds.done && dealtPack.current !== livePackIndex) {
+    const first = dealtPack.current < 0;
+    dealtPack.current = livePackIndex;
+    Sound.play(first ? 'draft-deal' : 'draft-pack');
+  }
   // While a sequence runs, the screen shows the pack the player picked from,
   // not the one the engine has already moved on to.
   const packIndex = seq ? seq.packIndex : livePackIndex;
@@ -103,20 +115,23 @@ export function Draft({ kind }: { kind: 'ship' | 'card' }): ReactElement | null 
     const before = livePackIndex;
     const shown = (ds!.packs[before] ?? []).slice();
     setSeq({ pack: shown, packIndex: before, picked: id, stage: 'lift', hit: false });
-    Sound.play('charge-placed');
+    Sound.play('draft-pick');
     // The pick goes to the engine now. The beats below are theatre played
     // over a decision already made — holding the engine back for an animation
     // would be holding the opponent back too.
     if (kind === 'ship') submitShip(id);
     else submitCard(id);
 
-    after(BEAT.theirs, () => setSeq((s) => (s ? { ...s, stage: 'theirs' } : s)));
+    after(BEAT.theirs, () => {
+      Sound.play('draft-theirs');
+      setSeq((s) => (s ? { ...s, stage: 'theirs' } : s));
+    });
     after(BEAT.resolve, () => {
       const now = useStore.getState().view();
       const draft = kind === 'ship' ? now?.shipDraft : now?.cardDraft;
       const hit = draft?.collisions[before] ?? false;
       setSeq((s) => (s ? { ...s, stage: 'resolve', hit } : s));
-      if (hit) Sound.play('prediction-triggered');
+      Sound.play(hit ? 'draft-collision' : 'draft-resolve');
       after(hit ? BEAT.slam : BEAT.quiet, () => setSeq(null));
     });
   }

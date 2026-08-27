@@ -1,6 +1,270 @@
 {
-  "retrieved": "2026-08-26",
+  "retrieved": "2026-08-27",
   "credits": [
+    {
+      "cue": "ui-press",
+      "file": "ui-press.ogg",
+      "original": "click_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-cancel",
+      "file": "ui-cancel.ogg",
+      "original": "back_001.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-hover",
+      "file": "ui-hover.ogg",
+      "original": "rollover1.ogg",
+      "pack": "UI Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/ui-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-select",
+      "file": "ui-select.ogg",
+      "original": "select_003.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-screen",
+      "file": "ui-screen.ogg",
+      "original": "scroll_003.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-modal-open",
+      "file": "ui-modal-open.ogg",
+      "original": "open_001.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-modal-close",
+      "file": "ui-modal-close.ogg",
+      "original": "close_001.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-slider",
+      "file": "ui-slider.ogg",
+      "original": "tick_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-toggle",
+      "file": "ui-toggle.ogg",
+      "original": "switch_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ui-refused",
+      "file": "ui-refused.ogg",
+      "original": "error_004.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "wallet-connected",
+      "file": "wallet-connected.ogg",
+      "original": "confirmation_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "error-shown",
+      "file": "error-shown.ogg",
+      "original": "error_006.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-deal",
+      "file": "draft-deal.ogg",
+      "original": "card-fan-1.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-pick",
+      "file": "draft-pick.ogg",
+      "original": "card-place-2.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-theirs",
+      "file": "draft-theirs.ogg",
+      "original": "card-slide-3.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-collision",
+      "file": "draft-collision.ogg",
+      "original": "card-shove-2.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-resolve",
+      "file": "draft-resolve.ogg",
+      "original": "card-slide-7.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "draft-pack",
+      "file": "draft-pack.ogg",
+      "original": "cards-pack-open-1.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ship-pickup",
+      "file": "ship-pickup.ogg",
+      "original": "impactMetal_light_001.ogg",
+      "pack": "Impact Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ship-rotate",
+      "file": "ship-rotate.ogg",
+      "original": "switch_005.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "ship-placed",
+      "file": "ship-placed.ogg",
+      "original": "impactPlate_medium_000.ogg",
+      "pack": "Impact Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "place-refused",
+      "file": "place-refused.ogg",
+      "original": "impactWood_medium_003.ogg",
+      "pack": "Impact Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "deploy-auto",
+      "file": "deploy-auto.ogg",
+      "original": "scratch_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "deploy-commit",
+      "file": "deploy-commit.ogg",
+      "original": "doorClose_001.ogg",
+      "pack": "Sci-Fi Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/sci-fi-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
     {
       "cue": "charge-placed",
       "file": "charge-placed.ogg",
@@ -10,7 +274,7 @@
       "source": "https://kenney.nl/assets/interface-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "card-fired",
@@ -21,7 +285,7 @@
       "source": "https://kenney.nl/assets/sci-fi-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "basic-attack",
@@ -32,7 +296,18 @@
       "source": "https://kenney.nl/assets/sci-fi-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "volley",
+      "file": "volley.ogg",
+      "original": "thrusterFire_002.ogg",
+      "pack": "Sci-Fi Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/sci-fi-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "hit",
@@ -43,7 +318,7 @@
       "source": "https://kenney.nl/assets/sci-fi-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "miss",
@@ -54,7 +329,7 @@
       "source": "https://kenney.nl/assets/impact-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "ship-sunk",
@@ -65,7 +340,7 @@
       "source": "https://kenney.nl/assets/sci-fi-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "ability-activated",
@@ -76,7 +351,7 @@
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "react-triggered",
@@ -87,18 +362,18 @@
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "charges-stolen",
       "file": "charges-stolen.ogg",
-      "original": "phaserDown2.ogg",
-      "pack": "Digital Audio",
+      "original": "chips-handle-2.ogg",
+      "pack": "Casino Audio",
       "author": "Kenney (kenney.nl)",
-      "source": "https://kenney.nl/assets/digital-audio",
+      "source": "https://kenney.nl/assets/casino-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "prediction-triggered",
@@ -109,18 +384,62 @@
       "source": "https://kenney.nl/assets/impact-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
-      "cue": "round-start",
-      "file": "round-start.ogg",
+      "cue": "shot-blocked",
+      "file": "shot-blocked.ogg",
+      "original": "forceField_001.ogg",
+      "pack": "Sci-Fi Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/sci-fi-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "match-found",
+      "file": "match-found.ogg",
       "original": "twoTone1.ogg",
       "pack": "Digital Audio",
       "author": "Kenney (kenney.nl)",
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "phase-card",
+      "file": "phase-card.ogg",
+      "original": "maximize_003.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "round-start",
+      "file": "round-start.ogg",
+      "original": "threeTone1.ogg",
+      "pack": "Digital Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/digital-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "resolve-step",
+      "file": "resolve-step.ogg",
+      "original": "tick_001.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "timer-warning",
@@ -131,7 +450,84 @@
       "source": "https://kenney.nl/assets/interface-sounds",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "timer-expired",
+      "file": "timer-expired.ogg",
+      "original": "error_008.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "plan-committed",
+      "file": "plan-committed.ogg",
+      "original": "drop_002.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "stake-confirmed",
+      "file": "stake-confirmed.ogg",
+      "original": "chip-lay-1.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "escrow-forming",
+      "file": "escrow-forming.ogg",
+      "original": "chips-stack-3.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "escrow-complete",
+      "file": "escrow-complete.ogg",
+      "original": "chips-collide-2.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "settlement",
+      "file": "settlement.ogg",
+      "original": "bong_001.ogg",
+      "pack": "Interface Sounds",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "payout",
+      "file": "payout.ogg",
+      "original": "chips-handle-5.ogg",
+      "pack": "Casino Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/casino-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "victory",
@@ -142,7 +538,7 @@
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "defeat",
@@ -153,7 +549,7 @@
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
     },
     {
       "cue": "draw",
@@ -164,7 +560,29 @@
       "source": "https://kenney.nl/assets/digital-audio",
       "licence": "CC0 1.0 (public domain)",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "retrieved": "2026-08-26"
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "round-won",
+      "file": "round-won.ogg",
+      "original": "zapThreeToneUp.ogg",
+      "pack": "Digital Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/digital-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
+    },
+    {
+      "cue": "champion",
+      "file": "champion.ogg",
+      "original": "powerUp11.ogg",
+      "pack": "Digital Audio",
+      "author": "Kenney (kenney.nl)",
+      "source": "https://kenney.nl/assets/digital-audio",
+      "licence": "CC0 1.0 (public domain)",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-08-27"
     }
   ]
 }

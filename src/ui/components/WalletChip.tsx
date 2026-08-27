@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { chain } from '../../chain/client';
+import { Sound } from '../sfx/SoundManager';
 
 /**
  * The wallet, always in the corner.
@@ -24,6 +25,7 @@ export function WalletChip(): ReactElement {
       setAddress(await chain.connect());
       setBalance(chain.balanceSol());
       setErr(null);
+      Sound.play('wallet-connected');
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }

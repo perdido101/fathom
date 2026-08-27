@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "ARMADA — fast hidden-information naval PvP, wagered on Solana.",
+  "description": "ARMADA \u2014 fast hidden-information naval PvP, wagered on Solana.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -30,7 +30,11 @@
     "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs && tsx scripts/guide-docx.ts",
     "guide:docx": "tsx scripts/guide-docx.ts",
     "feedback": "tsx scripts/feedback-doc.ts",
-    "inventory": "tsx scripts/ui-inventory.ts"
+    "inventory": "tsx scripts/ui-inventory.ts",
+    "vfx": "tsx scripts/vfx-doc.ts",
+    "audio:doc": "tsx scripts/audio-doc.ts",
+    "music:brief": "tsx scripts/music-brief.ts",
+    "docs": "tsx scripts/vfx-doc.ts && tsx scripts/audio-doc.ts && tsx scripts/music-brief.ts && tsx scripts/feedback-doc.ts"
   },
   "dependencies": {
     "@fontsource/baloo-2": "^5.3.0",

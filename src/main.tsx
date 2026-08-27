@@ -12,6 +12,10 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/600.css';
 import './ui/theme.css';
 import './ui/sfx/register';
+import './ui/music/register';
+import { attachUiSounds } from './ui/sfx/ui-sounds';
+
+attachUiSounds();
 
 const root = document.getElementById('root');
 if (!root) throw new Error('no #root in the document');

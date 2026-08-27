@@ -32,6 +32,7 @@ await page.screenshot({ path: 'sim-out/guide-top.png' });
 for (const [sel, name] of [
   ['#plate-24', 'guide-battle'],
   ['#plate-01', 'guide-menu'],
+  ['#plate-hulls', 'guide-hulls'],
   ['#plate-composition', 'guide-composition'],
   ['#plate-ownership', 'guide-ownership'],
   ['#plate-before-after', 'guide-spread'],

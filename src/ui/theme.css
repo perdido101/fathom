@@ -1578,12 +1578,58 @@ button.draft-pick:hover,
   justify-content: center;
 }
 
+/*
+ * The strip's height is set by the clock and nothing else now that both hull
+ * rows have moved down to their fleets. The clock overhangs it slightly by
+ * design — a 64px numeral in a 60px strip reads as sitting *on* the water
+ * rather than inside a box, which is what a neutral element should do.
+ *
+ * It is a centred capsule rather than a full-width bar. Holding three small
+ * objects, a bar spanning the screen was mostly empty surface, and a strip of
+ * chrome across the top is the shape of a thing that belongs to the *product*
+ * — this belongs to neither player, which is a different claim and wants a
+ * different shape.
+ */
+.neutral-strip {
+  overflow: visible;
+  justify-self: center;
+  width: min(720px, 62vw);
+}
+
+/*
+ * A hull row, as an object rather than nine loose ticks.
+ *
+ * Both rows lost their name label in Build 9 when they moved out of the
+ * neutral strip: inside a player's own cluster there is nothing to tell them
+ * apart from. What they did need was an edge — nine bare rectangles on open
+ * water read as debris, and your green ones sat on a green panel at almost no
+ * contrast.
+ */
+.hull-row {
+  display: flex;
+  gap: 4px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(18, 58, 94, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  width: max-content;
+}
+
 .foe-rail {
   align-items: flex-end;
   text-align: right;
   padding-right: 20px;
-  gap: 10px;
-  width: 200px;
+  /*
+   * 19 and 12 (below) are not arbitrary and not round. The fleet column
+   * carries a name, a hull row and three ship cards; the hand column carries
+   * three card backs. Those two stacks have different fixed heights, so the
+   * only free variable that makes them come out the same is the gap, and
+   * these are the two numbers that do it. `npm run screens` measures both
+   * boxes into sim-out/anchors.json on every run, which is what keeps the
+   * claim honest rather than aspirational.
+   */
+  gap: 19px;
+  width: 230px;
 }
 
 /*
@@ -1592,7 +1638,7 @@ button.draft-pick:hover,
  * of three different widths is precisely the ragged edge that made this rail
  * read as debris beside the board.
  */
-.foe-rail > span,
+.foe-rail > span:not(.hull-row),
 .foe-rail > span > .has-tip {
   width: 100%;
   box-sizing: border-box;
@@ -1601,8 +1647,9 @@ button.draft-pick:hover,
 .foe-hand {
   align-items: flex-start;
   padding-left: 20px;
-  gap: 18px;
-  width: 124px;
+  /* See the note on `.foe-rail` — this is the other half of that pair. */
+  gap: 12px;
+  width: 100px;
 }
 
 /* Their name sits with their fleet, not floating above the whole rail. */
@@ -1621,9 +1668,15 @@ button.draft-pick:hover,
  */
 .foe-card {
   position: relative;
-  width: 100px;
-  height: 140px;
-  border-radius: 12px;
+  /*
+   * Deliberately smaller than their ship cards. A card back carries one
+   * number; a ship card carries a length, a type, a reveal state and whether
+   * the once-per-match ability is spent. Build 8 had these at 100x140 against
+   * 72px-tall ship cards, which is that priority exactly inverted.
+   */
+  width: 76px;
+  height: 106px;
+  border-radius: 10px;
   border: 3px solid rgba(255, 255, 255, 0.7);
   box-shadow: var(--shadow-soft);
   overflow: visible;
@@ -1739,4 +1792,331 @@ button.draft-pick:hover,
   .slam-headline {
     animation: fade 160ms ease both !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * The visual effects layer (Build 9).
+ *
+ * Every rule below animates `transform`, `opacity` and `filter` and nothing
+ * else, so each effect stays on the compositor. A four-charge Burst finding
+ * nine cells puts about fifty-five of these on screen at once; none of them
+ * touches layout, so none of them costs a reflow.
+ *
+ * Sizes come from the element the effect is pinned to, set inline by the
+ * layer. A compact board's impacts are the size of a compact board's cells.
+ *
+ * `--dx`/`--dy` is the vector a travelling effect covers, `--w` its weight
+ * 0-1, `--i` its index within a fan, `--spread` a golden-angle rotation so
+ * four debris motes never leave along the same two axes.
+ * ------------------------------------------------------------------------- */
+
+.vfx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  /* Under the feedback layer (30): a HIT floater must stay legible over its
+     own impact. Above the resolve overlay, which the boards show through. */
+  z-index: 28;
+  overflow: hidden;
+}
+
+.vfx {
+  position: absolute;
+  display: block;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+/* --- a shot in the air ---------------------------------------------------- */
+
+@keyframes vfx-tracer {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  12% { opacity: 1; }
+  100% {
+    opacity: 0.9;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
+  }
+}
+
+.vfx-tracer {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 40% 35%, #fff 0%, var(--gold) 45%, rgba(255, 197, 49, 0) 72%);
+  box-shadow: 0 0 14px rgba(255, 197, 49, 0.9);
+  animation-name: vfx-tracer;
+  animation-timing-function: cubic-bezier(0.3, 0, 0.7, 1);
+}
+
+/* --- a hit ---------------------------------------------------------------- */
+
+@keyframes vfx-impact {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  14% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+.vfx-impact {
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff 0%, var(--hit) 38%, rgba(255, 77, 94, 0) 70%);
+  animation-name: vfx-impact;
+}
+
+@keyframes vfx-shock {
+  0% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.25); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
+}
+
+.vfx-shock {
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 18px rgba(255, 77, 94, 0.6);
+  animation-name: vfx-shock;
+}
+
+@keyframes vfx-debris {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--spread)) translateX(0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spread)) translateX(46px) scale(0.4); }
+}
+
+.vfx-debris {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--hit);
+  box-shadow: 0 0 8px rgba(255, 77, 94, 0.8);
+  animation-name: vfx-debris;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* --- a miss --------------------------------------------------------------- */
+
+@keyframes vfx-splash {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35) translateY(6px); }
+  20% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.1) translateY(-6px); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.85) translateY(2px); }
+}
+
+.vfx-splash {
+  border-radius: 999px;
+  background: radial-gradient(circle, #ffffff 0%, rgba(191, 227, 245, 0.85) 42%, rgba(191, 227, 245, 0) 72%);
+  animation-name: vfx-splash;
+}
+
+@keyframes vfx-ripple {
+  0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.1); }
+}
+
+.vfx-ripple {
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  animation-name: vfx-ripple;
+}
+
+/* --- a shot that arrived and failed --------------------------------------- */
+
+@keyframes vfx-blocked {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.5) rotate(0deg); }
+  22% { opacity: 1; transform: translate(-50%, -50%) scale(0.9) rotate(0deg); }
+  40% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+
+.vfx-blocked {
+  border-radius: 999px;
+  border: 4px solid var(--control);
+  background: radial-gradient(circle, rgba(155, 92, 255, 0.35) 0%, rgba(155, 92, 255, 0) 68%);
+  animation-name: vfx-blocked;
+}
+
+/* --- a ship going down ---------------------------------------------------- */
+
+@keyframes vfx-douse {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+}
+
+.vfx-douse {
+  border-radius: var(--r-sm);
+  background: radial-gradient(circle, rgba(9, 34, 56, 0.92) 0%, rgba(9, 34, 56, 0.55) 100%);
+  animation-name: vfx-douse;
+}
+
+@keyframes vfx-slick {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  25% { opacity: 0.75; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.vfx-slick {
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 45%, rgba(255, 255, 255, 0) 72%);
+  animation-name: vfx-slick;
+}
+
+/* --- charges -------------------------------------------------------------- */
+
+@keyframes vfx-carry {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.7);
+  }
+}
+
+.vfx-carry {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #ffe28a 0%, var(--gold) 55%, var(--gold-deep) 100%);
+  box-shadow: 0 0 12px rgba(255, 197, 49, 0.85);
+  animation-name: vfx-carry;
+  animation-timing-function: cubic-bezier(0.35, 0, 0.3, 1);
+}
+
+/*
+ * The gem taking weight. `--w` rises with the count the card now holds, so a
+ * fifth charge lands visibly harder than a first — which is the one thing a
+ * number on a gem cannot say on its own.
+ */
+@keyframes vfx-gempop {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.5); }
+  35% { opacity: 0.85; transform: translate(-50%, -50%) scale(calc(1 + var(--w) * 1.4)); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(calc(1 + var(--w) * 1.9)); }
+}
+
+.vfx-gempop {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 calc(10px + var(--w) * 26px) rgba(255, 197, 49, 0.8);
+  animation-name: vfx-gempop;
+}
+
+/* --- a ship acting -------------------------------------------------------- */
+
+/*
+ * `--w` carries the ship's type as a position on the wheel: ACTIVE green,
+ * NERF violet, REACT orange. One keyframe, three colours, no class per type.
+ */
+@keyframes vfx-flip {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.55) rotateY(90deg); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.06) rotateY(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3) rotateY(0deg); }
+}
+
+.vfx-flip {
+  width: 210px;
+  height: 92px;
+  border-radius: var(--r-md);
+  border: 4px solid;
+  border-color: color-mix(in srgb, var(--confirm) calc((1 - var(--w)) * 100%), var(--predict));
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--confirm) calc((1 - var(--w)) * 100%), var(--predict)) 0%,
+    transparent 72%
+  );
+  animation-name: vfx-flip;
+}
+
+/*
+ * A REACT is not a decision, it is an answer, and it is built to read that
+ * way: half the duration, no turn-over, and it snaps outward instead of
+ * settling. Same information, unmistakably different register.
+ */
+@keyframes vfx-react {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(0.92); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.vfx-react {
+  width: 220px;
+  height: 100px;
+  border-radius: var(--r-md);
+  border: 5px solid var(--predict);
+  box-shadow: 0 0 26px rgba(255, 159, 28, 0.85);
+  animation-name: vfx-react;
+  animation-timing-function: cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+/* --- a read landing ------------------------------------------------------- */
+
+/*
+ * The loudest thing in the game, and it should be: a prediction landing is
+ * the rarest and best moment ARMADA produces. It fills the board it happened
+ * on rather than a cell, because it did not happen to a cell.
+ */
+@keyframes vfx-foretold {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); filter: blur(6px); }
+  16% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); filter: blur(0); }
+  40% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); filter: blur(3px); }
+}
+
+.vfx-foretold {
+  width: min(56vw, 56vh);
+  height: min(56vw, 56vh);
+  border-radius: 999px;
+  border: 6px solid var(--predict);
+  background: radial-gradient(circle, rgba(255, 159, 28, 0.34) 0%, rgba(255, 159, 28, 0) 62%);
+  box-shadow: 0 0 60px rgba(255, 159, 28, 0.7), inset 0 0 60px rgba(255, 159, 28, 0.45);
+  animation-name: vfx-foretold;
+}
+
+/* --- screen shake --------------------------------------------------------- */
+
+/*
+ * On the app root, scaled by how much landed. Amplitude is a variable rather
+ * than a set of classes so one keyframe covers a nudge and a jolt, and the
+ * whole thing is a transform on one element — nothing inside it re-renders.
+ */
+@keyframes vfx-quake {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(calc(var(--q) * -7px), calc(var(--q) * 4px)); }
+  32% { transform: translate(calc(var(--q) * 6px), calc(var(--q) * -5px)); }
+  52% { transform: translate(calc(var(--q) * -4px), calc(var(--q) * -3px)); }
+  74% { transform: translate(calc(var(--q) * 3px), calc(var(--q) * 2px)); }
+}
+
+.app.quaking {
+  animation: vfx-quake 320ms ease-out both;
+}
+
+/* --- reduced motion ------------------------------------------------------- */
+
+/*
+ * Not "no effects". A player who has asked for less motion still needs to
+ * know a shot landed, so every effect degrades to a still flash in the same
+ * place and the same colour, at a fraction of the duration. What goes is
+ * travel, scatter and shake — the three things that move a player's eye
+ * without being asked.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .vfx {
+    animation-name: vfx-quiet !important;
+    animation-duration: 220ms !important;
+  }
+  .vfx-tracer,
+  .vfx-debris,
+  .vfx-carry,
+  .vfx-ripple,
+  .vfx-slick {
+    display: none;
+  }
+  .app.quaking {
+    animation: none;
+  }
+}
+
+@keyframes vfx-quiet {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  30% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }

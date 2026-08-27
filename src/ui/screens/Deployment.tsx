@@ -55,9 +55,14 @@ export function Deployment(): ReactElement | null {
 
   function tryPlace(cell: CellIndex): void {
     const cells = cellsFor(cell);
-    if (!cells || !active) return;
+    // A refused placement makes no sound in Build 8 and no message either.
+    // The board saying no is still the board answering you.
+    if (!cells || !active) {
+      Sound.play('place-refused', { guard: 120 });
+      return;
+    }
     setPlaced({ ...placed, [active]: cells });
-    Sound.play('charge-placed');
+    Sound.play('ship-placed');
     const next = ids.find((id) => id !== active && !placed[id]);
     if (next) setActive(next);
   }
@@ -72,10 +77,13 @@ export function Deployment(): ReactElement | null {
   const complete = placedCount === ids.length;
 
   function confirm(): void {
+    // The latch. This is the irreversible one — the layout hashes here.
+    Sound.play('deploy-commit');
     submit(ids.map((defId) => ({ defId, cells: placed[defId] }) as Placement));
   }
 
   function auto(): void {
+    Sound.play('deploy-auto');
     const next: Record<string, CellIndex[]> = {};
     const used = new Set<CellIndex>();
     for (const id of ids) {
@@ -128,15 +136,26 @@ export function Deployment(): ReactElement | null {
               length={SHIPS[id].length}
               selected={active === id}
               used={false}
-              onClick={() => setActive(id)}
+              onClick={() => {
+                Sound.play('ship-pickup');
+                setActive(id);
+              }}
               className={placed[id] ? '' : ''}
             />
           ))}
           <div className="row" style={{ marginTop: 4 }}>
-            <button className="btn small" style={{ flex: 1 }} onClick={() => setVertical(!vertical)}>
+            <button
+              className="btn small"
+              data-sfx="none"
+              style={{ flex: 1 }}
+              onClick={() => {
+                Sound.play('ship-rotate');
+                setVertical(!vertical);
+              }}
+            >
               {vertical ? 'Vertical ↓' : 'Horizontal →'}
             </button>
-            <button className="btn small" style={{ flex: 1 }} onClick={auto}>
+            <button className="btn small" data-sfx="none" style={{ flex: 1 }} onClick={auto}>
               Auto
             </button>
             <button className="btn small ghost" style={{ flex: 1 }} onClick={() => setPlaced({})}>

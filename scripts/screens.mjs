@@ -459,14 +459,14 @@ try {
   await wait(400);
   await shot('24-battle', 'the clock is the largest thing on screen; nothing is said twice');
   await anchors('24-battle', {
-    'Round counter': '.battle-grid > .panel.tight > .pill:first-child',
-    'Their hull': '.battle-grid > .panel.tight > span:nth-of-type(2)',
+    'Round counter': '.neutral-strip > .pill:first-child',
     'The clock': '.big-num',
-    'Your hull': '.battle-grid > .panel.tight > span:nth-of-type(4)',
-    'The pot': '.battle-grid > .panel.tight > .pill.gold',
-    'Their name': '.foe-rail > span:first-child',
-    'Their fleet': '.foe-rail > span.flip, .foe-rail > span:not(:first-child)',
+    'The pot': '.neutral-strip > .pill:last-child',
+    'Their name': '.foe-who',
+    'Their hull': '.foe-rail .hull-row',
+    'Their fleet': '.foe-rail .has-tip',
     'Their cards': '.foe-card',
+    'Your hull': '.own-rail .hull-row',
     'Their water': '.board:not(.own)',
     'The prompt': '.your-region .prompt-line',
     'The division': '.your-region',

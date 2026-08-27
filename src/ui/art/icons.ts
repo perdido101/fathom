@@ -355,4 +355,4 @@ export const ICON_CREDITS: { slot: string; author: string; name: string; source:
 
 export const ICON_LICENCE = "CC BY 3.0";
 export const ICON_LICENCE_URL = "https://creativecommons.org/licenses/by/3.0/";
-export const ICON_RETRIEVED = "2026-08-26";
+export const ICON_RETRIEVED = "2026-08-27";
