@@ -1,9 +1,9 @@
 {
-  "name": "shadow-armada",
+  "name": "armada",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Shadow Armada — fast hidden-information naval PvP, wagered on Solana.",
+  "description": "ARMADA — fast hidden-information naval PvP, wagered on Solana.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

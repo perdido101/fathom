@@ -41,7 +41,7 @@ export function issueSessionKey(now: number, authorisation: string | null = null
 /** The exact bytes a wallet is asked to sign when authorising a session. */
 export function authorisationMessage(publicKeyHex: string, expiresAt: number): string {
   return [
-    'Shadow Armada — authorise a session key',
+    'ARMADA — authorise a session key',
     '',
     'This key may sign game moves for this session only.',
     'It cannot move funds.',

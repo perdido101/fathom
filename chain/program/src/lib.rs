@@ -1,4 +1,4 @@
-//! Shadow Armada escrow — devnet and localnet only.
+//! ARMADA escrow — devnet and localnet only.
 //!
 //! The program deliberately knows nothing about the game, and cannot. Both
 //! boards are secret, so any move written here would have to be a hash, and a

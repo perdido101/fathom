@@ -1,5 +1,5 @@
 /*
- * Shadow Armada — "bright naval arcade".
+ * ARMADA — "bright naval arcade".
  *
  * Build 3 replaced the dark terminal direction wholesale. The game is sunny,
  * saturated and glossy: light panels floating on a sky-to-sea gradient, gold
@@ -1497,6 +1497,15 @@ button.draft-pick:hover,
 }
 
 /*
+ * Their board's size, in one place. The board element and both flanking
+ * columns read it, which is what lets the three of them share a top and a
+ * bottom edge without anyone maintaining the agreement by hand.
+ */
+.their-region {
+  --foe-board: min(52vw, 52vh);
+}
+
+/*
  * The division. A tone change and a rule, not an object: the point is that a
  * player reads it without noticing they read it.
  */
@@ -1535,14 +1544,95 @@ button.draft-pick:hover,
   justify-self: start;
 }
 
-/* Their rail: name, fleet and hand, stacked beside their board. */
-.foe-rail {
+/*
+ * Their fleet, and their hand, flanking their board.
+ *
+ * Build 7 stacked both in one rail to the board's left: a name, then a row of
+ * three ship cards, then a row of three card backs, each a different width,
+ * right-aligned to nothing in particular, with the whole right-hand flank
+ * empty apart from one line of text. It read as debris beside the board
+ * rather than as the opponent's half of a composition.
+ *
+ * They now flank it — fleet on the left, hand on the right — as two columns
+ * of the same width, each vertically centred on the board and each with its
+ * items in a single stack rather than a wrapping row. The left column echoes
+ * your own fleet column below the division, which sits in the same place.
+ */
+.foe-rail,
+.foe-hand {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /*
+   * Both columns stand exactly as tall as the board and centre their contents
+   * in that height, so the three elements share a vertical axis and the
+   * flanks are demonstrably attached to the thing they flank.
+   *
+   * Distributing them over the full height instead was tried and is worse:
+   * three ship cards spread across 560px stop reading as a fleet and start
+   * reading as three unrelated pills. Grouped and centred is the trade.
+   *
+   * The height is the board's own expression, hoisted to a token on the
+   * region so the two cannot drift apart.
+   */
+  height: var(--foe-board);
+  justify-content: center;
+}
+
+.foe-rail {
   align-items: flex-end;
   text-align: right;
-  padding-right: 18px;
+  padding-right: 20px;
+  gap: 10px;
+  width: 200px;
+}
+
+/*
+ * Their ship cards fill the column rather than sizing to their contents. A
+ * revealed four is wider than an unknown two, and right-aligning three cards
+ * of three different widths is precisely the ragged edge that made this rail
+ * read as debris beside the board.
+ */
+.foe-rail > span,
+.foe-rail > span > .has-tip {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.foe-hand {
+  align-items: flex-start;
+  padding-left: 20px;
+  gap: 18px;
+  width: 124px;
+}
+
+/* Their name sits with their fleet, not floating above the whole rail. */
+.foe-rail > .foe-who {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-body);
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(18, 58, 94, 0.55);
+}
+
+/*
+ * Their card backs. Small enough at 46px that the charge gem hung off the
+ * corner and the card was mostly gem; at this size the gem sits inside the
+ * card, the way it does on a card of yours.
+ */
+.foe-card {
+  position: relative;
+  width: 100px;
+  height: 140px;
+  border-radius: 12px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-soft);
+  overflow: visible;
+  flex: none;
+  padding: 0;
+}
+
+.foe-card.taking {
+  border-color: var(--gold);
 }
 
 /*

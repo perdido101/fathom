@@ -1,4 +1,4 @@
-# Shadow Armada
+# ARMADA
 
 A fast, offensive, hidden-information PvP game for the web, wagered on Solana.
 Two players, a 6×6 sea, three ships each, twelve cards, twenty-second rounds,

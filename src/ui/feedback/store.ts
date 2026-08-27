@@ -68,7 +68,7 @@ interface FeedbackStore {
   clear(): void;
 }
 
-const SEEN_KEY = 'shadow-armada:seen-mechanics';
+const SEEN_KEY = 'armada:seen-mechanics';
 
 function loadSeen(): Record<string, true> {
   try {

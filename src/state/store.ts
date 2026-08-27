@@ -178,7 +178,7 @@ interface Store {
   leaveMatch(): void;
 }
 
-const SETTINGS_KEY = 'shadow-armada:settings';
+const SETTINGS_KEY = 'armada:settings';
 
 /** What runs once the end-of-match banner is done. */
 let afterSlam: (() => void) | null = null;
@@ -318,7 +318,7 @@ export const useStore = create<Store>((set, get) => ({
   fail(what, detail, retry) {
     const text =
       detail instanceof Error ? detail.message : detail === undefined ? null : String(detail);
-    console.error('[shadow-armada]', what, text);
+    console.error('[armada]', what, text);
     set({ error: { what, detail: text, retry: retry ?? null }, busy: null });
   },
 
@@ -333,7 +333,7 @@ export const useStore = create<Store>((set, get) => ({
   noteAway() {
     const ms = get().match;
     if (ms && ms.phase !== 'over') {
-      console.info('[shadow-armada] player went away during a live match');
+      console.info('[armada] player went away during a live match');
     }
   },
 

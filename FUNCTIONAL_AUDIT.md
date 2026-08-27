@@ -1,4 +1,4 @@
-# Functional audit — Builds 4, 5 and 6
+# Functional audit — Builds 4 through 8
 
 > **Build 6 note.** The checklist below is unchanged in substance; the harness
 > counts and two control names were updated where Build 6 moved them. The
@@ -188,6 +188,34 @@ A `YOUR SIDE` pill on the waterline was built during this build and then
 removed, because it is the same mistake the hull caption was — a string
 apologising for a layout. The requirement is that a new player can tell whose
 board is whose without being told, and a label is being told.
+
+## Build 8 — the ownership rule, applied consistently
+
+Build 7 established that the two halves of the battle screen belong to
+different people. Build 8's composition pass was the first test of whether
+that rule survives contact with a second change, and it found one violation
+immediately — the biggest thing in the top region that was not theirs:
+
+| Element | Whose it is | Where it rendered | Verdict |
+| --- | --- | --- | --- |
+| *"Click their water to aim your free shot. Click a card to charge it."* | yours — it is an instruction to you | their half, top right | **FIXED** — moved above COMMIT, in your panel, beside the hand |
+| The aiming panel (Cancel / Lock in) | yours — they are your controls | their half, top right | **FIXED** — takes the commit slot, which is free by construction |
+| Their fleet, their hand, their board, their name | theirs | their half | PASS |
+| Your board, ships, hand, commit | yours | your half | PASS |
+| Hull pips, both rows | one each, named and coloured to match the halves | top bar, left and right | PASS |
+
+Two violations, both of them yours-rendered-in-their-half, and both from the
+same era: they were placed before there was a rule. Nothing of theirs was
+ever rendered below the line.
+
+**A composition note, reported rather than fixed.** The top cluster now spans
+roughly 24%–72% of the screen width against the bottom cluster's 11%–79%, so
+there is more open water at the two ends of the top half than the bottom.
+Closing it would mean pushing the flanking columns away from the board, and
+the columns are attached to the board on purpose — Build 7 established that a
+board centred with empty water either side reads as three unrelated things.
+The alignment across the division was judged worth more than the margin, and
+the residual is symmetric, so it reads as margin rather than as a gap.
 
 ## Console cleanliness
 

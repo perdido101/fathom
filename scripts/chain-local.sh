@@ -19,7 +19,7 @@ command -v solana-test-validator >/dev/null || {
 }
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WORK="${TMPDIR:-/tmp}/shadow-armada-chain"
+WORK="${TMPDIR:-/tmp}/armada-chain"
 RPC="http://127.0.0.1:8899"
 rm -rf "$WORK" && mkdir -p "$WORK"
 
@@ -27,9 +27,9 @@ echo "==> building the escrow program"
 cd "$ROOT/chain/program"
 # SBPF v3: current validators no longer enable the v0 the toolchain defaults to.
 cargo-build-sbf --arch v3 >/dev/null
-cp target/deploy/shadow_armada.so "$WORK/main.so"
+cp target/deploy/armada.so "$WORK/main.so"
 cargo-build-sbf --arch v3 --features fast-reclaim >/dev/null
-cp target/deploy/shadow_armada.so "$WORK/fast.so"
+cp target/deploy/armada.so "$WORK/fast.so"
 cd "$ROOT"
 
 echo "==> starting a local validator"

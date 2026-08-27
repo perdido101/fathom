@@ -132,7 +132,7 @@ cell they hit"*, never *"THORN triggers REACT"*.
 
 Once ever, per mechanic, per player. A fuller card with a **Got it**
 dismissal, persisted in \`localStorage\` under
-\`shadow-armada:seen-mechanics\`, and resettable from Settings — which also
+\`armada:seen-mechanics\`, and resettable from Settings — which also
 shows how many of the ${EXPLAINERS.length} have been seen.
 
 This is the mechanism that lets Tier 2 stay to one line: the teaching load

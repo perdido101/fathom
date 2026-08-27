@@ -441,8 +441,36 @@ export const SECTIONS: Section[] = [
     standfirst:
       'The screen the game is built around. Both players plan at the same time, in secret, and both plans resolve together — so nothing here is a turn you wait through.',
     journey:
-      'Twenty seconds, up to twenty times. Each round you must place exactly one charge, you may aim one free shot, and you may fire one card and use one ship ability. You are doing that while reading nine pips, three gems, a board of thirty-six cells and a clock — which is why Build 6 spent itself removing everything on this screen that said the same thing twice. What is left says each fact once, and the loudest object on it is the number you are spending. Build 7 then rebuilt the arrangement around the thing Build 6’s last removal exposed: the screen had never actually said whose board was whose. It had said so in a caption. Everything above the division is now theirs and everything below it is yours, and nothing is labelled.',
+      'Twenty seconds, up to twenty times. Each round you must place exactly one charge, you may aim one free shot, and you may fire one card and use one ship ability. You are doing that while reading nine pips, three gems, a board of thirty-six cells and a clock — which is why Build 6 spent itself removing everything on this screen that said the same thing twice. What is left says each fact once, and the loudest object on it is the number you are spending. Build 7 then rebuilt the arrangement around the thing Build 6’s last removal exposed: the screen had never actually said whose board was whose. It had said so in a caption. Everything above the division is now theirs and everything below it is yours, and nothing is labelled. Build 8 finished the half that restructure left unresolved: their fleet and their hand now flank their board as two columns rather than floating beside it, and the columns line up with yours across the division.',
     plates: [
+      {
+        file: 'COMPOSITION',
+        num: '—',
+        name: 'Finishing the top half',
+        thesis:
+          'Build 7 resolved the bottom of this screen and left the top unfinished. Their board sat in the middle of a region holding 55% of the screen height, their fleet and their hand were stacked in a rail to its left aligned to nothing in particular, and the entire right-hand flank held one line of text — which was not even theirs.',
+        spread: {
+          kicker: 'The top-region composition',
+          before: 'docs/before/battle-build7.jpg',
+          after: 'screens/web/24-battle.jpg',
+          beforeCaption: 'Before · Build 7',
+          afterCaption: 'After · Build 8',
+          goneTitle: 'What was unfinished',
+          arrivedTitle: 'What resolved it',
+          gone: [
+            ['Their fleet and their hand floated', 'Two rows of three items each, of three different widths, right-aligned to nothing — not to each other, not to the board, not to any edge. Beside a board, rather than part of a composition with it.'],
+            ['The whole right flank was empty', 'A quarter of the screen’s width, holding one sentence.'],
+            ['That sentence was in the wrong half', '“Click their water to aim your free shot. Click a card to charge it.” An instruction to you, rendered in their territory, on a screen whose entire argument is that the two halves belong to different people. The ownership rule was going to be judged first on whether it was applied consistently.'],
+            ['The dominant element did not dominate', 'Their board is the one place you act, and it filled about half the width of its own region. A dominant element that does not fill its space stops reading as dominant.'],
+          ],
+          arrived: [
+            ['Their fleet and their hand flank the board', 'Two columns, one either side, each standing exactly as tall as the board and centring its contents in that height. The ship cards fill the column width rather than sizing to their contents, so the fleet has one straight edge instead of three ragged ones.'],
+            ['The columns line up across the division', 'Their fleet sits directly above your fleet, their board directly above your hand, their hand directly above your commit. The mirroring the game rests on — same fleet shape, same card pool, opposite sides of a line — is now in the layout rather than only in the rules.'],
+            ['The prompt moved into your panel', 'It sits above COMMIT, beside the hand, next to the actions it describes. Not over the hand: that band already belongs to the hovered card’s own affordance, and two things wanting the same forty pixels is a bug this screen has produced once already.'],
+            ['The aiming panel took the commit slot', 'Commit is disabled for exactly as long as a declaration is open, so the control you need replaces the control you cannot use — and the last thing of yours rendering above the line came down with it.'],
+          ],
+        },
+      },
       {
         file: 'OWNERSHIP',
         num: '—',
@@ -525,15 +553,15 @@ export const SECTIONS: Section[] = [
           { x: 39.6, y: 3.5, label: 'The clock', text: 'The plan window, and the screen’s primary element at 64px. Under five seconds it turns red, pulses and ticks audibly. In a networked match the server owns this clock and the client renders an estimate.' },
           { x: 74, y: 8.6, label: 'Your hull', text: 'The same nine pips in your green — the colour your water carries, four inches below. Yours is on the right because everything of yours is.' },
           { x: 81, y: 8.6, label: 'The pot', text: 'In gold, always visible in a staked match. You never have to leave the board to remember what is riding on it.' },
-          { x: 18.8, y: 32.1, label: 'Their fleet', text: 'Three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks.' },
-          { x: 24.1, y: 38.8, label: 'Their cards', text: 'Card backs with readable gold charge gems. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public.' },
-          { x: 50, y: 14, label: 'Their water', text: 'The biggest single element on screen, in the blue, and the only place you act. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
-          { x: 74.8, y: 29.5, label: 'The prompt', text: 'What the next click does, in words, directly on the water. It had a panel behind it until Build 6 and was one of the heaviest objects on the screen for one sentence.' },
+          { x: 21.4, y: 36.1, label: 'Their fleet', text: 'Their name, then three ship cards showing only what the rules make public: a length, as pips. A card flips face-up the moment that ship uses an ability or sinks. The cards fill the column rather than sizing to their contents — a revealed four is wider than an unknown two, and three ragged right edges is what made this rail read as debris beside the board until Build 8.' },
+          { x: 74.8, y: 34.5, label: 'Their hand', text: 'Card backs with readable gold charge gems, on the far side of their board from their fleet. Charges are public on both sides — the bluff is built on shared information. An identity shows here only if a draft collision already made it public. This flank held one line of text until Build 8, and the line was not even theirs.' },
+          { x: 50, y: 12.5, label: 'Their water', text: 'The biggest single element on screen, in the blue, and the only place you act — and since Build 8 it fills the height of its region, with their fleet and their hand flanking it as two columns of exactly its height. Click a cell to aim your free shot; cells remember hits, misses and intel.' },
+          { x: 75.3, y: 70.5, label: 'The prompt', text: 'What your next click does, in words, immediately above the control that ends the round. It had a panel behind it until Build 6 and was one of the heaviest objects on the screen for one sentence; until Build 8 it was still rendering in *their* half, which is an instruction to you sitting in the opponent’s territory. While a card is aiming, the aiming panel takes this column instead.' },
           { x: 5, y: 62.6, label: 'The division', text: 'A quiet horizontal rule with a lit edge, running the width of the screen. Everything above it is theirs; everything below it is yours. This is the whole ownership argument, and it is why no part of this screen needs a label saying whose it is.' },
-          { x: 8, y: 80.1, label: 'Your water', text: 'Green rather than blue, and below the line: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here. The two waters are 11.1% apart in greyscale, so the pairing survives a colourblind reading.' },
-          { x: 27.8, y: 91, label: 'Your ships', text: 'Your three, face up to you, beside your own water instead of inside their half of the screen — which is where they rendered until Build 7. Each shows its type and whether the once-per-match ability is still available.' },
+          { x: 9.6, y: 80.1, label: 'Your water', text: 'Green rather than blue, and below the line: this is damage arriving, not a place you act. Your hulls are the dark cells. No coordinates — you never name a cell here. The two waters are 11.1% apart in greyscale, so the pairing survives a colourblind reading.' },
+          { x: 28.8, y: 91, label: 'Your ships', text: 'Your three, face up to you, beside your own water instead of inside their half of the screen — which is where they rendered until Build 7. They sit in the same column as their fleet above the division, which is the mirroring the whole game rests on, put into the layout. Each shows its type and whether the once-per-match ability is still available.' },
           { x: 50, y: 64, label: 'Your hand', text: 'Real cards at full size, fanned, lifting on hover — the rule text on the face is legible without hovering at 1920×1080. Clicking one charges it. Three at a time, one drawn per round while the shared pile lasts.' },
-          { x: 81.5, y: 80.1, label: 'Commit', text: 'The largest control in the product, and now adjacent to the hand it commits rather than at the far end of the screen from it. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
+          { x: 86.5, y: 82.8, label: 'Commit', text: 'The largest control in the product, and now adjacent to the hand it commits rather than at the far end of the screen from it. It drains as the window runs out, breathes while a plan is complete, and goes flat grey when it is not. Pressing it seals your plan as a hash — theirs is already sealed too.' },
         ],
         notes: [
           'Two callouts more than Build 6 left here, and the guide would rather say so than quietly round down: the hull row split into two because the top bar now reads the same way round as the screen, and the division earned one of its own because it is the most important object on the plate.',
@@ -548,10 +576,10 @@ export const SECTIONS: Section[] = [
         thesis:
           'The same screen mid-decision: a free shot aimed on their water, one card carrying this round’s charge, and the prompt updated to match.',
         pins: [
-          { x: 43, y: 22.2, label: 'The aimed cell', text: 'Outlined in gold on their board. Gold marks intent — this is where your free deck gun fires when the round resolves.' },
-          { x: 68, y: 30.3, label: 'Plan readout', text: 'The prompt now reads back what is planned — “Free shot: C2.” — rather than what to do next.' },
-          { x: 38.5, y: 64.5, label: 'Charged card', text: 'The gem has ticked to 1 and pulses. The pitch of the click rises with the count, so a fifth charge sounds different from a first.' },
-          { x: 81.5, y: 80.1, label: 'Armed', text: 'With a complete plan the commit button pulses, a hand’s width from the cards it commits. Both plans are held sealed until both have arrived — there is no window in which a late plan can be informed by an early one.' },
+          { x: 43, y: 22, label: 'The aimed cell', text: 'Outlined in gold on their board. Gold marks intent — this is where your free deck gun fires when the round resolves.' },
+          { x: 75.3, y: 70.5, label: 'Plan readout', text: 'The prompt reads back what is planned — “Free shot: C2.” — rather than what to do next, in your half, above the button that commits it.' },
+          { x: 39.8, y: 64.3, label: 'Charged card', text: 'The gem has ticked to 1 and pulses. The pitch of the click rises with the count, so a fifth charge sounds different from a first.' },
+          { x: 86.5, y: 82, label: 'Armed', text: 'With a complete plan the commit button pulses, a hand’s width from the cards it commits. Both plans are held sealed until both have arrived — there is no window in which a late plan can be informed by an early one.' },
         ],
       },
       {

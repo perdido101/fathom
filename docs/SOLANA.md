@@ -183,7 +183,7 @@ this environment's egress IP (`airdrop request failed… rate limit`), and a
 deployment needs roughly 1–2 SOL. Nothing in the code stands in the way — the
 same test runs unchanged against devnet:
 
-    solana program deploy chain/program/target/deploy/shadow_armada.so \
+    solana program deploy chain/program/target/deploy/armada.so \
       --url devnet --program-id <keypair>
     SA_RPC=https://api.devnet.solana.com SA_PROGRAM_ID=<id> npm run e2e:chain
 

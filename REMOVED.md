@@ -169,3 +169,34 @@ was no end-of-match *moment* before it, only an end-of-match *screen*. It is
 also the only thing here that holds the player up, which is why it lasts two
 seconds, dismisses on a click, shortens to 700ms under fast-resolve, and does
 not appear at all when transitions are off.
+
+---
+
+# Build 8 — finishing the top half
+
+Build 7 resolved the bottom of the battle screen and left the top unfinished.
+This build removed what was floating there.
+
+| Removed | Why |
+| --- | --- |
+| **The single left-hand rail holding both their fleet and their hand** | Two rows of three items, of three different widths, right-aligned to nothing in particular. It read as debris beside the board rather than as the opponent's half of a composition. The contents did not go away — they became two columns flanking the board, each as tall as it. |
+| **The ragged right edge of their fleet** | A revealed four is wider than an unknown two, so three ship cards right-aligned made three different edges. The cards now fill the column width. |
+| **The empty right-hand flank** | A quarter of the screen's width holding one sentence — and the sentence was moved out, so the flank now holds their hand. |
+| **The prompt line from their half** | *"Click their water to aim your free shot."* is an instruction to you. It was rendered in their territory on a screen whose entire argument is that the two halves belong to different people. It sits above COMMIT now. |
+| **The aiming panel from their half** | The last thing of yours rendering above the division. It takes the commit slot, which is free by construction: commit is disabled for exactly as long as a declaration is open. |
+| **A line from the wordmark** | SHADOW over ARMADA became ARMADA. See `RULINGS.md` for the two lockups that were drawn and rejected. |
+
+## What arrived
+
+| Arrived | Replaced |
+| --- | --- |
+| Two columns flanking their board, each exactly its height | A rail beside it and an empty flank |
+| Columns that line up across the division — their fleet above your fleet, their board above your hand, their hand above your commit | Two halves composed independently |
+| Their card backs at 100×140 rather than 46×66 | A card that was mostly charge gem, with the gem hanging off the corner |
+| Their ship cards filling the column width | Three ragged edges |
+| The prompt above COMMIT, in your panel | The prompt in their half |
+| The aiming panel in the commit slot | The aiming panel in their half |
+| A gold rule under the hero wordmark | The gold second line the two-word lockup used to carry |
+
+Nothing was added that replaces nothing. The board grew from `min(52vw, 50vh)`
+to `min(52vw, 52vh)`, which is a size change rather than an element.

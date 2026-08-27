@@ -176,7 +176,7 @@ const body = CHAPTERS.map(
 </section>`,
 ).join('\n');
 
-const html = `<title>Shadow Armada Dossier</title>
+const html = `<title>ARMADA Dossier</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 @font-face{font-family:'Bricolage';src:url(${FONTS.display700}) format('woff2');font-weight:700;font-display:swap}
@@ -448,7 +448,7 @@ footer .mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
 
 <div class="wrap">
   <header class="masthead">
-    <p class="kicker">Shadow Armada · build 7 · captured at 1920×1080</p>
+    <p class="kicker">ARMADA · build 8 · captured at 1920×1080</p>
     <h1>Every screen,<br>and what <em>every part of it</em> is for.</h1>
     <p class="lede">A hidden-information naval duel wagered on Solana, documented plate by plate:
       ${plateCount} screens photographed from the running game, with ${pinCount} callouts naming
@@ -502,7 +502,7 @@ footer .mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
       <code class="mono">npm run screens</code>, which drives a browser through the actual game —
       queueing, drafting, deploying, planning rounds, settling — and photographs what is on
       screen. Nothing here is a mock-up of a screen that does not exist.</p>
-    <p class="mono">Shadow Armada · devnet only · ${plateCount} plates</p>
+    <p class="mono">ARMADA · devnet only · ${plateCount} plates</p>
   </footer>
 </div>
 `;

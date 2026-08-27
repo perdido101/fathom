@@ -187,7 +187,7 @@ export function Result(): ReactElement | null {
               const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
               const a = document.createElement('a');
               a.href = URL.createObjectURL(blob);
-              a.download = 'shadow-armada-match.json';
+              a.download = 'armada-match.json';
               a.click();
             }}
           >

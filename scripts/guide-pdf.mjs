@@ -32,6 +32,7 @@ await page.screenshot({ path: 'sim-out/guide-top.png' });
 for (const [sel, name] of [
   ['#plate-24', 'guide-battle'],
   ['#plate-01', 'guide-menu'],
+  ['#plate-composition', 'guide-composition'],
   ['#plate-ownership', 'guide-ownership'],
   ['#plate-before-after', 'guide-spread'],
   ['#plate-33', 'guide-slam'],
@@ -65,7 +66,7 @@ console.log(`${figures} plate figures captured into sim-out/pins/`);
 
 await page.emulateMedia({ media: 'print' });
 await page.pdf({
-  path: 'Shadow-Armada-Screen-Guide.pdf',
+  path: 'Armada-Screen-Guide.pdf',
   format: 'A4',
   landscape: true,
   printBackground: true,

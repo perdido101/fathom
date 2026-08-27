@@ -61,7 +61,7 @@ console.log(`inlined ${inlined} assets (audio, latin fonts, dropped-in art)`);
 
 mkdirSync('dist-single', { recursive: true });
 
-const out = `<title>Shadow Armada</title>
+const out = `<title>ARMADA</title>
 <style>
 ${style}
 /* The host page supplies the frame, so the app claims the whole viewport. */
@@ -74,5 +74,5 @@ ${script}
 </script>
 `;
 
-writeFileSync('dist-single/shadow-armada.html', out, 'utf8');
-console.log(`wrote dist-single/shadow-armada.html — ${(out.length / 1024).toFixed(0)} KB`);
+writeFileSync('dist-single/armada.html', out, 'utf8');
+console.log(`wrote dist-single/armada.html — ${(out.length / 1024).toFixed(0)} KB`);

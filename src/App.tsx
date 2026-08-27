@@ -63,7 +63,7 @@ export function App(): ReactElement {
             textShadow: '0 2px 0 rgba(18,58,94,0.3)',
           }}
         >
-          Shadow Armada is played on desktop — 1280×720 or larger.
+          ARMADA is played on desktop — 1280×720 or larger.
         </p>
       </div>
 

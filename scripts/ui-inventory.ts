@@ -272,7 +272,7 @@ const uiName = (slot: string): string =>
     'ui.hidden': 'Hidden',
   })[slot] ?? slot;
 
-const html = `<title>Shadow Armada UI Inventory</title>
+const html = `<title>ARMADA UI Inventory</title>
 <style>
   /* The page borrows the game's own palette. It is documentation *of* that
      system, so using anything else would be describing one thing in the
@@ -463,7 +463,7 @@ const html = `<title>Shadow Armada UI Inventory</title>
 
 <div class="wrap">
   <header class="hero">
-    <p class="eyebrow">Shadow Armada · build 5</p>
+    <p class="eyebrow">ARMADA · build 5</p>
     <h1>Every screen, and<br>every <em>asset</em> behind it.</h1>
     <p class="lede">Thirty-three screens photographed at 1920×1080 — tournaments and the network states included — and a complete accounting of what is drawn, what is licensed, what has real audio, and what is still to be made.</p>
     <div class="stats">

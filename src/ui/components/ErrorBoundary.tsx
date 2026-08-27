@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Structured rather than a formatted string, so whatever collects logs
     // later can query it.
-    console.error('[shadow-armada] screen crashed', {
+    console.error('[armada] screen crashed', {
       where: this.props.where,
       message: error.message,
       stack: error.stack,

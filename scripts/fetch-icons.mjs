@@ -173,7 +173,7 @@ ${audio.credits
 const authors = [...new Set(credits.map((c) => c.author))].sort();
 const md = `# Asset credits
 
-Every third-party asset in Shadow Armada, with its source, author, licence and
+Every third-party asset in ARMADA, with its source, author, licence and
 the date it was retrieved. **Nothing is used whose licence could not be read
 off the source.** No Epic Games asset, model, texture, font or sound is used or
 referenced; "stylised 3D" in the brief is a visual target, not a source.

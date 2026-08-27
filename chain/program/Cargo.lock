@@ -15,6 +15,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "armada"
+version = "0.1.0"
+dependencies = [
+ "solana-program",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -952,13 +959,6 @@ checksum = "77fd7028345d415a4034cf8777cd4f8ab1851274233b45f84e3d955502d93874"
 dependencies = [
  "digest 0.10.7",
  "keccak",
-]
-
-[[package]]
-name = "shadow-armada"
-version = "0.1.0"
-dependencies = [
- "solana-program",
 ]
 
 [[package]]

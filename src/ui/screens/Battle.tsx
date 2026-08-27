@@ -50,6 +50,22 @@ import {
  * as hue so the distinction survives a colourblind simulation.
  *
  * Nothing here is labelled "yours". That is the whole point.
+ *
+ * Build 8 finished the composition. Below the division everything already
+ * read as one cluster; above it, their board sat in the middle with their
+ * fleet and their hand stacked in a rail to its left — two rows of different
+ * widths, aligned to nothing — and the entire right-hand flank held a single
+ * line of text. Worse, that line was *"Click their water to aim your free
+ * shot"*: an instruction to you, rendered in their territory, on a screen
+ * whose whole argument is that the two halves belong to different people.
+ *
+ * Their fleet and their hand now flank the board as two columns of equal
+ * width, each vertically centred on it. The prompt moved to your panel and
+ * sits over your hand, next to the cards it talks about; and the aiming
+ * panel, which holds Cancel and Lock in, took the commit slot — commit is
+ * disabled for exactly as long as a declaration is open, so the control you
+ * need replaces the control you cannot use, and nothing of yours is left
+ * rendering above the line.
  */
 export function Battle(): ReactElement | null {
   const view = useStore((s) => s.view());
@@ -331,104 +347,30 @@ export function Battle(): ReactElement | null {
         className="their-region"
         style={{ gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)' }}
       >
-        {/* Their fleet and their hand, in one rail beside their water. */}
+        {/* Their fleet, in a column against the board's left edge — the same
+            column your own fleet occupies below the division. */}
         <div className="foe-rail flank-end">
-          <span
-            style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'var(--fs-body)' }}
-          >
+          <span className="foe-who">
             {foe.name}
             {!foe.connected && ' · away'}
           </span>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            {foe.ships.map((s, i) => (
-              <span key={i} className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
-                <ShipCard
-                  defId={s.defId}
-                  length={s.length}
-                  revealed={s.defId !== null}
-                  sunk={s.sunk}
-                  used={s.abilityUsed}
-                  size="sm"
-                />
-              </span>
-            ))}
-          </div>
-          <div className="row" style={{ gap: 10, marginTop: 4 }}>
-            {foe.hand.map((c) => {
-              const known = c.defId !== null && collidedCards.has(c.defId);
-              const taking = draft?.from.find((f) => f.uid === c.uid)?.amount ?? 0;
-              return (
-                <button
-                  key={c.uid}
-                  onClick={() => onEnemyCardTap(c.uid)}
-                  data-anchor={`card:foe:${c.uid}`}
-                  aria-label={known && c.defId ? CARDS[c.defId].name : 'face-down enemy card'}
-                  style={{
-                    position: 'relative',
-                    width: 46,
-                    height: 66,
-                    borderRadius: 8,
-                    border: `2px solid ${taking ? 'var(--gold)' : 'rgba(255,255,255,0.7)'}`,
-                    overflow: 'visible',
-                    boxShadow: 'var(--shadow-soft)',
-                    flex: 'none',
-                    padding: 0,
-                  }}
-                >
-                  {known && c.defId ? (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: 6,
-                        background: 'var(--panel)',
-                        display: 'grid',
-                        placeItems: 'center',
-                        fontSize: 'var(--fs-fine)',
-                        fontWeight: 800,
-                        fontFamily: 'var(--display)',
-                        lineHeight: 1.02,
-                        color: 'var(--ink)',
-                        padding: 2,
-                        textAlign: 'center',
-                      }}
-                    >
-                      {CARDS[c.defId].name}
-                    </span>
-                  ) : (
-                    <CardBack />
-                  )}
-                  <span
-                    className="gem small num"
-                    style={{ position: 'absolute', right: -8, bottom: -8 }}
-                  >
-                    {c.charges}
-                  </span>
-                  {taking > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -10,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontFamily: 'var(--display)',
-                        fontWeight: 800,
-                        color: 'var(--danger)',
-                        fontSize: 'var(--fs-fine)',
-                      }}
-                    >
-                      −{taking}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {foe.ships.map((s, i) => (
+            <span key={i} className={s.defId ? `flip${s.sunk ? ' react' : ''}` : undefined}>
+              <ShipCard
+                defId={s.defId}
+                length={s.length}
+                revealed={s.defId !== null}
+                sunk={s.sunk}
+                used={s.abilityUsed}
+                size="md"
+              />
+            </span>
+          ))}
         </div>
 
         {/* Their water: still the dominant element, and still where you act. */}
         <div style={{ display: 'grid', placeItems: 'center', minHeight: 0, height: '100%' }}>
-          <div style={{ width: 'min(52vw, 50vh)', minWidth: 320 }}>
+          <div style={{ width: 'var(--foe-board)', minWidth: 320 }}>
             <Board
               side="foe"
               marks={me.marks}
@@ -442,109 +384,69 @@ export function Battle(): ReactElement | null {
           </div>
         </div>
 
-        {/* What the next click does — and, while aiming, how to aim it. */}
-        <div className="flank-start" style={{ alignSelf: 'center', maxWidth: 380, paddingLeft: 18 }}>
-          {draft ? (
-            /* Aiming is the one state here that earns a surface, because it
-               holds controls. The idle prompt below does not, and lost its. */
-            <div className="panel tight">
-              <div className="col" style={{ gap: 8 }}>
-                <div className="row" style={{ justifyContent: 'space-between' }}>
-                  <strong style={{ fontFamily: 'var(--display)', fontSize: 'var(--fs-body)' }}>
-                    {draft.aiming.kind === 'card'
-                      ? CARDS[draft.aiming.defId].name
-                      : SHIPS[draft.aiming.defId].name}
-                  </strong>
+        {/* Their hand, against the board's right edge. It sat under their
+            fleet in one left-hand rail until Build 8, which left this whole
+            flank holding one line of text that was not even theirs. */}
+        <div className="foe-hand flank-start">
+          {foe.hand.map((c) => {
+            const known = c.defId !== null && collidedCards.has(c.defId);
+            const taking = draft?.from.find((f) => f.uid === c.uid)?.amount ?? 0;
+            return (
+              <button
+                key={c.uid}
+                onClick={() => onEnemyCardTap(c.uid)}
+                data-anchor={`card:foe:${c.uid}`}
+                aria-label={known && c.defId ? CARDS[c.defId].name : 'face-down enemy card'}
+                className={`foe-card ${taking ? 'taking' : ''}`}
+              >
+                {known && c.defId ? (
                   <span
-                    style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: 'var(--ink-dim)' }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 9,
+                      background: 'var(--panel)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontSize: 'var(--fs-body)',
+                      fontWeight: 800,
+                      fontFamily: 'var(--display)',
+                      lineHeight: 1.02,
+                      color: 'var(--ink)',
+                      padding: 4,
+                      textAlign: 'center',
+                    }}
                   >
-                    {prompt(draft, draftCharges, innerDefId)}
+                    {CARDS[c.defId].name}
                   </span>
-                </div>
-                {shapeOf(draft, innerDefId) === 'beacon' &&
-                  draft.row !== null &&
-                  draft.axis === null && (
-                    <div className="row">
-                      <button
-                        className="btn small"
-                        style={{ flex: 1 }}
-                        onClick={() => setDraft({ ...draft, axis: 'row' })}
-                      >
-                        Read row {draft.row + 1}
-                      </button>
-                      <button
-                        className="btn small"
-                        style={{ flex: 1 }}
-                        onClick={() => setDraft({ ...draft, axis: 'col' })}
-                      >
-                        Read column {String.fromCharCode(65 + (draft.col ?? 0))}
-                      </button>
-                    </div>
-                  )}
-                {shapeOf(draft, innerDefId) === 'line' && draft.cells.length > 0 && (
-                  <div className="row">
-                    {(
-                      [
-                        ['→', [1, 0]],
-                        ['←', [-1, 0]],
-                        ['↓', [0, 1]],
-                        ['↑', [0, -1]],
-                      ] as [string, [number, number]][]
-                    ).map(([name, dir]) => (
-                      <button
-                        key={name}
-                        className="btn small"
-                        style={{ flex: 1 }}
-                        onClick={() => setDraft({ ...draft, dir })}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
+                ) : (
+                  <CardBack />
                 )}
-                <div className="row">
-                  <button
-                    className="btn small ghost"
-                    style={{ flex: 1 }}
-                    onClick={() => setDraft(null)}
+                <span
+                  className="gem small num"
+                  style={{ position: 'absolute', right: -10, bottom: -10 }}
+                >
+                  {c.charges}
+                </span>
+                {taking > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -12,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontFamily: 'var(--display)',
+                      fontWeight: 800,
+                      color: 'var(--danger)',
+                      fontSize: 'var(--fs-body)',
+                    }}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn small go"
-                    style={{ flex: 2 }}
-                    disabled={!isComplete(draft, innerDefId)}
-                    onClick={confirmDraft}
-                  >
-                    Lock in
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="col prompt-line" style={{ gap: 6 }}>
-              <span>
-                {blocked.noCharge && 'Blacked out — no charge this round. '}
-                {blocked.noFire && 'Locked — no card may be fired this round. '}
-                {basic === null
-                  ? 'Click their water to aim your free shot.'
-                  : `Free shot: ${label(basic)}.`}
-                {chargeTo === null && !blocked.noCharge ? ' Click a card to charge it.' : ''}
-              </span>
-              <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                {fire && (
-                  <button className="pill" onClick={() => setFire(null)}>
-                    Firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} ✕
-                  </button>
+                    −{taking}
+                  </span>
                 )}
-                {ability && (
-                  <button className="pill" onClick={() => setAbility(null)}>
-                    {SHIPS[ability.defId].name} ✕
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -659,36 +561,159 @@ export function Battle(): ReactElement | null {
 
         {/* Commit, beside the hand it commits. It sat at the far end of the
             screen from the decision until Build 7 — eye travel a player made
-            twenty times a match, every match. */}
-        <div className="flank-start" style={{ display: 'grid', placeItems: 'center', paddingLeft: 18 }}>
-          <WhyNot reason={ready || playingBack ? null : commitReason}>
-            <button
-              className="btn go huge commit-drain"
-              disabled={!ready || playingBack}
-              onClick={commit}
-              style={{ minWidth: 230 }}
-            >
-              {/* The second timer bar came out in Build 6. Pressure near the
-                  decision now lives *in* the decision: one element, two jobs. */}
-              <i
-                className={`drain ${warn ? 'warn' : ''}`}
-                style={{
-                  width: `${100 - Math.max(0, Math.min(100, (clock / roundSeconds) * 100))}%`,
-                }}
-              />
-              <span style={{ position: 'relative' }}>
-                {playingBack ? (
-                  <span className="thinking">
-                    THEY ARE PLANNING <i />
-                    <i />
-                    <i />
+            twenty times a match, every match.
+
+            While a card or an ability is aiming, the aiming panel takes this
+            slot instead. That is not a compromise for space: commit is
+            *disabled* for exactly as long as a declaration is open, so the
+            control you need replaces the control you cannot use, in the place
+            you are already looking. It also moves the last thing of yours
+            that was rendering in their half. */}
+        <div
+          className="flank-start col"
+          style={{ justifyContent: 'center', gap: 10, paddingLeft: 18, width: 340 }}
+        >
+          {draft ? (
+            /* Aiming is the one state here that earns a surface, because it
+               holds controls. The idle prompt above does not, and lost its. */
+            <div className="panel tight" style={{ width: '100%' }}>
+              <div className="col" style={{ gap: 8 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <strong style={{ fontFamily: 'var(--display)', fontSize: 'var(--fs-body)' }}>
+                    {draft.aiming.kind === 'card'
+                      ? CARDS[draft.aiming.defId].name
+                      : SHIPS[draft.aiming.defId].name}
+                  </strong>
+                  <span
+                    style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: 'var(--ink-dim)' }}
+                  >
+                    {prompt(draft, draftCharges, innerDefId)}
                   </span>
-                ) : (
-                  'COMMIT'
+                </div>
+                {shapeOf(draft, innerDefId) === 'beacon' &&
+                  draft.row !== null &&
+                  draft.axis === null && (
+                    <div className="row">
+                      <button
+                        className="btn small"
+                        style={{ flex: 1 }}
+                        onClick={() => setDraft({ ...draft, axis: 'row' })}
+                      >
+                        Read row {draft.row + 1}
+                      </button>
+                      <button
+                        className="btn small"
+                        style={{ flex: 1 }}
+                        onClick={() => setDraft({ ...draft, axis: 'col' })}
+                      >
+                        Read column {String.fromCharCode(65 + (draft.col ?? 0))}
+                      </button>
+                    </div>
+                  )}
+                {shapeOf(draft, innerDefId) === 'line' && draft.cells.length > 0 && (
+                  <div className="row">
+                    {(
+                      [
+                        ['→', [1, 0]],
+                        ['←', [-1, 0]],
+                        ['↓', [0, 1]],
+                        ['↑', [0, -1]],
+                      ] as [string, [number, number]][]
+                    ).map(([name, dir]) => (
+                      <button
+                        key={name}
+                        className="btn small"
+                        style={{ flex: 1 }}
+                        onClick={() => setDraft({ ...draft, dir })}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              </span>
-            </button>
-          </WhyNot>
+                <div className="row">
+                  <button
+                    className="btn small ghost"
+                    style={{ flex: 1 }}
+                    onClick={() => setDraft(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn small go"
+                    style={{ flex: 2 }}
+                    disabled={!isComplete(draft, innerDefId)}
+                    onClick={confirmDraft}
+                  >
+                    Lock in
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* What your next click does, immediately above the control
+                  that ends the round. This sentence was rendered in *their*
+                  half until Build 8 — an instruction to you, in the
+                  opponent's territory, on a screen whose whole argument is
+                  that the two halves belong to different people.
+
+                  It sits here rather than over the hand because the band
+                  above the hand already belongs to the hovered card's own
+                  affordance, and two things wanting the same 40 pixels is a
+                  bug this screen has produced once already. */}
+              <div className="col prompt-line" style={{ gap: 6 }}>
+                <span>
+                  {blocked.noCharge && 'Blacked out — no charge this round. '}
+                  {blocked.noFire && 'Locked — no card may be fired this round. '}
+                  {basic === null
+                    ? 'Click their water to aim your free shot.'
+                    : `Free shot: ${label(basic)}.`}
+                  {chargeTo === null && !blocked.noCharge ? ' Click a card to charge it.' : ''}
+                </span>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                  {fire && (
+                    <button className="pill" onClick={() => setFire(null)}>
+                      Firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} ✕
+                    </button>
+                  )}
+                  {ability && (
+                    <button className="pill" onClick={() => setAbility(null)}>
+                      {SHIPS[ability.defId].name} ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+              <WhyNot reason={ready || playingBack ? null : commitReason}>
+                <button
+                  className="btn go huge commit-drain"
+                  disabled={!ready || playingBack}
+                  onClick={commit}
+                  style={{ minWidth: 230 }}
+                >
+                {/* The second timer bar came out in Build 6. Pressure near the
+                    decision now lives *in* the decision: one element, two jobs. */}
+                <i
+                  className={`drain ${warn ? 'warn' : ''}`}
+                  style={{
+                    width: `${100 - Math.max(0, Math.min(100, (clock / roundSeconds) * 100))}%`,
+                  }}
+                />
+                <span style={{ position: 'relative' }}>
+                  {playingBack ? (
+                    <span className="thinking">
+                      THEY ARE PLANNING <i />
+                      <i />
+                      <i />
+                    </span>
+                  ) : (
+                    'COMMIT'
+                  )}
+                </span>
+                </button>
+              </WhyNot>
+            </>
+          )}
         </div>
       </div>
 

@@ -231,7 +231,7 @@ function figureFor(plate: Plate): string | null {
 
 function titlePage(): (Paragraph | Table)[] {
   return [
-    para([text('Shadow Armada · build 7 · captured at 1920×1080', {
+    para([text('ARMADA · build 8 · captured at 1920×1080', {
       size: 9, bold: true, color: GOLD, font: DISPLAY, caps: true,
     })], { spacing: 400 }),
     new Paragraph({
@@ -564,12 +564,12 @@ body.push(
       { size: 9.5, color: SOFT },
     ),
   ]),
-  para([text(`Shadow Armada · devnet only · ${plateCount} plates`, { size: 8.5, color: FAINT, font: MONO })]),
+  para([text(`ARMADA · devnet only · ${plateCount} plates`, { size: 8.5, color: FAINT, font: MONO })]),
 );
 
 const doc = new Document({
-  creator: 'Shadow Armada',
-  title: 'Shadow Armada — Screen Guide',
+  creator: 'ARMADA',
+  title: 'ARMADA — Screen Guide',
   description: `All ${plateCount} screens at 1920×1080, with ${pinCount} callouts.`,
   numbering: {
     config: [
@@ -605,7 +605,7 @@ const doc = new Document({
   ],
 });
 
-const out = 'Shadow-Armada-Screen-Guide.docx';
+const out = 'Armada-Screen-Guide.docx';
 const buffer = await Packer.toBuffer(doc);
 writeFileSync(out, buffer);
 console.log(

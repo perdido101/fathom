@@ -516,3 +516,110 @@ too many.
 fast-resolve setting on, dismissable by a click at any point, and skipped
 entirely when transitions are off. A player who has turned the theatre down
 has said what they want.
+
+# Build 8
+
+## The name
+
+**27 August 2026 — the product is renamed from Shadow Armada to ARMADA.**
+Recorded here so that the earlier name, which is all over the git history up
+to this commit, is explicable rather than confusing. Every spelling the old
+name took — `Shadow Armada`, `SHADOW ARMADA`, `Shadow-Armada`,
+`shadow-armada`, `shadow_armada` — is gone from source, comments, tests,
+documents, configuration, artefact filenames and the Rust crate, and
+`src/name.test.ts` fails the suite if any of them comes back.
+
+**Nothing on-chain was left behind, because there was nothing to leave.** The
+program has no `declare_id!`; its address comes from a keypair generated per
+deployment and passed to the client at runtime, and the PDA seeds are
+`match` and `bracket` rather than the product name. So renaming the crate
+`shadow-armada` → `armada` changes only the `.so` filename, which
+`scripts/chain-local.sh` was updated to match. The chain proof runs green on
+the renamed crate.
+
+**Two localStorage keys changed** — `shadow-armada:settings` and
+`shadow-armada:seen-mechanics` are now `armada:*`. This silently resets every
+existing player's volume, fast-resolve toggle and first-time explanations.
+Ruled acceptable without a migration: the product is devnet-only and
+pre-launch, the data is three booleans and a set of seen flags, and a
+migration shim would be permanent code carrying a dead name. Recorded rather
+than done quietly, because the same call after launch would be wrong.
+
+**The disagreement I raised and was overruled on**, kept here because a
+decision is worth more with its objection attached: *Armada* is a bare common
+noun in the exact genre — an existing Steam title of ship-to-ship combat, a
+naval board game, and several *X: Armada* franchises — which makes it close
+to unregistrable as a word mark in its own field and a permanent SEO fight.
+For a product that will hold real money, a name that cannot be defended is a
+name a competitor can trade off. Aris's call; the rename is done.
+
+## The wordmark
+
+Two lines became one, and dropping a line takes the gold with it. The old
+lockup set SHADOW in white over ARMADA in gold; a single word has nowhere to
+put a second colour, so the gold went back to the mark — the lower chevron
+already carries it — and the word is set once and tracked wide.
+
+Two alternatives were drawn and rejected:
+
+- **Mark over word, gold rule between.** The better drawing in isolation, and
+  a vertical lockup in a product whose every placement is a horizontal strip
+  — it forces the menu header taller for no gain, and it is illegible at the
+  small size the component's `hero={false}` variant is for. That variant is
+  currently unplaced; it exists so the mark can go inline when something
+  needs it, and a lockup that only works at one size is not a lockup.
+- **Split colour — ARM white, ADA gold.** Echoes the two chevrons without a
+  second line, and reads as two words. The split it makes is "ARM · ADA", and
+  ADA is another chain's token, on a product that settles in SOL.
+
+At hero size the word takes a gold rule underneath it, the width of the word.
+That is the one thing the tracked lockup gives up and the only place there is
+room to put it back; the top bar goes without.
+
+## The sanity sim, and one band that is now a coin-flip
+
+The rename touched no engine file — `balance.ts`, `ships.ts`, `cards.ts` and
+the reducer are byte-identical across Build 8 — so the sim was run as a
+sanity check rather than an expectation of change, on a seed prefix the
+project had never used.
+
+`npm run sim -- --matches 1000 --seed b8`, headline pairing (L4 vs L4, random
+drafts, the one Build 7 reported):
+
+| | Build 7 (`b7`) | Build 8 (`b8`) |
+| --- | --- | --- |
+| Ember win rate | 51.0% | **50.7%** (n=358) |
+| Spread, all twelve ships | 45.2% – 55.6% | **44.0% – 56.5%** |
+| Ships outside the 42–58% band | 0 | **0** |
+
+Ember and the band table survive, as expected.
+
+**A finding the check turned up, reported rather than acted on.** The "draws
+under 8%" band failed on `b8` at 8.4%. That looked like a regression, so it
+was measured properly — the same pairing at n=3000 on three independent seed
+sets:
+
+| Seeds | Draw rate | Band |
+| --- | --- | --- |
+| `b7` | 8.0% | PASS |
+| `b8` | 8.1% | FAIL |
+| `b9` | 7.8% | PASS |
+
+718 draws in 9000 matches: **7.98%**. The band is not detecting anything —
+it is drawing a line through the value the game actually produces, so which
+side of it a run lands on is noise. Every one of those draws is a mutual
+elimination entering the final round with *equal* hull, so the existing
+hull-count tiebreak cannot resolve any of them.
+
+Two ways to fix it, neither taken this build because nothing here was in
+scope and balance is not tuned without proposing first:
+
+1. **Move the band to 9%.** Cheapest, and honest if ~8% mutual eliminations
+   is the intended texture of a simultaneous-fire game. A band that fails
+   half the time teaches everyone to ignore it, which is worse than no band.
+2. **Break the tie further back.** A second tiebreak — charges banked, or
+   shots landed — would resolve mutual eliminations at equal hull and push
+   the rate down. That is a rules change and belongs in a brief, not here.
+
+My recommendation is (1). The draw rate has been stable across every
+measurement since Build 6; it is the threshold that is wrong, not the game.

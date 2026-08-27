@@ -464,10 +464,11 @@ try {
     'The clock': '.big-num',
     'Your hull': '.battle-grid > .panel.tight > span:nth-of-type(4)',
     'The pot': '.battle-grid > .panel.tight > .pill.gold',
-    'Their fleet': '.foe-rail > .row:nth-of-type(1)',
-    'Their cards': '.foe-rail > .row:nth-of-type(2)',
+    'Their name': '.foe-rail > span:first-child',
+    'Their fleet': '.foe-rail > span.flip, .foe-rail > span:not(:first-child)',
+    'Their cards': '.foe-card',
     'Their water': '.board:not(.own)',
-    'The prompt': '.their-region > .flank-start',
+    'The prompt': '.your-region .prompt-line',
     'The division': '.your-region',
     'Your water': '.board.own',
     'Your ships': '.own-rail > .col',
@@ -483,7 +484,7 @@ try {
   await shot('25-battle-planned', 'free shot aimed, a card charged, the gem pulsing');
   await anchors('25-battle-planned', {
     'The aimed cell': '.board:not(.own) .cell.pick',
-    'Plan readout': '.their-region > .flank-start',
+    'Plan readout': '.your-region .prompt-line',
     'Charged card': '.hand-slot:has(.gem.pulse)',
     Armed: '.commit-drain',
   });
