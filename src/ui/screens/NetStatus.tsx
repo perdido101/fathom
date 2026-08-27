@@ -22,7 +22,7 @@ export function NetBanners(): ReactElement | null {
     return (
       <div className="overlay" style={{ background: 'rgba(18,58,94,0.55)', zIndex: 40 }}>
         <div className="panel" style={{ textAlign: 'center', minWidth: 420 }}>
-          <p className="display" style={{ fontSize: 24, fontWeight: 800 }}>
+          <p className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800 }}>
             Reconnecting…
           </p>
           <p style={{ marginTop: 8, fontWeight: 700, color: 'var(--ink-dim)' }}>
@@ -43,7 +43,7 @@ export function NetBanners(): ReactElement | null {
     return (
       <div className="overlay" style={{ background: 'rgba(18,58,94,0.55)', zIndex: 40 }}>
         <div className="panel" style={{ textAlign: 'center', minWidth: 440, borderColor: 'var(--danger)' }}>
-          <p className="display" style={{ fontSize: 24, fontWeight: 800, color: 'var(--danger)' }}>
+          <p className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800, color: 'var(--danger)' }}>
             Connection lost
           </p>
           <p style={{ marginTop: 8, fontWeight: 700, color: 'var(--ink-dim)' }}>
@@ -79,7 +79,7 @@ export function NetBanners(): ReactElement | null {
         }}
       >
         <Icon name="ui.hidden" size={18} style={{ color: 'var(--predict)' }} />
-        <span style={{ fontWeight: 800, fontSize: 14 }}>
+        <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>
           Opponent disconnected — they forfeit if they stay away past the grace period.
         </span>
       </div>
@@ -100,7 +100,7 @@ export function NetBanners(): ReactElement | null {
           maxWidth: 560,
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--danger)' }}>
+        <span style={{ fontWeight: 700, fontSize: 'var(--fs-fine)', color: 'var(--danger)' }}>
           Server: {net.lastServerError}
         </span>
       </div>
@@ -132,13 +132,13 @@ export function NetResult(): ReactElement | null {
       <p
         className="banner big-num"
         style={{
-          fontSize: 72,
+          fontSize: 'var(--fs-hero)',
           color: won ? 'var(--gold)' : drew ? 'var(--intel)' : 'var(--danger)',
         }}
       >
         {won ? 'VICTORY' : drew ? 'DRAW' : 'DEFEAT'}
       </p>
-      <p style={{ color: '#ffffff', fontWeight: 800, fontSize: 17, textShadow: '0 2px 0 rgba(18,58,94,0.3)' }}>
+      <p style={{ color: '#ffffff', fontWeight: 800, fontSize: 'var(--fs-lead)', textShadow: '0 2px 0 rgba(18,58,94,0.3)' }}>
         Played over the wire against {view.foe.name}.
       </p>
       <div className="panel" style={{ minWidth: 460, textAlign: 'center' }}>

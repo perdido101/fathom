@@ -7,10 +7,14 @@
  * handle so the shots land on camera; that is staging, not gameplay — the
  * engine underneath is untouched.
  *
- * The prediction trigger is not captured: it needs the bot to fire into a
- * Mirror read, which cannot be staged deterministically from outside. Its
- * behaviour is pinned by engine tests and the resolve overlay beat was
- * verified by eye; documented in FUNCTIONAL_AUDIT.md.
+ * Build 6 added three: the draft's five-beat sequence, the beats between
+ * phases, and a round of the feedback layer working. All three are motion by
+ * definition and a still frame can only hint at them.
+ *
+ * The prediction trigger is still not captured: it needs the bot to fire into
+ * a Mirror read, which cannot be staged deterministically from outside. Its
+ * behaviour is pinned by engine tests and its beat was verified by eye;
+ * documented in FUNCTIONAL_AUDIT.md.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -55,6 +59,25 @@ async function record(name, drive) {
 }
 
 const click = (page, name, opts) => page.getByRole('button', { name, ...opts }).click();
+const seen = (page, sel) => page.locator(sel).isVisible().catch(() => false);
+
+/** Step past every phase beat currently queued. */
+async function skipBeats(page, limit = 5) {
+  for (let i = 0; i < limit; i++) {
+    if (!(await seen(page, '.beat-screen'))) return;
+    await page
+      .locator('.beat-screen')
+      .click({ position: { x: 40, y: 40 }, timeout: 2000 })
+      .catch(() => undefined);
+    await page.waitForTimeout(240);
+  }
+}
+
+/** Charge a card: since Build 6 the card itself is the charge control. */
+async function chargeFirst(page) {
+  await page.locator('.hand-slot .gamecard').first().click({ timeout: 4000 }).catch(() => undefined);
+  await page.waitForTimeout(160);
+}
 
 /** Cells of the enemy's ships, via the dev store handle. Staging, not play. */
 const enemyCells = (page) =>
@@ -63,40 +86,41 @@ const enemyCells = (page) =>
     return ms ? ms.players[1].ships.flatMap((s) => s.cells) : [];
   });
 
-async function intoBattle(page) {
-  await page.getByRole('button', { name: /Casual/ }).click();
-  await page.waitForTimeout(300);
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.draft-pick').first().click();
-    await page.waitForTimeout(1600);
-  }
-  for (let i = 0; i < 3; i++) {
-    await page.locator('button.gamecard').first().click();
-    await page.waitForTimeout(1600);
-  }
-  await click(page, 'Auto');
-  await click(page, 'Commit fleet');
-  await page.waitForTimeout(400);
+async function draftPick(page, selector) {
+  await page.locator(selector).first().click({ timeout: 6000 }).catch(() => undefined);
+  await page.waitForTimeout(2500);
+  await skipBeats(page);
 }
 
-async function playAimedRound(page, cells, chargeFirst = true) {
+async function intoBattle(page, { keepBeats = false } = {}) {
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await page.waitForTimeout(400);
+  if (!keepBeats) await skipBeats(page);
+  for (let i = 0; i < 3; i++) await draftPick(page, '.draft-pick');
+  await skipBeats(page);
+  for (let i = 0; i < 3; i++) await draftPick(page, 'button.gamecard');
+  await skipBeats(page);
+  await click(page, 'Auto');
+  await click(page, 'Commit fleet');
+  await page.waitForTimeout(500);
+  if (!keepBeats) await skipBeats(page);
+}
+
+async function playAimedRound(page, cells, charge = true) {
   // Every step is best-effort: the match can end under the camera, and a
   // finished clip beats a perfect drive that times out.
   const t = { timeout: 6000 };
+  await skipBeats(page);
   await page.locator('.board').first().locator('.cell').nth(cells[0]).click(t).catch(() => undefined);
   await page.waitForTimeout(150);
-  if (chargeFirst) {
-    await page
-      .getByRole('button', { name: 'Charge', exact: true })
-      .first()
-      .click(t)
-      .catch(() => undefined);
-  }
+  if (charge) await chargeFirst(page);
   await page.getByRole('button', { name: /^COMMIT/ }).click(t).catch(() => undefined);
-  // Let the resolve overlay play out on camera.
+  // Let the floaters and the resolve overlay play out on camera.
   await page.waitForTimeout(4200);
-  const overlay = page.locator('.overlay');
-  if (await overlay.isVisible().catch(() => false)) await overlay.click().catch(() => undefined);
+  const overlay = page.locator('.overlay').first();
+  if (await overlay.isVisible().catch(() => false)) {
+    await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+  }
   await page.waitForTimeout(400);
 }
 
@@ -113,44 +137,96 @@ await record('screen-transition', async (page) => {
   await page.waitForTimeout(1100);
 });
 
-// 2. The draft collision beat. Pack A always holds Warhead and the bot
-// values it highest, so picking it collides.
+// 2. NEW — the beats between phases, at their natural pace. Nothing is
+// skipped here: this is what a first-time player actually sees between
+// pressing Play and firing a shot.
+await record('phase-beats', async (page) => {
+  await page.getByRole('button', { name: /Casual/ }).click();
+  // Match found, then the ship-draft card, both at 1.5s.
+  await page.waitForTimeout(3600);
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.draft-pick').first().click({ timeout: 6000 }).catch(() => undefined);
+    await page.waitForTimeout(2500);
+  }
+  // Fleet assembled, then the card-draft card.
+  await page.waitForTimeout(3400);
+  for (let i = 0; i < 3; i++) {
+    await page.locator('button.gamecard').first().click({ timeout: 6000 }).catch(() => undefined);
+    await page.waitForTimeout(2500);
+  }
+  // The deploy card.
+  await page.waitForTimeout(1800);
+  await click(page, 'Auto').catch(() => undefined);
+  await click(page, 'Commit fleet').catch(() => undefined);
+  // Both committed, sealing, then the battle card.
+  await page.waitForTimeout(3600);
+});
+
+// 3. NEW — the draft's five beats: deal in, your pick lifts, their card back
+// slides in, resolve, pack counter advances. Two picks, so the deal-in of the
+// second pack is on camera too.
+await record('draft-sequence', async (page) => {
+  await page.getByRole('button', { name: /Casual/ }).click();
+  await page.waitForTimeout(400);
+  await skipBeats(page);
+  await page.waitForTimeout(700);
+  await page.locator('.draft-pick').first().click({ timeout: 6000 }).catch(() => undefined);
+  await page.waitForTimeout(3000);
+  await page.locator('.draft-pick').nth(1).click({ timeout: 6000 }).catch(() => undefined);
+  await page.waitForTimeout(3000);
+});
+
+// 4. The collision beat. Pack A always holds Warhead and the bot values it
+// highest, so picking it collides.
 await record('draft-collision', async (page) => {
   await page.getByRole('button', { name: /Casual/ }).click();
   await page.waitForTimeout(400);
-  await page.locator('.draft-pick', { hasText: 'Warhead' }).first().click();
-  await page.waitForTimeout(2000);
+  await skipBeats(page);
+  await page.waitForTimeout(600);
+  await page.locator('.draft-pick', { hasText: 'Warhead' }).first().click().catch(() => undefined);
+  await page.waitForTimeout(3000);
 });
 
-// 3. A card firing with its hits landing — aimed at real hull.
+// 5. NEW — one round of the feedback layer: floaters rising off the cells
+// that took the shots, and whatever named event the round produces.
+await record('round-feedback', async (page) => {
+  await intoBattle(page);
+  const cells = await enemyCells(page);
+  // Aim the free shot at real hull so a HIT is on camera, not just misses.
+  await playAimedRound(page, [cells[0]]);
+  await playAimedRound(page, [cells[1]]);
+});
+
+// 6. A card firing with its hits landing — aimed at real hull.
 await record('card-fire-hits', async (page) => {
   await intoBattle(page);
   const cells = await enemyCells(page);
-  // Round 1: charge Salvo-or-whatever sits first; free shot onto hull.
   await playAimedRound(page, cells);
-  // Round 2: fire the charged card at hull cells.
   const t = { timeout: 6000 };
+  await skipBeats(page);
   await page.locator('.board').first().locator('.cell').nth(cells[1]).click(t).catch(() => undefined);
   await page.waitForTimeout(150);
-  const fire = page.getByRole('button', { name: 'Fire', exact: true }).first();
-  if (await fire.isEnabled().catch(() => false)) {
+  // The Fire control appears on the hovered card, and only where it is legal.
+  const slots = await page.locator('.hand-slot').count();
+  for (let i = 0; i < slots; i++) {
+    await page.locator('.hand-slot').nth(i).hover().catch(() => undefined);
+    await page.waitForTimeout(240);
+    const fire = page.getByRole('button', { name: /^Fire · / }).first();
+    if (!(await fire.isVisible().catch(() => false))) continue;
     await fire.click(t).catch(() => undefined);
     await page.waitForTimeout(200);
     await page.locator('.board').first().locator('.cell').nth(cells[2]).click(t).catch(() => undefined);
     await page.waitForTimeout(150);
     const lock = page.getByRole('button', { name: 'Lock in' });
     if (await lock.isVisible().catch(() => false)) await lock.click().catch(() => undefined);
+    break;
   }
-  await page
-    .getByRole('button', { name: 'Charge', exact: true })
-    .first()
-    .click(t)
-    .catch(() => undefined);
+  await chargeFirst(page);
   await page.getByRole('button', { name: /^COMMIT/ }).click(t).catch(() => undefined);
   await page.waitForTimeout(5200);
 });
 
-// 4. A sink: hammer the shortest enemy ship's cells with the free shot.
+// 7. A sink: hammer the shortest enemy ship's cells with the free shot.
 await record('ship-sink', async (page) => {
   await intoBattle(page);
   const shortShip = await page.evaluate(() => {
@@ -160,11 +236,7 @@ await record('ship-sink', async (page) => {
   });
   for (const cell of shortShip) {
     await playAimedRound(page, [cell]);
-    const done = await page
-      .getByRole('button', { name: 'REMATCH' })
-      .isVisible()
-      .catch(() => false);
-    if (done) break;
+    if (await seen(page, 'text=PLAY AGAIN')) break;
   }
 });
 

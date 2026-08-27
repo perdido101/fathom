@@ -42,7 +42,9 @@ export function GameCard({
   selected = false,
   disabled = false,
   pulse = false,
+  anchor,
   onClick,
+  onHover,
   className,
   style,
 }: {
@@ -54,7 +56,10 @@ export function GameCard({
   disabled?: boolean;
   /** The gem pulses when this card took a charge this round. */
   pulse?: boolean;
+  /** Feedback anchor, so a +1 can float off the card that gained it. */
+  anchor?: string;
   onClick?: () => void;
+  onHover?: (over: boolean) => void;
   className?: string;
   style?: CSSProperties;
 }): ReactElement {
@@ -67,7 +72,10 @@ export function GameCard({
   return (
     <button
       onClick={onClick}
+      onMouseEnter={onHover ? () => onHover(true) : undefined}
+      onMouseLeave={onHover ? () => onHover(false) : undefined}
       disabled={disabled}
+      data-anchor={anchor}
       className={`gamecard has-tip ${className ?? ''}`}
       aria-label={faceDown ? 'face-down card' : (def?.name ?? 'card')}
       style={{
@@ -155,7 +163,7 @@ export function GameCard({
               color: '#ffffff',
               fontFamily: 'var(--display)',
               fontWeight: 800,
-              fontSize: size === 'sm' ? 10 : size === 'md' ? 14 : 17,
+              fontSize: size === 'lg' ? 'var(--fs-lead)' : size === 'md' ? 'var(--fs-body)' : 'var(--fs-fine)',
               textShadow: '0 1px 0 rgba(18,58,94,0.4)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -171,7 +179,7 @@ export function GameCard({
               style={{
                 flex: 1,
                 padding: size === 'md' ? '5px 8px' : '7px 10px',
-                fontSize: size === 'md' ? 10.5 : 12,
+                fontSize: 'var(--fs-fine)',
                 fontWeight: 700,
                 lineHeight: 1.3,
                 color: 'var(--ink-dim)',
@@ -189,12 +197,12 @@ export function GameCard({
               position: 'absolute',
               right: size === 'sm' ? -6 : -10,
               bottom: size === 'sm' ? -6 : -10,
-              fontSize: size === 'sm' ? 14 : size === 'lg' ? 28 : 21,
+              fontSize: size === 'sm' ? 'var(--fs-fine)' : size === 'lg' ? 'var(--fs-head)' : 'var(--fs-sub)',
             }}
           >
             <ChargeNumber
               value={charges}
-              size={size === 'sm' ? 14 : size === 'lg' ? 28 : 21}
+              size={size === 'sm' ? 'var(--fs-fine)' : size === 'lg' ? 'var(--fs-head)' : 'var(--fs-sub)'}
               style={{ color: '#5c3d00', textShadow: 'none' }}
             />
           </span>
@@ -238,7 +246,7 @@ export function CardBack({ label }: { label?: string }): ReactElement {
             bottom: 8,
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: 11,
+            fontSize: 'var(--fs-fine)',
             color: 'rgba(255,255,255,0.85)',
           }}
         >
@@ -323,7 +331,7 @@ export function ShipCard({
           style={{
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: size === 'sm' ? 18 : 24,
+            fontSize: size === 'sm' ? 'var(--fs-lead)' : 'var(--fs-sub)',
             color: '#ffffff',
             textShadow: '0 2px 0 rgba(18,58,94,0.35)',
           }}
@@ -336,12 +344,15 @@ export function ShipCard({
           style={{
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: size === 'sm' ? 13 : 15,
+            fontSize: size === 'sm' ? 'var(--fs-fine)' : 'var(--fs-body)',
             color: def ? 'var(--ink)' : '#ffffff',
             whiteSpace: 'nowrap',
           }}
         >
-          {def ? def.name : `Length ${length}`}
+          {/* An unrevealed ship says its length with pips alone. The words
+              "Length 4" beside four pips are the same fact twice, and the
+              pips are the half that scans without reading. */}
+          {def?.name ?? '\u00a0'}
         </span>
         {/* Length pips — sunk pips go hollow. */}
         <span style={{ display: 'flex', gap: 3 }}>
@@ -365,7 +376,7 @@ export function ShipCard({
             marginLeft: 4,
             fontFamily: 'var(--display)',
             fontWeight: 700,
-            fontSize: 10,
+            fontSize: 'var(--fs-fine)',
             color: sunk ? 'var(--danger)' : used ? 'var(--ink-faint)' : typeColour,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',

@@ -26,12 +26,12 @@ export function Credits(): ReactElement {
       <h2>Credits</h2>
 
       <div className="panel col" style={{ gap: 6 }}>
-        <strong style={{ fontSize: 14 }}>Icons — game-icons.net</strong>
-        <p style={{ fontSize: 12 }}>
+        <strong style={{ fontSize: 'var(--fs-fine)' }}>Icons — game-icons.net</strong>
+        <p style={{ fontSize: 'var(--fs-fine)' }}>
           {ICON_CREDITS.length} icons by {[...byAuthor.keys()].join(' and ')}, used under{' '}
           {ICON_LICENCE} and recoloured to this game&rsquo;s palette. Retrieved {ICON_RETRIEVED}.
         </p>
-        <span className="mono" style={{ wordBreak: 'break-all' }}>
+        <span style={{ wordBreak: 'break-all', fontSize: 'var(--fs-fine)', fontWeight: 700 }}>
           {ICON_LICENCE_URL}
         </span>
       </div>
@@ -56,7 +56,7 @@ export function Credits(): ReactElement {
                 title={`${c.name} by ${c.author}`}
               >
                 <Icon name={c.slot} size={22} style={{ color: 'var(--ink-dim)' }} />
-                <span style={{ fontSize: 8, color: 'var(--ink-faint)', textAlign: 'center' }}>
+                <span style={{ fontSize: 'var(--fs-fine)', color: 'var(--ink-faint)', textAlign: 'center' }}>
                   {c.name}
                 </span>
               </div>
@@ -66,13 +66,13 @@ export function Credits(): ReactElement {
       ))}
 
       <div className="panel col" style={{ gap: 6 }}>
-        <strong style={{ fontSize: 14 }}>Everything else</strong>
-        <p style={{ fontSize: 12 }}>
+        <strong style={{ fontSize: 'var(--fs-fine)' }}>Everything else</strong>
+        <p style={{ fontSize: 'var(--fs-fine)' }}>
           Ship hulls, board tiles, card frames, the wordmark and every visual effect are drawn
           procedurally in this repository. Type is Baloo 2, Nunito and JetBrains Mono, all under
           the SIL Open Font License, served from Google Fonts. No audio ships yet.
         </p>
-        <p style={{ fontSize: 12 }}>
+        <p style={{ fontSize: 'var(--fs-fine)' }}>
           No Epic Games asset, model, texture, font or sound is used or referenced anywhere in this
           project.
         </p>

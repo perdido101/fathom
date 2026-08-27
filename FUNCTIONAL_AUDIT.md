@@ -1,4 +1,11 @@
-# Functional audit — Builds 4 and 5
+# Functional audit — Builds 4, 5 and 6
+
+> **Build 6 note.** The checklist below is unchanged in substance; the harness
+> counts and two control names were updated where Build 6 moved them. The
+> restraint pass removed one control (`NEXT OPPONENT`) and moved two (`Charge`
+> and `Fire` became the card itself and a hover affordance), and every harness
+> — smoke, sweep, audit walk, clips — was updated to drive the new controls
+> rather than the old ones. All four run clean.
 
 Every item from the Build 4 Part 2 checklist (and the Part 5 tournament
 extension), walked as a player or proven by an automated harness. One line
@@ -9,11 +16,11 @@ Evidence sources, all runnable from a clean checkout:
 
 | Harness | Command | Scope |
 | --- | --- | --- |
-| Engine + server + bracket tests | `npm test` (79 tests) | rules, hidden info, server authority, bracket maths |
-| On-chain proof | `npm run chain:local` (54 checks) | every money path on a hermetic local validator |
+| Engine + server + bracket tests | `npm test` (102 tests) | rules, hidden info, server authority, bracket maths |
+| On-chain proof | `npm run chain:local` (69 checks) | every money path on a hermetic local validator |
 | Browser smoke | `npm run smoke` | full casual match at 1920×1080, zero console errors |
-| Player-flow walk | `node scripts/audit-ui.mjs` (16 checks) | flows only a UI can prove |
-| Simulation | `npm run sim` | 10,000 bot matches across five pairings |
+| Player-flow walk | `node scripts/audit-ui.mjs` (15 checks) | flows only a UI can prove |
+| Simulation | `npm run sim` | 36,000 bot matches across six pairings |
 
 "mock" below means the in-browser adapter (real UI, simulated chain);
 "local validator" means the deployed program under `npm run chain:local`;
@@ -26,8 +33,8 @@ devnet-specific items note their blocker.
 | First run → straight into bot match, no wallet | PASS | audit-ui: "first run goes straight to the ship draft, no wallet gate" |
 | Casual queue: bot fallback | PASS | casual always seats a bot opponent by design (`startMatch`); smoke plays it end to end |
 | Human-vs-human via two clients | PASS (two in-process seats) | `server.test.ts` drives both seats of `MatchServer` through the full protocol — token auth, commitments, plan holding, reveal. No network transport exists yet, so "two tabs" is not possible; the seat protocol the transport would carry is what is tested |
-| Rematch from every result type | PASS | audit-ui: REMATCH and NEXT OPPONENT both start fresh matches; `rematch()` is result-agnostic (same code path for win/loss/draw), exercised on win and loss |
-| Next Opponent works from result | PASS | audit-ui: "NEXT OPPONENT starts a fresh match too" |
+| Rematch from every result type | PASS | audit-ui: "PLAY AGAIN starts a fresh match in the same mode"; `rematch()` is result-agnostic (same code path for win/loss/draw), exercised on win and loss |
+| Next Opponent works from result | PASS (merged) | Build 6 collapsed REMATCH and NEXT OPPONENT into one button — they called the same function, because the queue finds whoever is available. Recorded in `REMOVED.md` |
 
 ## Drafts
 

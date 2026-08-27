@@ -3,6 +3,14 @@ import { playBotMatch } from './runner';
 import { analyse, pct, renderMarkdown, type PairingReport } from './report';
 import type { Level } from '../bots/bot';
 import { CARDS } from '../engine/cards';
+import { BALANCE } from '../engine/balance';
+
+/**
+ * `BALANCE` ships as a frozen-by-type constant, which is right for every
+ * consumer except this one. The measurement overrides below are the single
+ * place that is allowed to move a tunable, and only for the run in progress.
+ */
+const TUNABLE = BALANCE as unknown as Record<string, number>;
 
 /**
  * `npm run sim` — thousands of seeded bot matches, then the bands.
@@ -35,6 +43,39 @@ if (MIRROR_MIN !== CARDS.mirror.minCharges) {
   );
   CARDS.mirror.minCharges = MIRROR_MIN;
 }
+
+/**
+ * Ember's two levers, overridable for measurement only.
+ *
+ * Same contract as Mirror above: the shipped values live in `balance.ts`, and
+ * these exist so a proposed nerf can be measured on the same seeds before
+ * anyone rules on it. Both announce themselves loudly, so no report can be
+ * mistaken for a report on the shipped rules.
+ */
+const EMBER_GAIN = arg('ember-gain', BALANCE.emberGainPerHit);
+const EMBER_CELLS = arg('ember-cells', BALANCE.emberCells);
+if (EMBER_GAIN !== BALANCE.emberGainPerHit) {
+  console.log(
+    `MEASURING with Ember gaining ${EMBER_GAIN} per hit — the shipped value is ${BALANCE.emberGainPerHit}`,
+  );
+  TUNABLE.emberGainPerHit = EMBER_GAIN;
+}
+if (EMBER_CELLS !== BALANCE.emberCells) {
+  console.log(
+    `MEASURING with Ember firing ${EMBER_CELLS} cells — the shipped value is ${BALANCE.emberCells}`,
+  );
+  TUNABLE.emberCells = EMBER_CELLS;
+}
+
+/**
+ * Restrict the run to one pairing, by substring. Measuring a single ship's
+ * win rate only needs the random-draft pairing — the others deliberately draft
+ * to a policy, so their per-ship numbers say more about the bot than the ship.
+ */
+const ONLY = (() => {
+  const i = process.argv.indexOf('--only');
+  return i < 0 ? null : process.argv[i + 1];
+})();
 
 interface Pairing {
   levels: [Level, Level];
@@ -71,6 +112,7 @@ function main(): void {
   checkDeterminism();
   const reports: PairingReport[] = [];
   for (const pairing of PAIRINGS) {
+    if (ONLY && !pairing.label.includes(ONLY)) continue;
     const { levels } = pairing;
     const started = Date.now();
     const records = [];

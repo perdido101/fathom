@@ -5,6 +5,7 @@ import { CARDS } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { useStore } from '../../state/store';
 import { Icon } from '../art/Icon';
+import { STEP_TITLES, stepMs } from '../feedback/timing';
 
 /**
  * The resolve sequence, in the order the rules resolve it.
@@ -20,34 +21,6 @@ import { Icon } from '../art/Icon';
  * on fast resolve and gets the same beats in about one.
  */
 
-const STEP_TITLES: Record<string, string> = {
-  reveal: '1 · Reveal',
-  nerf: '2 · Interference',
-  prediction: '3 · Predictions',
-  shot: '4 · Attacks',
-  sink: '5 · Sinks',
-  react: '6 · Reactions',
-  charges: '7 · Charges',
-  intel: '7 · Intel',
-  draw: '8 · Draw',
-  strike: '— Timer',
-  end: '— Result',
-};
-
-const STEP_MS: Record<string, number> = {
-  reveal: 500,
-  nerf: 460,
-  prediction: 760,
-  shot: 190,
-  sink: 780,
-  react: 620,
-  charges: 340,
-  intel: 440,
-  draw: 260,
-  strike: 400,
-  end: 900,
-};
-
 export function ResolveOverlay(): ReactElement | null {
   const playback = useStore((s) => s.playback);
   const advance = useStore((s) => s.advancePlayback);
@@ -59,7 +32,9 @@ export function ResolveOverlay(): ReactElement | null {
   const current = playback ? playback.events[playback.index] : null;
   // Fast resolve keeps every beat but compresses the whole sequence to about a
   // second, so nothing is hidden from a player who already knows the rules.
-  const delay = current ? Math.max(40, (STEP_MS[current.t] ?? 300) * (fast ? 0.25 : 1)) : 0;
+  // The timings live beside the feedback layer's, which schedules its floaters
+  // against them — they drifted apart twice while they were two lists.
+  const delay = current ? stepMs(current.t, fast) : 0;
 
   useEffect(() => {
     if (!playback) return undefined;
@@ -98,7 +73,7 @@ export function ResolveOverlay(): ReactElement | null {
       {sinking && (
         <div
           className="banner big-num"
-          style={{ textAlign: 'center', fontSize: 64, color: 'var(--danger)' }}
+          style={{ textAlign: 'center', fontSize: 'var(--fs-hero)', color: 'var(--danger)' }}
         >
           {current.length} SUNK
         </div>
@@ -127,7 +102,7 @@ export function ResolveOverlay(): ReactElement | null {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                fontSize: loud ? 21 : last ? 17 : 13.5,
+                fontSize: loud ? 'var(--fs-sub)' : last ? 'var(--fs-lead)' : 'var(--fs-fine)',
                 color: loud ? undefined : last ? 'var(--ink)' : 'var(--ink-faint)',
                 fontWeight: last ? 800 : 600,
               }}
@@ -139,7 +114,7 @@ export function ResolveOverlay(): ReactElement | null {
         })}
       </div>
 
-      <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
+      <p style={{ textAlign: 'center', fontSize: 'var(--fs-fine)', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
         click to skip
       </p>
     </div>
@@ -166,7 +141,7 @@ function ChargeTheft(): ReactElement {
             position: 'absolute',
             left: `${18 + i * 16}%`,
             top: '22%',
-            fontSize: 15,
+            fontSize: 'var(--fs-body)',
             // Fanned rather than parallel, so five pips read as a handful
             // moving instead of one pip drawn five times.
             ['--dx' as string]: `${(i - 2) * 14}px`,

@@ -30,6 +30,12 @@ export interface BoardProps {
   /** Cells of a ship that went down this round, pulsed bow to stern. */
   sinking?: CellIndex[];
   compact?: boolean;
+  /**
+   * Which water this is. The feedback layer anchors floaters by
+   * `[data-anchor]`, so a HIT can rise off the exact cell that took it
+   * without this component knowing the layer exists.
+   */
+  side?: 'foe' | 'mine';
 }
 
 export function Board({
@@ -43,6 +49,7 @@ export function Board({
   flash = [],
   sinking = [],
   compact = false,
+  side,
 }: BoardProps): ReactElement {
   const aimSet = new Set(aim);
   const knownSet = new Set(known);
@@ -74,16 +81,21 @@ export function Board({
       <button
         key={c}
         className={classes.join(' ')}
+        data-anchor={side ? `cell:${side}:${c}` : undefined}
         onClick={onCell ? () => onCell(c) : undefined}
         onMouseEnter={onHoverCell ? () => onHoverCell(c) : undefined}
         aria-label={`${label(c)}${mark ? ` ${mark}` : ''}`}
         style={{
-          fontSize: compact ? 9 : 11,
           color: 'var(--ink-faint)',
           animationDelay: sinkIndex !== undefined ? `${sinkIndex * 90}ms` : undefined,
         }}
       >
-        {mark === undefined && !hull && <span className="cell-label">{label(c)}</span>}
+        {/* Coordinates label the water you aim at. A compact board is your
+            own, or a finished match's — you never name a cell on it, so the
+            labels came out in Build 6's restraint pass. */}
+        {mark === undefined && !hull && !compact && (
+          <span className="cell-label">{label(c)}</span>
+        )}
         {/* Hit and miss are distinguished by shape as well as colour, so the
             board still reads for a player who cannot tell the two apart. */}
         {mark === 'hit' && <Icon name="ui.hit" size={compact ? 12 : 20} title="hit" />}

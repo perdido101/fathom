@@ -31,6 +31,32 @@ async function shot(name) {
 
 const click = (name, opts) => page.getByRole('button', { name, ...opts }).click();
 const wait = (ms) => page.waitForTimeout(ms);
+const visible = (loc) => loc.isVisible().catch(() => false);
+
+/** Step past every phase beat currently queued. A click skips one. */
+async function skipBeats(limit = 5) {
+  for (let i = 0; i < limit; i++) {
+    if (!(await visible(page.locator('.beat-screen')))) return;
+    await page
+      .locator('.beat-screen')
+      .click({ position: { x: 40, y: 40 }, timeout: 3000 })
+      .catch(() => undefined);
+    await wait(240);
+  }
+}
+
+/** Since Build 6 the card itself is the charge control. */
+async function chargeFirst() {
+  await page.locator('.hand-slot .gamecard').first().click({ timeout: 5000 }).catch(() => undefined);
+  await wait(150);
+}
+
+/** One draft pick, waiting out the five-beat sequence. */
+async function draftPick(selector) {
+  await page.locator(selector).first().click({ timeout: 8000 }).catch(() => undefined);
+  await wait(2500);
+  await skipBeats();
+}
 
 try {
   await page.goto('http://localhost:5199/', { waitUntil: 'networkidle' });
@@ -38,7 +64,8 @@ try {
   await shot('01-menu');
 
   await click('How to play');
-  for (let i = 0; i < 3; i++) await click('Next');
+  // Five steps since Build 6 — the draft was added at the front.
+  for (let i = 0; i < 4; i++) await click('Next');
   await shot('02-howto');
   await click('Done');
   await wait(300);
@@ -46,36 +73,41 @@ try {
   // Casual: straight into the ship draft.
   await page.getByRole('button', { name: /Casual/ }).click();
   await wait(400);
+  await skipBeats();
   await shot('03-shipdraft');
 
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.draft-pick').first().click();
-    await wait(1600);
-  }
+  for (let i = 0; i < 3; i++) await draftPick('.draft-pick');
+  await skipBeats();
   await wait(300);
   await shot('04-carddraft');
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.draft-pick button, button.gamecard').first().click();
-    await wait(1600);
-  }
+  for (let i = 0; i < 3; i++) await draftPick('.draft-pick button, button.gamecard');
+  await skipBeats();
   await wait(300);
   await shot('05-deploy');
 
   await click('Auto');
   await click('Commit fleet');
-  await wait(400);
+  await wait(500);
+  await skipBeats();
+  await wait(300);
   await shot('06-battle');
 
   for (let round = 0; round < 24; round++) {
-    const live = await page.locator('.board .cell').first().isVisible();
+    await skipBeats();
+    const live = await visible(page.locator('.board .cell').first());
     if (!live) break;
-    await page.locator('.board').first().locator('.cell').nth((round * 3 + 1) % 36).click();
+    await page
+      .locator('.board')
+      .first()
+      .locator('.cell')
+      .nth((round * 3 + 1) % 36)
+      .click()
+      .catch(() => undefined);
     await wait(150);
-    await page.getByRole('button', { name: 'Charge', exact: true }).first().click();
-    await wait(150);
+    await chargeFirst();
     if (round === 0) await shot('06b-planned');
     const commit = page.getByRole('button', { name: /^COMMIT/ });
-    if (!(await commit.isVisible())) {
+    if (!(await visible(commit))) {
       console.log(`round ${round}: no commit button — stopping`);
       break;
     }
@@ -84,12 +116,18 @@ try {
       break;
     }
     await commit.click();
-    await wait(250);
-    const overlay = page.locator('.overlay');
-    if (await overlay.isVisible()) await overlay.click();
     await wait(300);
+    const overlay = page.locator('.overlay').first();
+    if (await visible(overlay)) {
+      await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+    }
+    await wait(300);
+    // A first-time explainer waits for a click; dismiss it and play on.
+    const gotIt = page.getByRole('button', { name: 'Got it' });
+    if (await visible(gotIt)) await gotIt.click().catch(() => undefined);
+    await wait(200);
     if (round === 1) await shot('07-midbattle');
-    if (await page.getByRole('button', { name: 'REMATCH' }).isVisible()) {
+    if (await visible(page.getByRole('button', { name: 'PLAY AGAIN' }))) {
       console.log(`match ended after ${round + 1} rounds`);
       break;
     }

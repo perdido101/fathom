@@ -27,6 +27,7 @@
     "screens": "node scripts/screens.mjs",
     "clips": "node scripts/clips.mjs",
     "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs",
+    "feedback": "tsx scripts/feedback-doc.ts",
     "inventory": "tsx scripts/ui-inventory.ts"
   },
   "dependencies": {

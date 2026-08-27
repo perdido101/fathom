@@ -1,11 +1,18 @@
 /**
  * Every screen at 1920×1080, photographed from the running game.
  *
- * The sweep walks the real loop — menu, drafts, deployment, a full battle —
- * and then every betting surface: the tier picker, the escrow forming, the
- * ranked-join modal, the season page, the insufficient-funds error, the
- * settlement receipt. Plus the desktop gate and two hover states, because
- * hover is half the desktop design.
+ * The sweep walks the real loop — menu, the beats between phases, both
+ * drafts, deployment, a full battle — and then every betting surface: the
+ * tier picker, the escrow forming, the ranked-join modal, the season page,
+ * the insufficient-funds error, the settlement receipt. Plus the desktop
+ * gate, the connection states, and the hover states, because hover is half
+ * the desktop design and, since Build 6, is where a disabled control says
+ * why it is disabled.
+ *
+ * Nothing here is staged that a player cannot reach by playing, with two
+ * declared exceptions marked at their call sites: the champion bracket and
+ * the connection states, both of which need forty minutes or a severed cable
+ * to reach honestly and are proven by tests instead.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -14,8 +21,9 @@ import { mkdirSync, rmSync } from 'node:fs';
 const OUT = 'screens';
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-// JPEG copies for the inventory page, which embeds every screen as a data
-// URI — 24 full-size PNGs would put the page past what a browser forgives.
+// JPEG copies for the inventory page and the screen guide, both of which
+// embed every screen as a data URI — 40 full-size PNGs would put either page
+// past what a browser forgives.
 mkdirSync(`${OUT}/web`, { recursive: true });
 
 const server = await createServer({ server: { port: 5233 } });
@@ -39,15 +47,92 @@ async function shot(name, note) {
   await page.screenshot({ path: file });
   await page.screenshot({ path: `${OUT}/web/${name}.jpg`, type: 'jpeg', quality: 74 });
   taken.push({ file, note });
-  console.log(`  ${file.padEnd(40)} ${note}`);
+  console.log(`  ${file.padEnd(42)} ${note}`);
 }
 
 const click = (name, opts) => page.getByRole('button', { name, ...opts }).click();
 const wait = (ms) => page.waitForTimeout(ms);
+const visible = (loc) => loc.isVisible().catch(() => false);
+
+/**
+ * Advance one phase beat, if one is up. Beats hold open for the sweep (see
+ * `__beatHold`), so this is the only thing that moves them along — which is
+ * also what a player in a hurry does.
+ */
+async function nextBeat() {
+  await page
+    .locator('.beat-screen')
+    .click({ position: { x: 40, y: 40 }, timeout: 2000 })
+    .catch(() => undefined);
+  await wait(240);
+}
+
+/** Step past every beat currently queued. */
+async function skipBeats(limit = 5) {
+  for (let i = 0; i < limit; i++) {
+    if (!(await visible(page.locator('.beat-screen')))) return;
+    await nextBeat();
+  }
+}
+
+/** Photograph the beat that is up, then advance past it. */
+async function beatShot(name, note) {
+  const beat = page.locator('.beat-screen');
+  await beat.waitFor({ state: 'visible', timeout: 5000 }).catch(() => undefined);
+  if (await visible(beat)) await shot(name, note);
+  await nextBeat();
+}
+
+/** Charge a card: since Build 6 the card itself is the charge control. */
+async function chargeFirst() {
+  await page.locator('.hand-slot .gamecard').first().click().catch(() => undefined);
+  await wait(160);
+}
+
+/**
+ * Fire a card: hover it, then take the one control it reveals. Which card is
+ * legal depends on what the draft handed you, so try each in turn rather than
+ * assuming the leftmost one can fire.
+ */
+async function fireFirst() {
+  const count = await page.locator('.hand-slot').count();
+  for (let i = 0; i < count; i++) {
+    await page.locator('.hand-slot').nth(i).hover().catch(() => undefined);
+    await wait(220);
+    const fire = page.getByRole('button', { name: /^Fire · / }).first();
+    if (!(await visible(fire))) continue;
+    await fire.click();
+    await wait(200);
+    return true;
+  }
+  return false;
+}
+
+async function clearOverlays() {
+  const overlay = page.locator('.overlay').first();
+  if (await visible(overlay)) {
+    await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+    await wait(240);
+  }
+  const gotIt = page.getByRole('button', { name: 'Got it' });
+  if (await visible(gotIt)) {
+    await gotIt.click().catch(() => undefined);
+    await wait(160);
+  }
+}
+
+/** One pick in a draft, waiting out the five-beat sequence. */
+async function draftPick(selector, { keepBeats = false } = {}) {
+  await page.locator(selector).first().click().catch(() => undefined);
+  // The sequence is ~1.4s without a collision and ~2.3s with one.
+  await wait(2500);
+  if (!keepBeats) await skipBeats();
+}
 
 async function playRounds(max) {
   for (let round = 0; round < max; round++) {
-    if (await page.getByRole('button', { name: 'REMATCH' }).isVisible().catch(() => false)) return true;
+    if (await visible(page.getByRole('button', { name: 'PLAY AGAIN' }))) return true;
+    await skipBeats();
     await page
       .locator('.board')
       .first()
@@ -55,54 +140,65 @@ async function playRounds(max) {
       .nth((round * 5 + 3) % 36)
       .click()
       .catch(() => undefined);
-    await wait(140);
-    await page
-      .getByRole('button', { name: 'Charge', exact: true })
-      .first()
-      .click()
-      .catch(() => undefined);
-    await wait(140);
+    await wait(120);
+    await chargeFirst();
     const commit = page.getByRole('button', { name: /^COMMIT/ });
     if (!(await commit.isEnabled().catch(() => false))) return false;
     await commit.click();
-    await wait(250);
-    const overlay = page.locator('.overlay');
-    if (await overlay.isVisible().catch(() => false)) await overlay.click();
-    await wait(250);
+    await wait(260);
+    await clearOverlays();
+    await wait(220);
   }
   return false;
 }
 
 try {
   await page.goto('http://localhost:5233/', { waitUntil: 'networkidle' });
+  // Hold every beat open until the sweep clicks it. A 1.5s beat is right for
+  // a player and a race for a harness.
+  await page.evaluate(() => {
+    window.__beatHold = 120000;
+  });
   await wait(600);
-  await shot('01-main-menu', 'three mode cards, each wearing its money story');
+  await shot('01-main-menu', 'four mode cards, each wearing its money story');
 
-  // How to play.
+  // How to play — five steps since Build 6, the draft first.
   await click('How to play');
   await wait(300);
-  await shot('02-howto-charging', 'teach by doing — live cards, click to charge');
+  await shot('02-howto-draft', 'the blind draft, taught with live cards you can actually pick');
   await click('Next');
   await wait(250);
-  await shot('03-howto-firing', 'firing destroys the card');
+  await shot('03-howto-charging', 'teach by doing — live cards, click to charge');
+  await click('Next');
+  await wait(250);
+  await shot('04-howto-firing', 'firing spends everything and destroys the card');
   await click('Next');
   await click('Next');
   await wait(250);
-  await shot('04-howto-sinks', 'a sink announces a length, never a name');
+  await shot('05-howto-sinks', 'a sink announces a length, never a name');
   await click('Done');
   await wait(300);
 
   // Ranked join modal — a betting surface.
   await page.getByRole('button', { name: /Ranked/ }).click();
   await wait(300);
-  await shot('05-ranked-join-modal', 'season entry: price, what it buys, pool so far');
+  await shot('06-ranked-join-modal', 'season entry: price, what it buys, pool so far');
   await page.getByRole('button', { name: 'Not now' }).click();
   await wait(200);
 
   // Arena tier picker. Fresh profile first, so the locked tiers show.
   await page.getByRole('button', { name: /Arena/ }).click();
   await wait(300);
-  await shot('06-arena-tiers', 'four stake tables, rating band per tier, locked tiers explained');
+  // The pointer is still where the Arena card was, which lands on a tier and
+  // opens its hover reason. Park it somewhere with nothing under it first.
+  await page.mouse.move(40, 900);
+  await wait(260);
+  await shot('07-arena-tiers', 'four stake tables, the matchmaking band stated once');
+
+  // The "why can't I?" hover on a locked tier.
+  await page.locator('.whynot').last().hover();
+  await wait(320);
+  await shot('08-locked-tier-why', 'a locked table now says what unlocks it, on hover');
 
   // Insufficient funds: graduate the profile (dev store handle) so the 0.5
   // table unlocks, then sit down at it with a 0.3 balance.
@@ -116,7 +212,7 @@ try {
   await wait(300);
   await page.getByRole('button', { name: /0\.5/ }).first().click();
   await wait(200);
-  await shot('07-insufficient-funds', 'not enough SOL: the amounts, the faucet, a way down');
+  await shot('09-insufficient-funds', 'not enough SOL: the amounts, the faucet, a way down');
   await page.evaluate(() => {
     const store = window.__store;
     store.setState({ profile: { ...store.getState().profile, provisionalMatches: 0 } });
@@ -127,56 +223,81 @@ try {
   // The escrow forming.
   await page.getByRole('button', { name: /Find match/ }).click();
   await wait(1400);
-  await shot('08-escrow-forming', 'you staked, opponent staking — the pot forming in view');
-  await wait(2200);
+  await shot('10-escrow-forming', 'you staked, opponent staking — the pot forming in view');
+  await wait(2000);
 
-  // Ship draft (arena match continues).
-  await shot('09-ship-draft', 'four ships in a row, the whole pack face up');
+  // --- the beats between phases ------------------------------------------
+  await beatShot('11-beat-match-found', 'who you are facing and for how much, before pack one');
+  await beatShot('12-beat-phase-ship-draft', 'the phase card that replaced a permanent header');
+  await wait(400);
+
+  // --- the ship draft, beat by beat --------------------------------------
+  await shot('13-ship-draft', 'four ships face up, the mechanism stated under the pack');
   await page.locator('.draft-pick').first().click();
-  await wait(160);
-  await shot('10-draft-collision', 'the collision beat — the only thing a draft leaks');
-  await wait(1500);
-  for (let i = 0; i < 2; i++) {
-    await page.locator('.draft-pick').first().click();
-    await wait(1600);
-  }
+  await wait(180);
+  await shot('14-draft-your-pick', 'beat 2: your pick lifts and holds, the other three recede');
+  await wait(500);
+  await shot('15-draft-their-pick', 'beat 3: their card back slides in beside yours');
+  await wait(900);
+  await shot('16-draft-resolve', 'beat 4: collision, or quietly away — no screen for a non-event');
+  await wait(1600);
+  await skipBeats();
+
+  await draftPick('.draft-pick');
+  // The third pick completes the fleet, which raises the fleet beat. Keep it.
+  await draftPick('.draft-pick', { keepBeats: true });
   await wait(300);
-  await shot('11-card-draft', 'four real cards, full rules on their faces');
+
+  // Fleet assembled, then the card-draft phase card.
+  await beatShot('17-beat-fleet-assembled', 'the moment you find out what you drafted');
+  await skipBeats();
+  await wait(300);
+  await shot('18-card-draft', 'four real cards, full rules on their faces');
 
   // Hover state on a draft card.
   await page.locator('button.gamecard').first().hover();
   await wait(300);
-  await shot('12-card-hover', 'hover lifts the card and shows the full rule tooltip');
+  await shot('19-card-hover', 'hover lifts the card and shows the full rule tooltip');
 
-  for (let i = 0; i < 3; i++) {
-    await page.locator('button.gamecard').first().click();
-    await wait(1600);
-  }
+  for (let i = 0; i < 3; i++) await draftPick('button.gamecard');
+  await skipBeats();
   await wait(300);
-  await shot('13-deployment', 'board centred large, fleet in the side tray');
+  await page.locator('.board').first().locator('.cell').nth(14).hover().catch(() => undefined);
+  await wait(260);
+  await shot('20-deployment', 'board centred large, hover previewing a legal placement');
 
   await click('Auto');
   await wait(200);
-  await shot('14-deployment-placed', 'fleet placed; the layout commits as a hash');
+  await shot('21-deployment-placed', 'fleet placed; the layout commits as a hash');
   await click('Commit fleet');
+  // The seals shut at 620ms; photograph them shut.
+  await wait(900);
+  await beatShot('22-beat-both-committed', 'two hashes sealing — the honesty claim, made visible');
+  await beatShot('23-beat-phase-battle', 'the last card before the first round');
   await wait(400);
-  await shot('15-battle', 'enemy water dominant, hand fanned, commit huge and green');
+  await shot('24-battle', 'the clock is the largest thing on screen; nothing is said twice');
 
   // Aim the free shot + charge, then photograph the planned state.
   await page.locator('.board').first().locator('.cell').nth(8).click();
   await wait(150);
-  await page.getByRole('button', { name: 'Charge', exact: true }).first().click();
-  await wait(250);
-  await shot('16-battle-planned', 'free shot aimed, a card charged, the gem pulsing');
+  await chargeFirst();
+  await wait(220);
+  await shot('25-battle-planned', 'free shot aimed, a card charged, the gem pulsing');
+
+  // The one control a card carries, and the reason when it has none. The
+  // third card is the one holding no charges — Ambush is legal at zero.
+  await page.locator('.hand-slot').nth(2).hover();
+  await wait(320);
+  await shot('26-card-hover-cant', 'hovering a card that cannot fire says why, in a sentence');
+  await page.locator('.hand-slot').first().hover();
+  await wait(320);
+  await shot('27-card-hover-fire', 'one Fire affordance, on the hovered card, when it is legal');
 
   // Targeting with a hover pattern preview.
-  const fire = page.getByRole('button', { name: 'Fire', exact: true }).first();
-  if (await fire.isEnabled().catch(() => false)) {
-    await fire.click();
-    await wait(200);
+  if (await fireFirst()) {
     await page.locator('.board').first().locator('.cell').nth(14).hover();
     await wait(250);
-    await shot('17-target-hover', 'the pattern about to fire, previewed on hover before locking');
+    await shot('28-target-hover', 'the pattern about to fire, previewed before it locks');
     await page.locator('.board').first().locator('.cell').nth(14).click();
     await wait(200);
     const lock = page.getByRole('button', { name: 'Lock in' });
@@ -186,33 +307,76 @@ try {
   }
 
   await page.getByRole('button', { name: /^COMMIT/ }).click();
-  await wait(800);
-  await shot('18-resolve', 'the resolve sequence on its own panel, board visible behind');
-  const overlay = page.locator('.overlay');
-  if (await overlay.isVisible().catch(() => false)) await overlay.click();
+  // Tier 1 floaters ride the same clock the resolve overlay does, so the
+  // first shots are landing about here.
+  await wait(700);
+  await shot('29-floaters', 'HIT and MISS rising off the exact cells that took them');
+  await wait(700);
+  await shot('30-resolve', 'the resolve sequence on its own panel, board visible behind');
+  await clearOverlays();
   await wait(300);
 
-  // Play the match out to the receipt.
+  // The two feedback tiers that need a live round to exist at all: a named
+  // event, and a first-time explainer. Both depend on what actually happens,
+  // so the sweep plays on until it has seen each of them rather than assuming
+  // round one will oblige.
+  let gotNamed = false;
+  let gotExplainer = false;
+  for (let i = 0; i < 12 && !(gotNamed && gotExplainer); i++) {
+    if (!gotExplainer && (await visible(page.locator('.explainer')))) {
+      await shot('31-explainer', 'first time only, per mechanic, per player — then never again');
+      gotExplainer = true;
+      await click('Got it').catch(() => undefined);
+      await wait(200);
+    }
+    await skipBeats();
+    if (await visible(page.getByRole('button', { name: 'PLAY AGAIN' }))) break;
+    await page
+      .locator('.board')
+      .first()
+      .locator('.cell')
+      .nth((i * 7 + 2) % 36)
+      .click()
+      .catch(() => undefined);
+    await chargeFirst();
+    const commit = page.getByRole('button', { name: /^COMMIT/ });
+    if (!(await commit.isEnabled().catch(() => false))) break;
+    await commit.click();
+    await wait(600);
+    if (!gotNamed && (await visible(page.locator('.named-line')))) {
+      await shot('32-named-event', 'one line, fixed position, for a change with a name behind it');
+      gotNamed = true;
+    }
+    // Walk the resolve out without dismissing an explainer that just landed.
+    const overlay = page.locator('.overlay').first();
+    if (await visible(overlay)) {
+      await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+      await wait(240);
+    }
+    await wait(2600);
+  }
+  await clearOverlays();
+
   await playRounds(24);
   await wait(400);
-  await shot('19-result-settlement', 'celebration + receipt: pot, rake, net, tx, replay verified');
+  await shot('33-result-settlement', 'celebration + receipt: pot, rake, net, tx, replay verified');
 
   await click('Menu');
   await wait(400);
   await click('Leaderboard');
   await wait(300);
-  await shot('20-leaderboard', 'payout curve drawn, live pool in gold, your row pinned');
+  await shot('34-leaderboard', 'the ladder, and your row pinned to the bottom of it');
   await click('Back');
   await click('Season', { exact: true });
   await wait(300);
-  await shot('21-season', 'pool, days left, projected payout at current rank');
+  await shot('35-season', 'pool, days left, the payout curve, projected payout at your rank');
   await click('Back');
   await click('Settings');
   await wait(300);
-  await shot('22-settings', 'wallet, session key, bot strength, chain journal');
+  await shot('36-settings', 'wallet, session key, beats, first-time explanations, chain journal');
   await click('Art credits and licences');
   await wait(300);
-  await shot('23-credits', 'the attribution the icon licence requires');
+  await shot('37-credits', 'the attribution the icon licence requires');
   await click('back');
   await wait(200);
   await click('Back');
@@ -220,36 +384,26 @@ try {
   // Tournaments: the tier picker, the bracket forming, and the bracket live.
   await page.getByRole('button', { name: /Tournament/ }).click();
   await wait(300);
-  await shot('24-tournament-tiers', 'eight seats a bracket, the whole curve priced before entry');
+  await shot('38-tournament-tiers', 'eight seats a bracket, the whole curve priced before entry');
   await page.getByRole('button', { name: /Take a seat/ }).click();
   await wait(1100);
-  await shot('25-bracket-forming', 'seats staking in view — a bracket only starts full');
+  await shot('39-bracket-forming', 'seats staking in view — a bracket only starts full');
   await wait(2400);
-  await shot('26-bracket-live', 'eight seats, three rounds, your path in gold, pot always visible');
+  await shot('40-bracket-live', 'eight seats, three rounds, your path in gold, pot always visible');
 
-  // The champion moment, staged through the dev store handle: the real path
-  // (three straight wins) is proven by audit-ui; the screenshot only needs
-  // the state, not the forty minutes.
+  // STAGED (1 of 2): the champion moment. The real path is three straight
+  // wins and is proven by audit-ui; the screenshot needs the state, not the
+  // forty minutes.
   await page.evaluate(() => {
     const store = window.__store;
     const t = store.getState().tournament;
     if (!t) return;
     let b = t.bracket;
-    const report = (idx, winner) => {
-      const m = b.matches[idx];
-      const w = m.seats.includes(winner) ? winner : m.seats[0];
-      b = window.__bracketReport ? window.__bracketReport(b, idx, w) : b;
-    };
-    void report;
-    // Walk the bracket with seat 0 winning throughout.
     const feeds = (i) => (i < 4 ? [4 + (i >> 1), i & 1] : i < 6 ? [6, i - 4] : null);
     for (let i = 0; i < 7; i++) {
       const m = b.matches[i];
       const winner = m.seats.includes(0) ? 0 : m.seats[0];
-      b = {
-        ...b,
-        matches: b.matches.map((x, j) => (j === i ? { ...x, winner } : { ...x })),
-      };
+      b = { ...b, matches: b.matches.map((x, j) => (j === i ? { ...x, winner } : { ...x })) };
       const to = feeds(i);
       if (to) b.matches[to[0]].seats[to[1]] = winner;
     }
@@ -259,20 +413,20 @@ try {
     });
   });
   await wait(600);
-  await shot('27-champion', 'the loudest screen in the game — 55% of the pot');
+  await shot('41-champion', 'the loudest screen in the game — 55% of the pot');
   await page.evaluate(() => window.__store.getState().leaveMatch());
   await wait(400);
 
   // The desktop gate.
   await page.setViewportSize({ width: 1024, height: 640 });
   await wait(300);
-  await shot('28-desktop-gate', 'below 1280×720: logo, one line, nothing else');
+  await shot('42-desktop-gate', 'below 1280×720: logo, one line, nothing else');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await wait(200);
 
-  // The network states, staged through the dev store handle — the transport
-  // itself is proven by the wire tests and the acceptance run; these frames
-  // show what the player sees when it happens.
+  // STAGED (2 of 2): the connection states. The transport is proven by the
+  // wire tests and the acceptance run; these frames show what the player sees
+  // when it happens, which no test can photograph.
   const setNet = (patch) =>
     page.evaluate((p) => {
       const s = window.__store.getState();
@@ -280,36 +434,41 @@ try {
     }, patch);
   await setNet({ status: 'reconnecting' });
   await wait(300);
-  await shot('29-reconnecting', 'the seat is held server-side; the client only says so');
+  await shot('43-reconnecting', 'the seat is held server-side; the client only says so');
   await setNet({ status: 'lost' });
   await wait(300);
-  await shot('30-connection-lost', 'unreachable, said plainly, with the one useful button');
+  await shot('44-connection-lost', 'unreachable, said plainly, with the one useful button');
   await setNet({ status: 'online' });
 
   // Opponent disconnected: a live battle with the grace-period banner.
   await page.getByRole('button', { name: /Casual/ }).click();
   await wait(400);
-  for (let i = 0; i < 3; i++) {
-    await page.locator('.draft-pick').first().click();
-    await wait(1600);
-  }
-  for (let i = 0; i < 3; i++) {
-    await page.locator('button.gamecard').first().click();
-    await wait(1600);
-  }
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('.draft-pick');
+  await skipBeats();
+  for (let i = 0; i < 3; i++) await draftPick('button.gamecard');
+  await skipBeats();
   await click('Auto');
   await click('Commit fleet');
-  await wait(400);
+  await wait(500);
+  await skipBeats();
   await setNet({ remote: true, oppConnected: false });
-  await wait(300);
-  await shot('31-opponent-disconnected', 'their problem, your grace period — the match holds');
+  // Forcing `remote` without a server leaves the clock with no deadline to
+  // count against, and it renders 0. Give it one, so the frame shows a live
+  // plan window rather than a stalled one.
+  await page.evaluate(() => window.__store.setState({ netDeadlineAt: Date.now() + 14000 }));
+  await wait(400);
+  await shot('45-opponent-disconnected', 'their problem, your grace period — the match holds');
   await setNet({ remote: false, oppConnected: true });
+  await page.evaluate(() =>
+    window.__store.setState({ netDeadlineAt: null, clock: 20 }),
+  );
   await page.evaluate(() => window.__store.getState().leaveMatch());
   await wait(300);
 
   await setNet({ lastServerError: 'rate-limited: queueing too fast' });
   await wait(300);
-  await shot('32-server-error', 'a server refusal as a sentence, not a code');
+  await shot('46-server-error', 'a server refusal as a sentence, not a code');
   await setNet({ lastServerError: null });
 
   await page.evaluate(() =>
@@ -320,7 +479,7 @@ try {
     ),
   );
   await wait(300);
-  await shot('33-queue-timeout', 'a staked player never silently faces a bot');
+  await shot('47-queue-timeout', 'a staked player never silently faces a bot');
   await page.evaluate(() => window.__store.getState().clearError());
 } catch (err) {
   errors.push(`sweep aborted: ${err instanceof Error ? err.message.split('\n')[0] : err}`);

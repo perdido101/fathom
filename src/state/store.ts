@@ -19,6 +19,8 @@ import {
 import { playBotMatch } from '../sim/runner';
 import * as net from './net';
 import { Sound } from '../ui/sfx/SoundManager';
+import { announceRound } from '../ui/feedback/announce';
+import { useFeedback } from '../ui/feedback/store';
 import {
   type MatchHistoryEntry,
   type Mode,
@@ -61,8 +63,24 @@ export interface Settings {
   volume: number;
   /** Skip the resolve animation, unlocked after a few matches. */
   fastResolve: boolean;
+  /** The beats between phases. On by default; a click skips any single one. */
+  transitions: boolean;
   botLevel: Level;
 }
+
+/**
+ * A beat between two phases. They queue rather than interrupt: a ship draft
+ * ending raises the fleet reveal *and* the card-draft card, in that order,
+ * and each waits for the one before it.
+ */
+export type Beat =
+  | { kind: 'matchFound'; opponent: string; subtitle: string; stake: number }
+  | { kind: 'shipDraft' }
+  | { kind: 'cardDraft' }
+  | { kind: 'deploy' }
+  | { kind: 'battle' }
+  | { kind: 'fleet'; ships: string[] }
+  | { kind: 'committed'; mine: string | null; theirs: string | null };
 
 interface Store {
   screen: Screen;
@@ -79,6 +97,15 @@ interface Store {
   lastRoundEvents: ResolveEvent[];
   /** Seconds left in the plan window. */
   clock: number;
+  /** Queued phase beats. The head is the one on screen. */
+  beats: Beat[];
+  /**
+   * The cells this client declared this round. The event stream carries no
+   * plan payload, so this is the only way the feedback layer can put BLOCKED
+   * on the cells a Mirror ate — and it is the player's own declaration, which
+   * they are plainly entitled to see.
+   */
+  lastAim: number[];
   matchIdOnChain: string | null;
   chainNotice: string | null;
   /** Non-null while a screen is waiting on something. Never a blank panel. */
@@ -119,6 +146,9 @@ interface Store {
   } | null;
 
   go(screen: Screen): void;
+  /** Queue beats, unless the player has turned them off. */
+  showBeats(...beats: Beat[]): void;
+  advanceBeat(): void;
   fail(what: string, detail?: unknown, retry?: () => void): void;
   clearError(): void;
   noteAway(): void;
@@ -133,7 +163,7 @@ interface Store {
   submitShipPick(defId: string): void;
   submitCardPick(defId: string): void;
   submitDeployment(placements: Placement[]): void;
-  submitPlan(plan: Plan): void;
+  submitPlan(plan: Plan, aim?: number[]): void;
   advancePlayback(): void;
   finishPlayback(): void;
   tick(): void;
@@ -143,9 +173,32 @@ interface Store {
 
 const SETTINGS_KEY = 'shadow-armada:settings';
 
+const BOT_NAMES = ['Deckhand', 'Mate', 'Officer', 'Admiral'];
+
+/**
+ * Who you are about to face, said honestly. A local opponent is a bot and is
+ * named as one — inventing a rating for it would be the first lie the product
+ * tells, on the screen whose whole job is telling you who you are playing.
+ */
+function foundBeat(mode: Mode, stake: Stake): Beat {
+  const level = useStore.getState().settings.botLevel;
+  return {
+    kind: 'matchFound',
+    opponent: 'Opponent',
+    subtitle: `${mode} · bot: ${BOT_NAMES[level - 1]}`,
+    stake,
+  };
+}
+
 /** Volume and mute survive a reload; a player should set them once. */
 function loadSettings(): Settings {
-  const fallback: Settings = { sound: true, volume: 0.8, fastResolve: false, botLevel: 3 };
+  const fallback: Settings = {
+    sound: true,
+    volume: 0.8,
+    fastResolve: false,
+    transitions: true,
+    botLevel: 3,
+  };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return fallback;
@@ -187,6 +240,8 @@ export const useStore = create<Store>((set, get) => ({
   playback: null,
   lastRoundEvents: [],
   clock: 20,
+  beats: [],
+  lastAim: [],
   matchIdOnChain: null,
   chainNotice: null,
   escrow: null,
@@ -200,7 +255,20 @@ export const useStore = create<Store>((set, get) => ({
   firstRun: true,
 
   go(screen) {
+    // Anything the feedback layer still has in flight belongs to the screen
+    // being left. A floater anchored to a board cell that no longer exists
+    // would draw itself over whatever took its place.
+    useFeedback.getState().clear();
     set({ screen, error: null, busy: null });
+  },
+
+  showBeats(...beats) {
+    if (!get().settings.transitions) return;
+    set({ beats: [...get().beats, ...beats] });
+  },
+
+  advanceBeat() {
+    set({ beats: get().beats.slice(1) });
   },
 
   /**
@@ -309,11 +377,13 @@ export const useStore = create<Store>((set, get) => ({
       setTimeout(() => {
         if (get().screen !== 'escrow') return;
         set({ screen: 'shipDraft', escrow: null });
+        get().showBeats(foundBeat(mode, stake), { kind: 'shipDraft' });
         Sound.play('round-start');
       }, 3100);
       return;
     }
     set({ ...base, screen: 'shipDraft' });
+    get().showBeats(foundBeat(mode, stake), { kind: 'shipDraft' });
     Sound.play('round-start');
   },
 
@@ -402,6 +472,15 @@ export const useStore = create<Store>((set, get) => ({
       chainNotice: `bracket ${roundOf(idx)} vs ${t.bracket.entrants[foeSeat]}`,
       tournament: { ...t, suddenDeath: false },
     });
+    get().showBeats(
+      {
+        kind: 'matchFound',
+        opponent: t.bracket.entrants[foeSeat],
+        subtitle: roundOf(idx),
+        stake: t.stake,
+      },
+      { kind: 'shipDraft' },
+    );
     Sound.play('round-start');
   },
 
@@ -416,7 +495,13 @@ export const useStore = create<Store>((set, get) => ({
     let next = pickShip(ms, 0, defId);
     next = pickShip(next, 1, botChoice);
     set({ match: next, botRng: rng, clock: 25 });
-    if (next.phase === 'cardDraft') set({ screen: 'cardDraft' });
+    if (next.phase === 'cardDraft') {
+      set({ screen: 'cardDraft' });
+      get().showBeats(
+        { kind: 'fleet', ships: next.players[0].draftedShips.slice() },
+        { kind: 'cardDraft' },
+      );
+    }
   },
 
   submitCardPick(defId) {
@@ -430,7 +515,10 @@ export const useStore = create<Store>((set, get) => ({
     let next = pickCard(ms, 0, defId);
     next = pickCard(next, 1, botChoice);
     set({ match: next, botRng: rng, clock: 30 });
-    if (next.phase === 'deploy') set({ screen: 'deploy' });
+    if (next.phase === 'deploy') {
+      set({ screen: 'deploy' });
+      get().showBeats({ kind: 'deploy' });
+    }
   },
 
   submitDeployment(placements) {
@@ -449,15 +537,25 @@ export const useStore = create<Store>((set, get) => ({
     next = deploy(next, 1, botPlacements, freshSeed());
     void chain.commitDeployment(get().matchIdOnChain, next.players[0].deployCommit ?? '');
     set({ match: next, botRng: rng, screen: 'battle', clock: next.config.roundSeconds });
+    get().showBeats(
+      {
+        kind: 'committed',
+        mine: next.players[0].deployCommit,
+        theirs: next.players[1].deployCommit,
+      },
+      { kind: 'battle' },
+    );
   },
 
-  submitPlan(plan) {
+  submitPlan(plan, aim = []) {
     if (get().net.remote) {
+      set({ lastAim: aim });
       net.netPlan(plan);
       return;
     }
     const ms = get().match;
     if (!ms || ms.phase !== 'battle') return;
+    const before = clientView(ms, 0);
     const [oppPlan, rng] = botPlan(clientView(ms, 1), get().settings.botLevel, get().botRng);
     const nonceA = freshSeed();
     const nonceB = freshSeed();
@@ -467,14 +565,19 @@ export const useStore = create<Store>((set, get) => ({
         commitPlan(oppPlan, nonceB, chain.signWithSessionKey(oppPlan, nonceB)),
       ],
     });
+    const fast = get().settings.fastResolve;
     set({
       match: state,
       botRng: rng,
       lastRoundEvents: events,
-      playback: get().settings.fastResolve ? null : { events, index: 0 },
+      lastAim: aim,
+      playback: fast ? null : { events, index: 0 },
       clock: state.config.roundSeconds,
     });
-    if (get().settings.fastResolve) get().finishPlayback();
+    // The feedback layer runs on its own clock rather than on playback, so it
+    // says the same things whether or not the player skips the resolve.
+    announceRound(before, clientView(state, 0), events, fast, aim);
+    if (fast) get().finishPlayback();
   },
 
   advancePlayback() {
@@ -590,7 +693,14 @@ export const useStore = create<Store>((set, get) => ({
       // the pot, exactly as a disconnect past the grace period would.
       void chain.settleBracket(t.bracketId, 'out', t.stake).catch(() => undefined);
     }
-    set({ match: null, playback: null, screen: 'menu', matchIdOnChain: null, tournament: null });
+    set({
+      match: null,
+      playback: null,
+      beats: [],
+      screen: 'menu',
+      matchIdOnChain: null,
+      tournament: null,
+    });
   },
 }));
 

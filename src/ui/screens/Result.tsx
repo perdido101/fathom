@@ -45,14 +45,14 @@ export function Result(): ReactElement | null {
       <h1
         className="banner"
         style={{
-          fontSize: 72,
+          fontSize: 'var(--fs-hero)',
           color: '#ffffff',
           textShadow: `0 5px 0 ${drew ? 'rgba(18,58,94,0.35)' : won ? 'var(--confirm-deep)' : 'var(--danger)'}, 0 10px 30px rgba(18,58,94,0.4)`,
         }}
       >
         {drew ? 'DRAW' : won ? 'VICTORY' : 'DEFEAT'}
       </h1>
-      <p style={{ color: 'rgba(255,255,255,0.95)', fontWeight: 800, fontSize: 16 }}>
+      <p style={{ color: 'rgba(255,255,255,0.95)', fontWeight: 800, fontSize: 'var(--fs-body)' }}>
         {outcome?.kind === 'draw' && outcome.reason === 'mutual'
           ? 'Both fleets went down together, level going in. Stakes returned in full, no rake.'
           : outcome?.kind === 'win' && outcome.reason === 'mutual'
@@ -133,13 +133,13 @@ export function Result(): ReactElement | null {
 
           {lastTx && (
             <div className="col" style={{ gap: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontSize: 'var(--fs-fine)', fontWeight: 800, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Transaction
               </span>
               {chain.kind === 'devnet' ? (
                 <a
                   className="mono"
-                  style={{ fontSize: 12, wordBreak: 'break-all' }}
+                  style={{ fontSize: 'var(--fs-fine)', wordBreak: 'break-all' }}
                   href={`https://explorer.solana.com/tx/${lastTx}?cluster=devnet`}
                   target="_blank"
                   rel="noreferrer"
@@ -147,7 +147,7 @@ export function Result(): ReactElement | null {
                   {lastTx.slice(0, 28)}… ↗ devnet explorer
                 </a>
               ) : (
-                <span className="mono" style={{ fontSize: 12, wordBreak: 'break-all', color: 'var(--ink-dim)' }}>
+                <span className="mono" style={{ fontSize: 'var(--fs-fine)', wordBreak: 'break-all', color: 'var(--ink-dim)' }}>
                   {lastTx.slice(0, 28)}… (simulated — local settlement)
                 </span>
               )}
@@ -166,7 +166,7 @@ export function Result(): ReactElement | null {
             <span style={{ fontWeight: 800, color: audit.ok ? 'var(--confirm-deep)' : 'var(--danger)' }}>
               {audit.ok ? '✓ Replay verified' : '✕ REPLAY MISMATCH'}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--ink-dim)', fontWeight: 700 }}>
+            <span style={{ fontSize: 'var(--fs-fine)', color: 'var(--ink-dim)', fontWeight: 700 }}>
               {audit.roundsReplayed} rounds re-run from the seed and the signed transcript
             </span>
           </div>
@@ -185,14 +185,12 @@ export function Result(): ReactElement | null {
           </button>
 
           <div className="spacer" />
-          <div className="row">
-            <button className="btn go" style={{ flex: 1, fontSize: 19 }} onClick={() => void rematch()}>
-              REMATCH
-            </button>
-            <button className="btn primary" style={{ flex: 1, fontSize: 19 }} onClick={() => void rematch()}>
-              NEXT OPPONENT
-            </button>
-          </div>
+          {/* REMATCH and NEXT OPPONENT stood side by side here and called the
+              same function: the queue finds whoever is available, so there
+              was never a rematch to offer. One control, one behaviour. */}
+          <button className="btn go" style={{ fontSize: 'var(--fs-lead)' }} onClick={() => void rematch()}>
+            PLAY AGAIN
+          </button>
           <button
             className="btn ghost small"
             onClick={() => {
@@ -211,10 +209,14 @@ export function Result(): ReactElement | null {
 function ReceiptRow({ label, value, gold }: { label: string; value: string; gold?: boolean }): ReactElement {
   return (
     <div className="row" style={{ justifyContent: 'space-between' }}>
-      <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 14 }}>{label}</span>
+      <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 'var(--fs-fine)' }}>{label}</span>
       <span
-        className={gold ? 'display' : 'mono'}
-        style={{ fontWeight: 800, fontSize: gold ? 20 : 14, color: gold ? 'var(--gold-deep)' : 'var(--ink)' }}
+        className={gold ? 'display' : 'num'}
+        style={{
+          fontWeight: 800,
+          fontSize: gold ? 'var(--fs-lead)' : 'var(--fs-body)',
+          color: gold ? 'var(--gold-deep)' : 'var(--ink)',
+        }}
       >
         {value}
       </span>

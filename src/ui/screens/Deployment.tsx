@@ -7,6 +7,8 @@ import { placementLegal, type Placement } from '../../engine/board';
 import { Board } from '../components/Board';
 import { ShipCard } from '../components/GameCard';
 import { Sound } from '../sfx/SoundManager';
+import { WhyNot } from '../feedback/Feedback';
+import { whyCannotDeploy } from '../feedback/reasons';
 
 /**
  * Deployment at 16:9: the board centred and large, the fleet in a side tray.
@@ -66,7 +68,8 @@ export function Deployment(): ReactElement | null {
     hits: cells.map(() => false),
     sunk: false,
   }));
-  const complete = ids.every((id) => placed[id]?.length === SHIPS[id].length);
+  const placedCount = ids.filter((id) => placed[id]?.length === SHIPS[id].length).length;
+  const complete = placedCount === ids.length;
 
   function confirm(): void {
     submit(ids.map((defId) => ({ defId, cells: placed[defId] }) as Placement));
@@ -103,18 +106,17 @@ export function Deployment(): ReactElement | null {
       </div>
 
       <div className="col" style={{ width: 380, gap: 14 }}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h1 style={{ color: '#ffffff', textShadow: '0 3px 0 rgba(18,58,94,0.3)' }}>Deploy</h1>
-          <span className="pill" style={{ fontSize: 16 }}>
-            {clock}s
-          </span>
+        {/* A permanent "Deploy" header stood here. The phase card says it once
+            on the way in, which is where a player actually needs telling. */}
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <p className="full" style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 700 }}>
+            Orthogonal only. Hulls may touch — two side by side read as one long ship.
+          </p>
+          <span className="pill num">{clock}s</span>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 700 }}>
-          Orthogonal only. Hulls may touch — two side by side read as one long ship.
-        </p>
 
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <h3>Your fleet</h3>
+          {/* "Your fleet" labelled three of your own ship cards. */}
           {ids.map((id) => (
             <ShipCard
               key={id}
@@ -139,13 +141,19 @@ export function Deployment(): ReactElement | null {
           </div>
         </div>
 
-        <button className="btn go huge" disabled={!complete} onClick={confirm}>
-          Commit fleet
-        </button>
-        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 700 }}>
-          Your layout is hashed and written before the first shot. It cannot change after this —
-          and that commitment is what proves the match honest later.
-        </p>
+        {/* The paragraph explaining the commitment hash used to sit under
+            this button. It now has its own beat, on the way out of this
+            screen, where the two hashes are actually shown sealing. */}
+        <WhyNot reason={whyCannotDeploy(placedCount, ids.length)}>
+          <button
+            className="btn go huge"
+            style={{ width: '100%' }}
+            disabled={!complete}
+            onClick={confirm}
+          >
+            Commit fleet
+          </button>
+        </WhyNot>
       </div>
     </div>
   );

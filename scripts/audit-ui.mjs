@@ -37,17 +37,33 @@ const state = () => page.evaluate(() => window.__store.getState());
 async function draftThrough() {
   for (let i = 0; i < 3; i++) {
     await page.locator('.draft-pick').first().click();
-    await wait(1700);
+    await wait(2500);
+    await skipBeats();
   }
   for (let i = 0; i < 3; i++) {
     await page.locator('button.gamecard').first().click();
-    await wait(1700);
+    await wait(2500);
+    await skipBeats();
+  }
+}
+
+/** Step past every phase beat currently queued. A click skips one. */
+async function skipBeats(limit = 5) {
+  for (let i = 0; i < limit; i++) {
+    if (!(await page.locator('.beat-screen').isVisible().catch(() => false))) return;
+    await page
+      .locator('.beat-screen')
+      .click({ position: { x: 40, y: 40 }, timeout: 3000 })
+      .catch(() => undefined);
+    await wait(240);
   }
 }
 
 async function playOut(maxRounds = 24) {
   for (let round = 0; round < maxRounds; round++) {
-    if (await page.getByRole('button', { name: 'REMATCH' }).isVisible().catch(() => false)) return;
+    await skipBeats();
+    if (await page.getByRole('button', { name: 'PLAY AGAIN' }).isVisible().catch(() => false))
+      return;
     const s = await state();
     if (s.screen === 'bracket') return;
     await page
@@ -58,8 +74,9 @@ async function playOut(maxRounds = 24) {
       .click({ timeout: 5000 })
       .catch(() => undefined);
     await wait(120);
+    // Since Build 6 the card itself is the charge control.
     await page
-      .getByRole('button', { name: 'Charge', exact: true })
+      .locator('.hand-slot .gamecard')
       .first()
       .click({ timeout: 3000 })
       .catch(() => undefined);
@@ -67,10 +84,15 @@ async function playOut(maxRounds = 24) {
     const commit = page.getByRole('button', { name: /^COMMIT/ });
     if (!(await commit.isEnabled().catch(() => false))) return;
     await commit.click();
-    await wait(250);
-    const overlay = page.locator('.overlay');
-    if (await overlay.isVisible().catch(() => false)) await overlay.click().catch(() => undefined);
-    await wait(300);
+    await wait(280);
+    const overlay = page.locator('.overlay').first();
+    if (await overlay.isVisible().catch(() => false)) {
+      await overlay.click({ position: { x: 30, y: 30 } }).catch(() => undefined);
+    }
+    await wait(280);
+    const gotIt = page.getByRole('button', { name: 'Got it' });
+    if (await gotIt.isVisible().catch(() => false)) await gotIt.click().catch(() => undefined);
+    await wait(180);
   }
 }
 
@@ -113,7 +135,8 @@ try {
   // Finish drafts by hand.
   for (let i = 0; i < 2; i++) {
     await page.locator('.draft-pick').first().click();
-    await wait(1700);
+    await wait(2500);
+    await skipBeats();
   }
   for (let i = 0; i < 3; i++) {
     await page.locator('button.gamecard').first().click();
@@ -153,27 +176,23 @@ try {
 
   // --- Battle to a result, then REMATCH and NEXT OPPONENT ----------------
   await playOut();
-  const sawResult = await page.getByRole('button', { name: 'REMATCH' }).isVisible();
+  const sawResult = await page.getByRole('button', { name: 'PLAY AGAIN' }).isVisible();
   check('a full match reaches the result screen', sawResult);
-  await click('REMATCH');
-  await wait(600);
+  // Build 6 collapsed REMATCH and NEXT OPPONENT into one button: they called
+  // the same function, because the queue finds whoever is available.
+  await click('PLAY AGAIN');
+  await wait(800);
+  await skipBeats();
   s = await state();
-  check('REMATCH starts a fresh match in the same mode', s.screen === 'shipDraft');
+  check('PLAY AGAIN starts a fresh match in the same mode', s.screen === 'shipDraft');
   await draftThrough();
   await click('Auto');
   await click('Commit fleet');
-  await wait(300);
+  await wait(400);
+  await skipBeats();
   await playOut();
-  if (await page.getByRole('button', { name: 'NEXT OPPONENT' }).isVisible().catch(() => false)) {
-    await click('NEXT OPPONENT');
-    await wait(600);
-    s = await state();
-    check('NEXT OPPONENT starts a fresh match too', s.screen === 'shipDraft');
-    await page.evaluate(() => window.__store.getState().leaveMatch());
-    await wait(300);
-  } else {
-    check('NEXT OPPONENT starts a fresh match too', false, 'button not found on result');
-  }
+  await page.evaluate(() => window.__store.getState().leaveMatch());
+  await wait(300);
 
   // --- Tournament: seat, bracket forms full, play to a settled place -----
   await page.getByRole('button', { name: /Tournament/ }).click();

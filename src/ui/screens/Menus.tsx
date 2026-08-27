@@ -15,9 +15,11 @@ import { Wordmark } from '../components/WalletChip';
 import { bracketPayoutSol } from '../../tournament/bracket';
 import { artUrl } from '../art/dropin';
 import { chain } from '../../chain/client';
-import { CUES, Sound } from '../sfx/SoundManager';
-import { VFX_HOOKS } from '../vfx/hooks';
+import { Sound } from '../sfx/SoundManager';
 import { Icon } from '../art/Icon';
+import { useFeedback } from '../feedback/store';
+import { WhyNot } from '../feedback/Feedback';
+import { whyTierLocked } from '../feedback/reasons';
 
 /**
  * Menus, spread to 16:9.
@@ -69,13 +71,13 @@ export function MainMenu(): ReactElement {
       }}
     >
       <Clouds />
-      <Wordmark size={84} />
+      <Wordmark hero />
       <p
         style={{
           color: '#ffffff',
           fontFamily: 'var(--display)',
           fontWeight: 700,
-          fontSize: 19,
+          fontSize: 'var(--fs-lead)',
           textShadow: '0 2px 0 rgba(18,58,94,0.3)',
         }}
       >
@@ -142,11 +144,11 @@ export function MainMenu(): ReactElement {
 
       <div className="row" style={{ gap: 10 }}>
         <span className="pill">
-          Rating <strong className="mono">{profile.rating}</strong>
+          Rating <strong className="num">{profile.rating}</strong>
         </span>
-        <span className="pill">
-          Season rank <strong className="mono">#{season.yourRank}</strong>
-        </span>
+        {/* Season rank stood beside this until Build 6. A rank is a rating
+            read against the pool — the same fact, one click away on the
+            Season screen, and nothing a player does differently here. */}
         {isProvisional(profile) && (
           <span className="pill" title="Wider matchmaking, lowest arena table only">
             Provisional · {PROVISIONAL_MATCHES - profile.provisionalMatches} to go
@@ -220,14 +222,14 @@ function ModeCard({
           <Icon name={icon} size={30} />
         </span>
         <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span className="display" style={{ fontSize: 26, fontWeight: 800 }}>
+          <span className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800 }}>
             {title}
           </span>
-          <span className="pill gold" style={{ fontSize: 13 }}>
+          <span className="pill gold" style={{ fontSize: 'var(--fs-fine)' }}>
             {stakeLine}
           </span>
         </span>
-        <p style={{ fontSize: 14, minHeight: 62 }}>{blurb}</p>
+        <p style={{ fontSize: 'var(--fs-fine)', minHeight: 62 }}>{blurb}</p>
         <span className="btn go small" style={{ alignSelf: 'stretch', textAlign: 'center' }}>
           {cta}
         </span>
@@ -258,7 +260,7 @@ function RankedJoinModal({
           <h2>Enter the season</h2>
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <span style={{ fontWeight: 700, color: 'var(--ink-dim)' }}>One-time entry</span>
-            <span className="pill gold" style={{ fontSize: 18 }}>
+            <span className="pill gold" style={{ fontSize: 'var(--fs-lead)' }}>
               ◎ {SEASON_ENTRY_SOL}
             </span>
           </div>
@@ -269,7 +271,7 @@ function RankedJoinModal({
           </p>
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <span style={{ fontWeight: 700, color: 'var(--ink-dim)' }}>Pool so far</span>
-            <span className="display" style={{ fontSize: 22, fontWeight: 800 }}>
+            <span className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800 }}>
               ◎ {poolSol.toFixed(0)}
             </span>
           </div>
@@ -326,8 +328,11 @@ export function Queue({ tournament = false }: { tournament?: boolean }): ReactEl
           const locked = !allowedStakes(profile).includes(s);
           const active = stake === s;
           return (
-            <button
+            <WhyNot
               key={s}
+              reason={whyTierLocked(locked, PROVISIONAL_MATCHES, profile.provisionalMatches)}
+            >
+            <button
               className="panel"
               disabled={locked}
               onClick={() => setStake(s)}
@@ -345,30 +350,37 @@ export function Queue({ tournament = false }: { tournament?: boolean }): ReactEl
                 position: 'relative',
               }}
             >
-              <span className="gem big" style={{ fontSize: 20 }}>
+              <span className="gem big" style={{ fontSize: 'var(--fs-lead)' }}>
                 ◎
               </span>
-              <span className="display" style={{ fontSize: 30, fontWeight: 800 }}>
+              <span className="display" style={{ fontSize: 'var(--fs-head)', fontWeight: 800 }}>
                 {s}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
-                Rating {profile.rating - band}–{profile.rating + band}
-              </span>
+              {/* The matchmaking band was printed on all four tiers and was
+                  the same range on every one of them. It is a property of
+                  your rating, not of the table, so it is stated once below. */}
               {locked ? (
-                <span className="pill" title="Provisional accounts play the lowest table">
+                <span className="pill">
                   <Icon name="ui.locked" size={13} /> after {PROVISIONAL_MATCHES} rated
                 </span>
               ) : (
-                <span className="pill gold" style={{ fontSize: 12 }}>
+                <span className="pill gold" style={{ fontSize: 'var(--fs-fine)' }}>
                   {tournament
                     ? `champion ◎ ${bracketPayoutSol(s).champion.toFixed(3)}`
                     : `win ◎ ${arenaPayout(s).toWinner.toFixed(3)}`}
                 </span>
               )}
             </button>
+            </WhyNot>
           );
         })}
       </div>
+
+      <p className="full" style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>
+        You are matched against ratings{' '}
+        <span className="num">{profile.rating - band}</span>–
+        <span className="num">{profile.rating + band}</span> at every table.
+      </p>
 
       {tournament ? (
         <div className="panel tight row" style={{ gap: 22, minWidth: 640, justifyContent: 'center' }}>
@@ -384,13 +396,13 @@ export function Queue({ tournament = false }: { tournament?: boolean }): ReactEl
           </span>
         </div>
       ) : (
-        <div className="panel tight row" style={{ gap: 22, minWidth: 560, justifyContent: 'center' }}>
+        <div className="panel tight row" style={{ gap: 22, minWidth: 420, justifyContent: 'center' }}>
+          {/* "To winner" sat here too, and it is pot minus rake — both of
+              which are on this row, and the figure itself is already on the
+              tier card you are choosing between. */}
           <span style={{ fontWeight: 800 }}>Pot ◎ {payout.pot.toFixed(2)}</span>
           <span style={{ color: 'var(--ink-dim)', fontWeight: 700 }}>
-            Rake ◎ {payout.rake.toFixed(4)}
-          </span>
-          <span style={{ color: 'var(--confirm-deep)', fontWeight: 800 }}>
-            To winner ◎ {payout.toWinner.toFixed(4)}
+            Rake ◎ {payout.rake.toFixed(4)} ({(ARENA_RAKE * 100).toFixed(0)}%)
           </span>
         </div>
       )}
@@ -400,7 +412,7 @@ export function Queue({ tournament = false }: { tournament?: boolean }): ReactEl
           <p style={{ color: 'var(--danger)', fontWeight: 800, marginBottom: 4 }}>
             Not enough devnet SOL for this {tournament ? 'bracket' : 'table'}.
           </p>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: 'var(--fs-fine)' }}>
             A ◎ {stake} seat needs ◎ {stake} staked and your wallet holds ◎ {balance?.toFixed(3)}.
             Get free devnet SOL at{' '}
             <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">
@@ -453,7 +465,7 @@ export function Escrow(): ReactElement | null {
           style={{
             width: 110,
             height: 110,
-            fontSize: 26,
+            fontSize: 'var(--fs-sub)',
             transform: both ? 'scale(1.12)' : 'scale(1)',
             transition: 'transform var(--t-med)',
           }}
@@ -464,14 +476,14 @@ export function Escrow(): ReactElement | null {
       </div>
 
       <div className="panel tight" style={{ minWidth: 420, textAlign: 'center' }}>
-        <p style={{ fontWeight: 800, fontSize: 16, color: both ? 'var(--confirm-deep)' : 'var(--ink)' }}>
+        <p style={{ fontWeight: 800, fontSize: 'var(--fs-body)', color: both ? 'var(--confirm-deep)' : 'var(--ink)' }}>
           {both
             ? 'Both stakes escrowed — the match is live.'
             : escrow.you
               ? 'You staked ✓ · Opponent staking…'
               : 'Sending your stake…'}
         </p>
-        <p style={{ fontSize: 13, marginTop: 4 }}>
+        <p style={{ fontSize: 'var(--fs-fine)', marginTop: 4 }}>
           Both stakes land in one on-chain account. If the match is never played, either player can
           reclaim their own stake after 30 minutes — nobody can take the other's.
         </p>
@@ -546,13 +558,16 @@ export function Leaderboard(): ReactElement {
     <div className="screen" style={{ alignItems: 'center', gap: 18 }}>
       <div className="row" style={{ width: 'min(1100px, 100%)', justifyContent: 'space-between' }}>
         <h1 style={{ color: '#ffffff', textShadow: '0 3px 0 rgba(18,58,94,0.3)' }}>Leaderboard</h1>
-        <span className="pill gold" style={{ fontSize: 20, padding: '10px 22px' }}>
+        <span className="pill gold" style={{ fontSize: 'var(--fs-lead)', padding: '10px 22px' }}>
           Live pool ◎ {season.poolSol.toFixed(1)}
         </span>
       </div>
 
-      <div className="row" style={{ width: 'min(1100px, 100%)', gap: 20, alignItems: 'flex-start' }}>
-        <div className="panel" style={{ flex: 1.2 }}>
+      {/* The payout curve was drawn here as well as on the Season screen,
+          the same chart twice. The ladder lives here; what it pays lives
+          there. */}
+      <div className="row" style={{ width: 'min(760px, 100%)', gap: 20, alignItems: 'flex-start' }}>
+        <div className="panel" style={{ flex: 1 }}>
           <div className="col" style={{ gap: 6 }}>
             {rows.map((r) => (
               <div
@@ -566,12 +581,12 @@ export function Leaderboard(): ReactElement {
               >
                 <span
                   className="display"
-                  style={{ width: 40, fontWeight: 800, fontSize: 18, color: 'var(--ink-dim)' }}
+                  style={{ width: 40, fontWeight: 800, fontSize: 'var(--fs-lead)', color: 'var(--ink-dim)' }}
                 >
                   {r.rank}
                 </span>
                 <span style={{ flex: 1, fontWeight: 800 }}>{r.name}</span>
-                <span className="mono" style={{ fontWeight: 700 }}>
+                <span className="num" style={{ fontWeight: 700 }}>
                   {r.rating}
                 </span>
               </div>
@@ -585,25 +600,17 @@ export function Leaderboard(): ReactElement {
                 background: 'rgba(255,197,49,0.12)',
               }}
             >
-              <span className="display" style={{ width: 40, fontWeight: 800, fontSize: 18 }}>
+              <span className="display" style={{ width: 40, fontWeight: 800, fontSize: 'var(--fs-lead)' }}>
                 {season.yourRank}
               </span>
               <span style={{ flex: 1, fontWeight: 800 }}>{profile.name}</span>
-              <span className="mono" style={{ fontWeight: 700 }}>
+              <span className="num" style={{ fontWeight: 700 }}>
                 {profile.rating}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="panel" style={{ flex: 1 }}>
-          <h3 style={{ marginBottom: 12 }}>Payout curve</h3>
-          <PayoutChart poolSol={season.poolSol} />
-          <p style={{ fontSize: 13, marginTop: 10 }}>
-            The top 1% take the largest share; the top tenth at least recover their entry. A ladder
-            nobody below the podium can profit from stops being a ladder.
-          </p>
-        </div>
       </div>
 
       <button className="btn ghost" onClick={() => go('menu')}>
@@ -620,7 +627,7 @@ export function PayoutChart({ poolSol }: { poolSol: number }): ReactElement {
     <div className="col" style={{ gap: 8 }}>
       {PAYOUT_CURVE.map((b) => (
         <div key={b.label} className="row" style={{ gap: 10 }}>
-          <span style={{ width: 92, fontSize: 13, fontWeight: 800, color: 'var(--ink-dim)' }}>
+          <span style={{ width: 92, fontSize: 'var(--fs-fine)', fontWeight: 800, color: 'var(--ink-dim)' }}>
             {b.label}
           </span>
           <div style={{ flex: 1, height: 22, borderRadius: 11, background: 'var(--panel-dim)' }}>
@@ -634,7 +641,7 @@ export function PayoutChart({ poolSol }: { poolSol: number }): ReactElement {
               }}
             />
           </div>
-          <span className="mono" style={{ width: 88, fontSize: 12, fontWeight: 700, textAlign: 'right' }}>
+          <span className="num" style={{ width: 88, fontSize: 'var(--fs-fine)', fontWeight: 700, textAlign: 'right' }}>
             {(b.poolShare * 100).toFixed(0)}% · ◎{(poolSol * b.poolShare).toFixed(0)}
           </span>
         </div>
@@ -704,11 +711,11 @@ export function Season(): ReactElement {
                 >
                   {h.result}
                 </span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
+                <span style={{ flex: 1, fontSize: 'var(--fs-fine)', fontWeight: 700, color: 'var(--ink-dim)' }}>
                   {h.mode}
                   {h.stake ? ` · ◎ ${h.stake}` : ''} · {h.rounds} rounds
                 </span>
-                <span className="mono" style={{ fontWeight: 700 }}>
+                <span className="num" style={{ fontWeight: 700 }}>
                   {h.delta >= 0 ? '+' : ''}
                   {h.delta}
                 </span>
@@ -739,10 +746,10 @@ export function Season(): ReactElement {
 function Stat({ label, value, gold }: { label: string; value: string; gold?: boolean }): ReactElement {
   return (
     <div className="panel tight" style={{ minWidth: 170, textAlign: 'center' }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+      <div style={{ fontSize: 'var(--fs-fine)', fontWeight: 800, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
         {label}
       </div>
-      <div className="display" style={{ fontSize: 28, fontWeight: 800, color: gold ? 'var(--gold-deep)' : 'var(--ink)' }}>
+      <div className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800, color: gold ? 'var(--gold-deep)' : 'var(--ink)' }}>
         {value}
       </div>
     </div>
@@ -757,6 +764,8 @@ export function SettingsScreen(): ReactElement {
   const go = useStore((s) => s.go);
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
+  const resetSeen = useFeedback((s) => s.resetSeen);
+  const explained = useFeedback((s) => Object.keys(s.seen).length);
   const [err, setErr] = useState<string | null>(null);
   const [addr, setAddr] = useState(chain.address());
 
@@ -768,8 +777,12 @@ export function SettingsScreen(): ReactElement {
         <div className="col" style={{ flex: 1 }}>
           <div className="panel">
             <h3 style={{ marginBottom: 10 }}>Wallet</h3>
-            <p style={{ fontSize: 14, wordBreak: 'break-all' }}>{addr ?? 'Not connected.'}</p>
-            <p style={{ fontSize: 13, marginTop: 6 }}>
+            {/* An address is compared character by character, so it is one of
+                the four things JetBrains Mono still exists for. */}
+            <p className="mono" style={{ fontSize: 'var(--fs-fine)', wordBreak: 'break-all' }}>
+              {addr ?? 'Not connected.'}
+            </p>
+            <p style={{ fontSize: 'var(--fs-fine)', marginTop: 6 }}>
               Adapter: <strong>{chain.kind}</strong>. Connecting issues a session key that signs
               your moves for this session. It cannot move funds — the escrow answers to your
               wallet, never to the session.
@@ -788,14 +801,14 @@ export function SettingsScreen(): ReactElement {
             >
               Connect
             </button>
-            {err && <p style={{ color: 'var(--danger)', marginTop: 8, fontSize: 13 }}>{err}</p>}
+            {err && <p style={{ color: 'var(--danger)', marginTop: 8, fontSize: 'var(--fs-fine)' }}>{err}</p>}
           </div>
 
           <div className="panel">
             <h3 style={{ marginBottom: 10 }}>Play</h3>
             <Toggle label="Sound" on={settings.sound} onChange={(v) => setSettings({ sound: v })} />
             <div className="row" style={{ gap: 10, alignItems: 'center', margin: '6px 0' }}>
-              <span style={{ fontWeight: 800, fontSize: 14, minWidth: 110 }}>Master volume</span>
+              <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)', minWidth: 110 }}>Master volume</span>
               <input
                 type="range"
                 min={0}
@@ -807,7 +820,7 @@ export function SettingsScreen(): ReactElement {
                 style={{ flex: 1, accentColor: 'var(--gold)' }}
                 aria-label="Master volume"
               />
-              <span className="mono" style={{ fontSize: 12, width: 34, textAlign: 'right' }}>
+              <span className="num" style={{ fontSize: 'var(--fs-fine)', width: 34, textAlign: 'right' }}>
                 {Math.round(settings.volume * 100)}%
               </span>
             </div>
@@ -816,8 +829,25 @@ export function SettingsScreen(): ReactElement {
               on={settings.fastResolve}
               onChange={(v) => setSettings({ fastResolve: v })}
             />
+            <Toggle
+              label="Between-phase beats"
+              on={settings.transitions}
+              onChange={(v) => setSettings({ transitions: v })}
+            />
+            <div className="row" style={{ justifyContent: 'space-between', margin: '8px 0 2px' }}>
+              <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>
+                First-time explanations
+              </span>
+              <button className="btn small ghost" onClick={() => resetSeen()}>
+                {explained} seen · show them again
+              </button>
+            </div>
+            <p style={{ fontSize: 'var(--fs-fine)' }}>
+              Each card, ability and reaction is explained the first time it happens to you, then
+              never again. This makes every one of them first-time once more.
+            </p>
             <div className="col" style={{ gap: 8, marginTop: 10 }}>
-              <span style={{ fontWeight: 800, fontSize: 14 }}>Opponent strength</span>
+              <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>Opponent strength</span>
               <div className="grid4">
                 {([1, 2, 3, 4] as const).map((l) => (
                   <button
@@ -843,9 +873,11 @@ export function SettingsScreen(): ReactElement {
         <div className="col" style={{ flex: 1 }}>
           <div className="panel">
             <h3 style={{ marginBottom: 8 }}>Credits</h3>
-            <p style={{ fontSize: 13, marginBottom: 8 }}>
-              {CUES.length} sound cues and {VFX_HOOKS.length} visual hooks are wired; the icon set
-              is CC BY and its attribution lives on the credits screen.
+            {/* A count of wired cues and hooks was printed here. It is a
+                number about the build, not about the game. */}
+            <p style={{ fontSize: 'var(--fs-fine)', marginBottom: 8 }}>
+              Every sound and icon in the game is CC0 or CC BY, and every source
+              is listed with its licence.
             </p>
             <button className="btn small" onClick={() => go('credits')}>
               Art credits and licences
@@ -855,17 +887,12 @@ export function SettingsScreen(): ReactElement {
             <h3 style={{ marginBottom: 8 }}>Chain journal</h3>
             <div
               className="scroll mono"
-              style={{ fontSize: 12, color: 'var(--ink-dim)', lineHeight: 1.6 }}
+              style={{ fontSize: 'var(--fs-fine)', color: 'var(--ink-dim)', lineHeight: 1.6 }}
             >
               {chain.journal.length === 0
                 ? 'Nothing yet.'
                 : chain.journal.slice(-12).map((l, i) => <div key={i}>{l}</div>)}
             </div>
-          </div>
-          <div className="panel tight">
-            <span className="mono" style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
-              Last cues: {Sound.history.slice(-6).map((h) => h.cue).join(', ') || 'none yet'}
-            </span>
           </div>
         </div>
       </div>
@@ -892,7 +919,7 @@ function Toggle({
       onClick={() => onChange(!on)}
       style={{ width: '100%', padding: '8px 0', justifyContent: 'space-between' }}
     >
-      <span style={{ fontWeight: 800, fontSize: 14 }}>{label}</span>
+      <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>{label}</span>
       <span
         style={{
           width: 52,

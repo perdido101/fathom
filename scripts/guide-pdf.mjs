@@ -3,6 +3,7 @@
  * pins can be checked against the screens they annotate.
  */
 import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const browser = await chromium.launch({
@@ -26,11 +27,26 @@ await page.evaluate(async () => {
 });
 await page.waitForTimeout(1200);
 
+// Proof shots, so a regeneration can be eyeballed without opening 66 pages.
 await page.screenshot({ path: 'sim-out/guide-top.png' });
-const battle = await page.$('#plate-15');
-if (battle) await battle.screenshot({ path: 'sim-out/guide-battle.png' });
-const menu = await page.$('#plate-01');
-if (menu) await menu.screenshot({ path: 'sim-out/guide-menu.png' });
+for (const [sel, name] of [
+  ['#plate-24', 'guide-battle'],
+  ['#plate-01', 'guide-menu'],
+  ['#plate-spread', 'guide-spread'],
+  ['#plate-31', 'guide-explainer'],
+  ['#tells', 'guide-chapter'],
+]) {
+  const el = await page.$(sel);
+  if (el) await el.screenshot({ path: `sim-out/${name}.png` });
+}
+// Every pinned plate's figure, so a regeneration can be checked for pins
+// that landed on top of the thing they name — the failure mode this guide
+// has produced twice now.
+mkdirSync('sim-out/pins', { recursive: true });
+for (const fig of await page.$$('.plate.has-pins figure.shot')) {
+  const id = await fig.evaluate((el) => el.closest('.plate').id);
+  await fig.screenshot({ path: `sim-out/pins/${id}.png` });
+}
 
 await page.emulateMedia({ media: 'print' });
 await page.pdf({

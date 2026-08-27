@@ -53,20 +53,20 @@ export function BracketScreen(): ReactElement | null {
 
       {/* The money, always visible. */}
       <div className="panel tight row" style={{ gap: 20, justifyContent: 'center' }}>
-        <span className="pill gold" style={{ fontSize: 15 }}>
+        <span className="pill gold" style={{ fontSize: 'var(--fs-body)' }}>
           Pot ◎ {pay.pot.toFixed(2)}
         </span>
-        <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 13 }}>
+        <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 'var(--fs-fine)' }}>
           rake ◎ {pay.rake.toFixed(4)}
         </span>
-        <span style={{ fontWeight: 800, fontSize: 13 }}>champion ◎ {pay.champion.toFixed(4)}</span>
-        <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 13 }}>
+        <span style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>champion ◎ {pay.champion.toFixed(4)}</span>
+        <span style={{ fontWeight: 700, color: 'var(--ink-dim)', fontSize: 'var(--fs-fine)' }}>
           2nd ◎ {pay.runnerUp.toFixed(4)} · semis ◎ {pay.semiLoser.toFixed(4)} · QF exit ◎ 0
         </span>
       </div>
 
       {forming ? (
-        <Forming filled={t.filled} entrants={t.bracket.entrants} stake={t.stake} />
+        <Forming filled={t.filled} entrants={t.bracket.entrants} />
       ) : (
         <BracketGrid bracket={t.bracket} />
       )}
@@ -95,7 +95,7 @@ export function BracketScreen(): ReactElement | null {
             border: champion ? '4px solid var(--gold)' : undefined,
           }}
         >
-          <p className="display" style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>
+          <p className="display" style={{ fontSize: 'var(--fs-sub)', fontWeight: 800, marginBottom: 6 }}>
             {t.yourPlace === 'champion'
               ? 'Champion'
               : t.yourPlace === 'runnerUp'
@@ -106,13 +106,13 @@ export function BracketScreen(): ReactElement | null {
           </p>
           <p style={{ fontWeight: 700, color: 'var(--ink-dim)' }}>
             Your share of the pot:{' '}
-            <span className="pill gold" style={{ fontSize: 15 }}>
+            <span className="pill gold" style={{ fontSize: 'var(--fs-body)' }}>
               ◎ {share.toFixed(4)}
             </span>{' '}
             {share === 0 && '— the curve pays the top four seats only'}
           </p>
           {lastTx && (
-            <p className="mono" style={{ fontSize: 11, marginTop: 8, color: 'var(--ink-faint)' }}>
+            <p className="mono" style={{ fontSize: 'var(--fs-fine)', marginTop: 8, color: 'var(--ink-faint)' }}>
               {chain.kind === 'devnet' ? (
                 <a
                   href={`https://explorer.solana.com/tx/${lastTx}?cluster=devnet`}
@@ -157,11 +157,11 @@ export function BracketScreen(): ReactElement | null {
             </span>
             <p
               className="big-num"
-              style={{ fontSize: 88, color: 'var(--gold)', lineHeight: 1 }}
+              style={{ fontSize: 'var(--fs-display)', color: 'var(--gold)', lineHeight: 1 }}
             >
               CHAMPION
             </p>
-            <p style={{ fontWeight: 800, fontSize: 18, marginTop: 10 }}>
+            <p style={{ fontWeight: 800, fontSize: 'var(--fs-lead)', marginTop: 10 }}>
               Eight entered. You take ◎ {pay.champion.toFixed(4)} of the ◎ {pay.pot.toFixed(2)}{' '}
               pot.
             </p>
@@ -176,15 +176,7 @@ export function BracketScreen(): ReactElement | null {
 }
 
 /** Seats filling while the bracket forms. It only ever starts full. */
-function Forming({
-  filled,
-  entrants,
-  stake,
-}: {
-  filled: number;
-  entrants: string[];
-  stake: number;
-}): ReactElement {
+function Forming({ filled, entrants }: { filled: number; entrants: string[] }): ReactElement {
   return (
     <div className="col" style={{ gap: 14, alignItems: 'center' }}>
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -202,9 +194,11 @@ function Forming({
                 transition: 'opacity var(--t-med), border-color var(--t-med)',
               }}
             >
-              <p style={{ fontWeight: 800, fontSize: 14 }}>{staked ? name : '—'}</p>
-              <p style={{ fontSize: 12, fontWeight: 700, color: staked ? 'var(--confirm-deep)' : 'var(--ink-faint)' }}>
-                {staked ? `◎ ${stake} staked ✓` : 'seat open'}
+              <p style={{ fontWeight: 800, fontSize: 'var(--fs-fine)' }}>{staked ? name : '—'}</p>
+              {/* Each seat printed the stake amount. Every seat stakes the
+                  same figure, and it is in the title and the pot row. */}
+              <p style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: staked ? 'var(--confirm-deep)' : 'var(--ink-faint)' }}>
+                {staked ? 'staked ✓' : 'seat open'}
               </p>
             </div>
           );
@@ -238,7 +232,7 @@ function BracketGrid({ bracket }: { bracket: BracketState }): ReactElement {
               color: 'rgba(255,255,255,0.9)',
               fontFamily: 'var(--display)',
               fontWeight: 800,
-              fontSize: 13,
+              fontSize: 'var(--fs-fine)',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
             }}
@@ -256,7 +250,7 @@ function BracketGrid({ bracket }: { bracket: BracketState }): ReactElement {
             color: 'rgba(255,255,255,0.9)',
             fontFamily: 'var(--display)',
             fontWeight: 800,
-            fontSize: 13,
+            fontSize: 'var(--fs-fine)',
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
           }}
@@ -275,12 +269,12 @@ function BracketGrid({ bracket }: { bracket: BracketState }): ReactElement {
           }}
         >
           {final ? (
-            <p style={{ fontWeight: 800, fontSize: 16 }}>
+            <p style={{ fontWeight: 800, fontSize: 'var(--fs-body)' }}>
               <Icon name="ui.trophy" size={16} style={{ color: 'var(--gold-deep)' }} />{' '}
               {bracket.entrants[final.champion]}
             </p>
           ) : (
-            <p style={{ color: 'var(--ink-faint)', fontWeight: 700, fontSize: 13 }}>undecided</p>
+            <p style={{ color: 'var(--ink-faint)', fontWeight: 700, fontSize: 'var(--fs-fine)' }}>undecided</p>
           )}
         </div>
       </div>
@@ -319,7 +313,7 @@ function MatchBox({
               display: 'flex',
               justifyContent: 'space-between',
               fontWeight: seat === 0 ? 900 : 700,
-              fontSize: 14,
+              fontSize: 'var(--fs-fine)',
               color: lost ? 'var(--ink-faint)' : 'var(--ink)',
               textDecoration: lost ? 'line-through' : 'none',
               padding: '2px 0',
@@ -333,9 +327,14 @@ function MatchBox({
           </p>
         );
       })}
-      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', marginTop: 2 }}>
-        {m.winner !== null ? 'decided' : playable ? 'up next' : 'waiting on earlier rounds'}
-      </p>
+      {/* A decided match said "decided" under a row that is already struck
+          through and ticked. The label now only appears where it adds
+          something the box does not already show. */}
+      {m.winner === null && (
+        <p style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: 'var(--ink-faint)', marginTop: 2 }}>
+          {playable ? 'up next' : 'waiting on earlier rounds'}
+        </p>
+      )}
     </div>
   );
 }

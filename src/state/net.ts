@@ -5,6 +5,7 @@ import { useStore } from './store';
 import type { Mode, Stake } from './profile';
 import type { Plan } from '../engine/types';
 import { Sound } from '../ui/sfx/SoundManager';
+import { announceRound } from '../ui/feedback/announce';
 
 /**
  * The browser's side of the wire.
@@ -158,6 +159,17 @@ function onServerMessage(c: NetClient, m: ServerMessage): void {
         chainNotice: m.vsBot ? 'casual vs server bot' : `vs ${m.opponent} over the wire`,
         screen: 'shipDraft',
       });
+      useStore
+        .getState()
+        .showBeats(
+          {
+            kind: 'matchFound',
+            opponent: m.opponent,
+            subtitle: m.vsBot ? `${m.mode} · server bot` : `${m.mode} · over the wire`,
+            stake: m.stake,
+          },
+          { kind: 'shipDraft' },
+        );
       Sound.play('round-start');
       return;
     case 'state': {
@@ -176,18 +188,39 @@ function onServerMessage(c: NetClient, m: ServerMessage): void {
                 : null;
       if (want && screen !== want && useStore.getState().net.remote) {
         useStore.setState({ screen: want });
+        if (want === 'cardDraft') {
+          store.showBeats(
+            { kind: 'fleet', ships: m.view.me.draftedShips.slice() },
+            { kind: 'cardDraft' },
+          );
+        } else if (want === 'deploy') {
+          store.showBeats({ kind: 'deploy' });
+        } else if (want === 'battle') {
+          store.showBeats(
+            {
+              kind: 'committed',
+              mine: m.view.me.deployCommit,
+              theirs: m.view.foe.deployCommit,
+            },
+            { kind: 'battle' },
+          );
+        }
       }
       return;
     }
-    case 'roundReport':
+    case 'roundReport': {
+      const before = useStore.getState().remoteView;
+      const fast = useStore.getState().settings.fastResolve;
       useStore.setState({
         remoteView: m.view,
         lastRoundEvents: m.events,
-        playback: useStore.getState().settings.fastResolve
-          ? null
-          : { events: m.events, index: 0 },
+        playback: fast ? null : { events: m.events, index: 0 },
       });
+      // Same feedback over the wire as off it: the layer works from the view
+      // diff and the events, both of which the server already sends.
+      announceRound(before, m.view, m.events, fast, useStore.getState().lastAim);
       return;
+    }
     case 'result':
       useStore.setState({ remoteView: m.view, screen: 'netResult', playback: null });
       Sound.play(

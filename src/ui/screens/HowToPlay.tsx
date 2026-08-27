@@ -1,16 +1,20 @@
 import { useState, type ReactElement } from 'react';
 import { useStore } from '../../state/store';
 import { Board } from '../components/Board';
-import { GameCard } from '../components/GameCard';
+import { CardBack, GameCard } from '../components/GameCard';
 
 /**
- * How to play, as four things you do rather than four things you read. Each
+ * How to play, as five things you do rather than five things you read. Each
  * step is a live control that behaves the way the real one does.
+ *
+ * The draft came first in Build 6 because it happens first, and because blind
+ * simultaneous picking with legal duplicates is the one rule in this game
+ * nobody arrives already knowing.
  */
 export function HowToPlay(): ReactElement {
   const go = useStore((s) => s.go);
   const [step, setStep] = useState(0);
-  const steps = [Charging, Firing, Simultaneous, Sinks];
+  const steps = [Drafting, Charging, Firing, Simultaneous, Sinks];
   const Step = steps[step];
 
   return (
@@ -50,6 +54,67 @@ export function HowToPlay(): ReactElement {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The draft, taught with the same live-card treatment the charging step uses:
+ * pick one of four and watch what the opponent picking the same one does.
+ */
+function Drafting(): ReactElement {
+  const [mine, setMine] = useState<string | null>(null);
+  // Fixed, not random: a tutorial that behaves differently on two readings
+  // teaches two different rules.
+  const theirs = 'burst';
+  const pack = ['salvo', 'burst', 'echo', 'mirror'];
+  const collided = mine === theirs;
+  return (
+    <div className="col">
+      <h3>The draft is blind, and duplicates are legal</h3>
+      <p>
+        You both see the same four. You both pick in secret. If you happen to reach for the same
+        one, you <strong>both</strong> get it — and that is the only thing either of you learns
+        about the other&rsquo;s hand all draft.
+      </p>
+      <div className="row" style={{ gap: 14, justifyContent: 'center', padding: '10px 0' }}>
+        {pack.map((id) => (
+          <GameCard
+            key={id}
+            defId={id}
+            charges={0}
+            size="md"
+            selected={mine === id}
+            style={
+              mine && mine !== id
+                ? { opacity: 0.4, transform: 'scale(0.95)' }
+                : undefined
+            }
+            onClick={() => setMine(id)}
+          />
+        ))}
+        {mine && (
+          <div className="their-pick">
+            {collided ? (
+              <GameCard defId={theirs} charges={0} size="md" />
+            ) : (
+              <div
+                className="their-back"
+                style={{ width: 148, position: 'relative', aspectRatio: '2 / 3' }}
+              >
+                <CardBack label="THEIRS" />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <p style={{ fontWeight: 800 }}>
+        {mine === null
+          ? 'Pick one. They are picking at the same moment.'
+          : collided
+            ? 'Collision — you both take Burst, and you both know it.'
+            : 'They took one of the other three. You will not learn which.'}
+      </p>
     </div>
   );
 }
@@ -112,7 +177,7 @@ function Firing(): ReactElement {
             : 'Click to fire it at five charges.'}
         </p>
       </div>
-      <p style={{ fontSize: 13 }}>
+      <p style={{ fontSize: 'var(--fs-fine)' }}>
         Ambush is the only card that does anything at zero. Everything else needs at least one.
       </p>
     </div>
@@ -128,7 +193,7 @@ function Simultaneous(): ReactElement {
         and all the damage is worked out against the same board — so a ship that dies this round
         still lands every shot it fired.
       </p>
-      <p style={{ fontSize: 13 }}>
+      <p style={{ fontSize: 'var(--fs-fine)' }}>
         That is why the order matters: interference first, then reads, then attacks together, then
         sinks, then anything a dying ship does on its way down.
       </p>
@@ -149,7 +214,7 @@ function Sinks(): ReactElement {
       <div style={{ width: 260, alignSelf: 'center' }}>
         <Board marks={marks} compact />
       </div>
-      <p style={{ fontSize: 13 }}>
+      <p style={{ fontSize: 'var(--fs-fine)' }}>
         Their ships only name themselves by acting. Using an ability flips that ship face up
         forever — but it never says where it is.
       </p>

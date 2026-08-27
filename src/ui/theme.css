@@ -60,9 +60,32 @@
   --t-med: 260ms;
   --t-slow: 520ms;
 
+  /* ---------------------------------------------------------------------
+   * Type. Two families and one scale — see docs/TYPOGRAPHY.md.
+   *
+   * Baloo 2 carries display, headings and every numeral. Nunito carries body
+   * and UI. JetBrains Mono is not a third voice: it is a utility reserved for
+   * strings a player may need to compare character by character — wallet
+   * addresses, commitment hashes, transaction signatures, board coordinates.
+   * `src/ui/typography.test.ts` fails the build if it appears anywhere else,
+   * or if a component invents a font size outside this scale.
+   * ------------------------------------------------------------------- */
   --display: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', system-ui, sans-serif;
   --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* The eight steps. Every text element in the game maps to one of these. */
+  --fs-display: 88px; /* the wordmark, and nothing else */
+  --fs-hero: 64px; /* one per screen: the clock, the verdict, the slam */
+  --fs-title: 48px; /* screen titles */
+  --fs-head: 32px; /* panel headings and stat values */
+  --fs-sub: 24px; /* card names, primary buttons */
+  --fs-lead: 18px; /* the sentence that matters on a screen */
+  --fs-body: 15px; /* default running text and UI */
+  --fs-fine: 13px; /* labels, pips, fine print, coordinates */
+
+  /* Roughly 65 characters. Longer than this and a block reads as a wall. */
+  --measure: 65ch;
 
   /* The glossy top-light that carries most of the arcade feel. */
   --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 32%, rgba(255, 255, 255, 0) 60%);
@@ -84,7 +107,7 @@ body {
   background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-deep) 100%);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 16px;
+  font-size: var(--fs-body);
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -162,18 +185,18 @@ h3,
 }
 
 h1 {
-  font-size: clamp(34px, 3.6vw, 56px);
+  font-size: var(--fs-title);
   font-weight: 800;
   letter-spacing: 0.01em;
 }
 
 h2 {
-  font-size: clamp(22px, 2vw, 32px);
+  font-size: var(--fs-head);
   font-weight: 700;
 }
 
 h3 {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--ink-dim);
   text-transform: uppercase;
@@ -184,8 +207,28 @@ p {
   margin: 0;
   color: var(--ink-dim);
   line-height: 1.55;
-  font-size: 15px;
+  font-size: var(--fs-body);
+  /* Structural, not decorative: a paragraph wider than this is a wall, and
+     every explanatory block in the game is narrower than its container. */
+  max-width: var(--measure);
 }
+
+/* The one paragraph shape that legitimately fills its box: a single short
+   line used as a label rather than as prose. */
+p.full {
+  max-width: none;
+}
+
+/* The size steps, as classes, for the places inline style would otherwise
+   invent a number. */
+.fs-display { font-size: var(--fs-display); }
+.fs-hero { font-size: var(--fs-hero); }
+.fs-title { font-size: var(--fs-title); }
+.fs-head { font-size: var(--fs-head); }
+.fs-sub { font-size: var(--fs-sub); }
+.fs-lead { font-size: var(--fs-lead); }
+.fs-body { font-size: var(--fs-body); }
+.fs-fine { font-size: var(--fs-fine); }
 
 /* Big outlined display numbers — readable from across a room. */
 .big-num {
@@ -205,6 +248,22 @@ p {
   color: var(--gold);
 }
 
+/*
+ * Numbers that stack in a column or update in place. Display family, fixed
+ * advance width, so a rating going 1200 → 1188 does not shove the row about.
+ * This replaces every former use of `.mono` on a number.
+ */
+.num {
+  font-family: var(--display);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/*
+ * Strings a player compares character by character: wallet addresses,
+ * commitment hashes, transaction signatures, board coordinates. Nothing else.
+ */
 .mono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -236,7 +295,7 @@ p {
   border: 2px solid var(--panel-trim);
   font-family: var(--display);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-fine);
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(18, 58, 94, 0.18);
 }
@@ -271,7 +330,7 @@ button {
   border: 3px solid rgba(255, 255, 255, 0.85);
   font-family: var(--display);
   font-weight: 700;
-  font-size: 17px;
+  font-size: var(--fs-lead);
   color: var(--ink);
   box-shadow: var(--shadow-pop), var(--shadow-soft);
   transition:
@@ -338,7 +397,7 @@ button {
 
 .btn.huge {
   padding: 20px 44px;
-  font-size: 24px;
+  font-size: var(--fs-sub);
   border-radius: var(--r-lg);
 }
 
@@ -349,7 +408,7 @@ button {
 
 .btn.small {
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: var(--fs-fine);
   border-width: 2px;
 }
 
@@ -413,10 +472,9 @@ button {
 
 .cell-label {
   color: rgba(255, 255, 255, 0.75);
-  font-size: 13px;
+  font-size: var(--fs-fine);
+  font-family: var(--mono);
 }
-
-.board.compact .cell-label { font-size: 10px; }
 
 .cell:hover {
   border-color: rgba(255, 255, 255, 0.85);
@@ -479,8 +537,8 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.gem.small { width: 30px; height: 30px; font-size: 14px; border-width: 2px; }
-.gem.big { width: 60px; height: 60px; font-size: 30px; }
+.gem.small { width: 30px; height: 30px; font-size: var(--fs-fine); border-width: 2px; }
+.gem.big { width: 60px; height: 60px; font-size: var(--fs-head); }
 
 .charges {
   font-family: var(--display);
@@ -696,7 +754,8 @@ button {
 /* Round transition wipe. */
 @keyframes wipe {
   0% { transform: translateY(-100%); }
-  55% { transform: translateY(0); }
+  40% { transform: translateY(0); }
+  62% { transform: translateY(0); }
   100% { transform: translateY(100%); }
 }
 
@@ -712,7 +771,7 @@ button {
   );
   pointer-events: none;
   z-index: 15;
-  animation: wipe 520ms ease-in-out both;
+  animation: wipe 720ms ease-in-out both;
 }
 
 /* Screen-to-screen transition: each screen scales and fades in. */
@@ -743,23 +802,102 @@ button {
 .thinking > i:nth-child(2) { animation-delay: 0.18s; }
 .thinking > i:nth-child(3) { animation-delay: 0.36s; }
 
-/* Timer bar. */
-.timer-bar {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(18, 58, 94, 0.2);
+/*
+ * The commit button, draining.
+ *
+ * Build 6 removed the separate timer bar that sat above this button: the
+ * clock in the top bar owns time, and a second countdown eighteen inches away
+ * from the first was the clearest duplicate on the screen. The pressure that
+ * bar carried now lives in the button itself — one element, two jobs — as a
+ * scrim eating the green from the left as the window runs out.
+ */
+.commit-drain {
+  position: relative;
   overflow: hidden;
 }
 
-.timer-bar > i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #ffd968, var(--gold));
-  transition: width 250ms linear;
+.commit-drain > .drain {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(18, 58, 94, 0.34);
+  transition: width 950ms linear;
+  pointer-events: none;
+  border-right: 2px solid rgba(255, 255, 255, 0.45);
 }
 
-.timer-bar.warn > i {
-  background: linear-gradient(90deg, #ff7d8a, var(--danger));
+.commit-drain > .drain.warn {
+  background: rgba(255, 77, 94, 0.5);
+}
+
+/*
+ * The one control a card carries, and only while the pointer is on it. It is
+ * absolutely positioned so the hand does not reflow as the pointer crosses
+ * it — a row of buttons that appears and disappears would shove the cards
+ * around under the cursor mid-click.
+ */
+.card-action {
+  position: absolute;
+  /* Above the card, not below it: the hand sits on the bottom edge of the
+     viewport, and anything below a card there is off the screen. */
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  animation: pop 120ms ease-out both;
+}
+
+.card-action .cant {
+  display: block;
+  width: 190px;
+  padding: 7px 12px;
+  border-radius: var(--r-md);
+  background: rgba(18, 58, 94, 0.94);
+  color: #ffffff;
+  font-size: var(--fs-fine);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: var(--shadow-deep);
+}
+
+/*
+ * The idle prompt. It had a panel behind it until Build 6 and was one of the
+ * heaviest objects on the screen for one sentence of text.
+ */
+.prompt-line {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: var(--fs-body);
+  text-shadow: 0 2px 4px rgba(18, 58, 94, 0.55);
+  padding: 2px 2px 0;
+}
+
+/* The round number lands as part of the wipe rather than as its own beat. */
+@keyframes round-stamp {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+
+.round-stamp {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  z-index: 16;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-title);
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  animation: round-stamp 720ms ease-out both;
 }
 
 /* Tooltips — desktop has hover, so the full rule text lives here. */
@@ -775,7 +913,7 @@ button {
   border-radius: var(--r-md);
   background: rgba(18, 58, 94, 0.95);
   color: #ffffff;
-  font-size: 13px;
+  font-size: var(--fs-fine);
   font-family: var(--body);
   font-weight: 600;
   line-height: 1.4;
@@ -884,4 +1022,415 @@ button.draft-pick:hover,
   .timer-hot {
     animation: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * The feedback layer (Build 6).
+ *
+ * Everything here is transient by construction. Tier 1 floaters live 600ms,
+ * Tier 2 lines a little over two seconds, and only Tier 3 waits for a click —
+ * once, ever, per mechanic. Nothing in this block occupies screen while it has
+ * nothing to say, which is the whole contract with the restraint pass.
+ * ------------------------------------------------------------------------- */
+
+.feedback-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  18% { opacity: 1; transform: translate(-50%, -60%) scale(1.08); }
+  34% { opacity: 1; transform: translate(-50%, -70%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -128%) scale(0.94); }
+}
+
+.floater {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-lead);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation-name: float-up;
+  animation-timing-function: cubic-bezier(0.2, 1, 0.4, 1);
+  animation-fill-mode: both;
+  text-shadow:
+    -2px -2px 0 rgba(255, 255, 255, 0.9),
+    2px -2px 0 rgba(255, 255, 255, 0.9),
+    -2px 2px 0 rgba(255, 255, 255, 0.9),
+    2px 2px 0 rgba(255, 255, 255, 0.9),
+    0 4px 10px rgba(18, 58, 94, 0.4);
+}
+
+.floater-hit { color: var(--hit); }
+.floater-miss { color: var(--water-deep); }
+.floater-sunk { color: var(--hit); font-size: var(--fs-sub); }
+.floater-gain { color: var(--gold-deep); }
+.floater-loss { color: var(--danger); }
+.floater-blocked { color: var(--control); }
+
+/* Tier 2 — one line, fixed, never more than two deep. */
+.named-stack {
+  position: fixed;
+  /* Below the opponent strip, over the water. Higher than this and a line
+     covers their fleet, which is exactly what a player looks at when they
+     are told a reaction just went off. */
+  top: 174px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+@keyframes named-in {
+  from { opacity: 0; transform: translateY(-10px); }
+}
+
+.named-line {
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(18, 58, 94, 0.92);
+  color: #ffffff;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-lead);
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-deep);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  animation: named-in var(--t-med) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  white-space: nowrap;
+}
+
+/* Tier 3 — the only thing in the layer that waits for the player. */
+.explainer {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+  border-left: 6px solid var(--gold);
+}
+
+.explainer-kicker {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-fine);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold-deep);
+}
+
+.explainer-title {
+  font-size: var(--fs-sub);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.explainer-rule {
+  font-size: var(--fs-fine);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.explainer-sowhat {
+  font-size: var(--fs-fine);
+  color: var(--ink-dim);
+}
+
+/* A disabled control inside a reason wrapper still has to receive hover, and
+   a disabled button never does — so the wrapper takes the pointer. */
+.whynot {
+  display: inline-flex;
+}
+
+.whynot > :first-child {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floater {
+    animation-name: fade;
+    animation-duration: 500ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase beats (Build 6).
+ *
+ * ~1.5s each, skippable with a click, and off entirely from Settings. They
+ * are what let the draft and deploy screens drop their permanent headers:
+ * the game names a phase once, loudly, instead of forever, quietly.
+ * ------------------------------------------------------------------------- */
+
+.beat-screen {
+  cursor: pointer;
+  background: rgba(18, 58, 94, 0.62);
+}
+
+.beat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 34px 56px;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  border: 3px solid var(--panel-trim);
+  box-shadow: var(--shadow-deep);
+  animation: pop var(--t-med) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  max-width: min(1000px, 92vw);
+}
+
+.beat-card.wide {
+  padding: 30px 44px;
+}
+
+.beat-title {
+  font-size: var(--fs-title);
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.beat-kicker {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-fine);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--gold-deep);
+}
+
+.beat-line {
+  font-size: var(--fs-lead);
+  font-weight: 700;
+  color: var(--ink-dim);
+  max-width: var(--measure);
+}
+
+.beat-vs {
+  gap: 22px;
+  align-items: baseline;
+}
+
+.beat-name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-head);
+  color: var(--ink);
+}
+
+.beat-versus {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--fs-lead);
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.beat-skip {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--fs-fine);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.08em;
+}
+
+.fleet-slot {
+  align-items: center;
+  animation: pop 320ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/* The two commitments, sealing. */
+.seal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 20px;
+  border-radius: var(--r-md);
+  background: var(--panel-dim);
+  border: 3px dashed var(--ink-faint);
+  transition:
+    border-color var(--t-med),
+    background var(--t-med),
+    transform var(--t-med);
+}
+
+.seal.shut {
+  border-style: solid;
+  border-color: var(--confirm);
+  background: rgba(46, 213, 115, 0.14);
+  transform: scale(1.03);
+}
+
+.seal-who {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: var(--fs-fine);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+
+.seal-hash {
+  font-size: var(--fs-fine);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * The draft sequence (Build 6).
+ *
+ * Five beats that read as a decision rather than a jump cut: deal in, your
+ * pick lifts and holds, their card back slides in beside it, resolve, pack
+ * counter advances. About two seconds, skippable with a click, and reduced to
+ * a cross-fade under prefers-reduced-motion.
+ * ------------------------------------------------------------------------- */
+
+@keyframes deal-in {
+  0% { opacity: 0; transform: translateY(-90px) rotate(-7deg) scale(0.9); }
+  70% { opacity: 1; transform: translateY(8px) rotate(0.6deg) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+.draft-pick.dealt {
+  animation: deal-in 460ms cubic-bezier(0.2, 1.25, 0.4, 1) both;
+}
+
+/* The confirmation beat: the one you took lifts and holds. */
+.draft-pick.chosen {
+  transform: translateY(-22px) scale(1.05);
+  box-shadow: 0 0 0 5px rgba(255, 197, 49, 0.5), var(--shadow-deep);
+  border-radius: var(--r-lg);
+  transition:
+    transform var(--t-med) cubic-bezier(0.2, 1.3, 0.4, 1),
+    box-shadow var(--t-med),
+    opacity var(--t-med);
+  z-index: 3;
+}
+
+.draft-pick.receded {
+  transform: translateY(10px) scale(0.93);
+  opacity: 0.32;
+  filter: saturate(0.5);
+  transition:
+    transform var(--t-med),
+    opacity var(--t-med),
+    filter var(--t-med);
+}
+
+/* Their pick: face down, beside yours, for a moment that used to not exist. */
+@keyframes slide-beside {
+  from { opacity: 0; transform: translateX(70px) rotate(6deg); }
+}
+
+.their-pick {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  animation: slide-beside 300ms cubic-bezier(0.2, 1.1, 0.4, 1) both;
+  transition:
+    opacity var(--t-med),
+    transform var(--t-med);
+}
+
+.their-back {
+  position: relative;
+  width: 190px;
+  aspect-ratio: 2 / 3;
+  border-radius: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+/* No collision: it flips away, and nothing is announced. */
+.their-pick.away {
+  opacity: 0;
+  transform: rotateY(80deg) translateX(40px);
+}
+
+/* Collision: both faces turn up together, into the slam. */
+.their-pick.flipped {
+  animation: reveal-flip 380ms ease-out both;
+}
+
+.pack-pip {
+  width: 34px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  transition: background var(--t-med);
+}
+
+.pack-pip.done { background: var(--gold); }
+.pack-pip.now { background: rgba(255, 255, 255, 0.95); }
+
+/* The mechanism, permanently: a line, not a panel. */
+.draft-rule {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 700;
+  text-align: center;
+  max-width: var(--measure);
+  text-shadow: 0 2px 4px rgba(18, 58, 94, 0.45);
+}
+
+.draft-taken-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 800;
+  font-size: var(--fs-fine);
+}
+
+.draft-taken-none {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 700;
+  font-size: var(--fs-fine);
+}
+
+/* The first-run coach. Pack one, once, then never again. */
+.draft-coach {
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: rgba(18, 58, 94, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  box-shadow: var(--shadow-deep);
+  max-width: var(--measure);
+  text-align: center;
+}
+
+.draft-coach strong {
+  color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft-pick.dealt,
+  .their-pick,
+  .their-pick.flipped {
+    animation: fade 140ms ease both !important;
+  }
+}
+
+/*
+ * The hand card's rule tooltip clears the one control that now sits above the
+ * card. This rule lives at the end of the file deliberately: `.has-tip .tip`
+ * has the same specificity, so the later of the two wins, and the tooltip
+ * was landing exactly on top of the Fire button.
+ */
+.hand-slot .tip {
+  bottom: calc(100% + 58px);
 }

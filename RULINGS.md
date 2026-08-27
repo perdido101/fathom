@@ -352,3 +352,99 @@ cards fire at two, but nearly a quarter wait for four or more.
 - **Blackout, Leech and Pin are barely used against the Deckhand (L1)** —
   their triggers require the opponent to have banked charges or to be worth
   denying, and a random bot never gets there.
+
+---
+
+# Build 6
+
+## Ember, measured at the sample size that settles it
+
+Build 6 Part 0 said: *"Ember at 59.4% — do not nerf yet. Measured on n=749;
+the confidence interval at that sample size comfortably straddles the 58 line.
+Re-measure at n ≥ 2000 and report. If it holds above 58 at that sample size,
+propose a change and I'll rule."*
+
+Re-measured at three sample sizes, all on the unbiased pairing (L4 vs L4,
+random drafts — the one that prices ships rather than the bot's draft policy):
+
+| Matches run | Times Ember was drafted | Ember win rate |
+|---|---|---|
+| 2 400 | n = 749 (Build 5's figure) | 59.4% |
+| 2 400 | n = 897 | 59.5% |
+| 6 000 | **n = 2 234** | **59.5%** |
+
+**It holds.** The point estimate has not moved by more than 0.1pp while the
+sample tripled. At n = 2 234 the 95% interval is **[57.5%, 61.5%]**, which
+still clips the 58 line — a strict two-sided test against 58 gives p ≈ 0.15,
+so it is not *individually* significant. The evidence is the stability, not
+the interval: three measurements, one number.
+
+Every other ship in that pairing is inside the band. Pin sits at the floor
+(42.8%) and Ember alone is outside the ceiling.
+
+| Ship | Rate | | Ship | Rate |
+|---|---|---|---|---|
+| **Ember** | **59.5%** | | Dreadnought | 47.7% |
+| Kiln | 54.4% | | Leech | 45.7% |
+| Beacon | 54.3% | | Blackout | 45.5% |
+| Forge | 54.0% | | Cinder | 45.4% |
+| Thorn | 53.0% | | Spite | 44.8% |
+| Warhead | 52.8% | | Pin | 42.8% |
+
+## The proposal — one value, measured before proposing it
+
+Rather than guess, both candidate levers were measured on the **same seeds**
+through new measurement-only flags (`--ember-gain`, `--ember-cells`), which
+follow the `--mirror-min` precedent: they announce themselves loudly and never
+touch `balance.ts`.
+
+| Change | Ember | Verdict |
+|---|---|---|
+| shipped | 59.5% | out of band |
+| `emberGainPerHit: 2 → 1` | **59.4%** | **no effect at all** |
+| `emberCells: 3 → 2` | **51.9%** | **every ship in band, spread 44.9–55.2%** |
+
+The first result is the finding worth having: **Ember's charge payback is not
+what makes it strong.** Halving it moves the win rate by 0.1pp — inside the
+noise. The strength is the three free cells, which are damage that costs
+neither a card nor a charge, on the cheapest hull in the game.
+
+**Proposed: `emberCells: 3 → 2`. One value, nothing else.**
+
+Measured landing: Ember 51.9% at n = 2 234, and every one of the twelve ships
+inside 42–58 (spread 44.9%–55.2%). Not applied — awaiting your ruling, per
+Part 0. Ember's card text would need one word changed to match: *"Fire 2 cells
+anywhere"*, and `docs/FEEDBACK.md` regenerates itself from that definition.
+
+The remaining three band failures are the same pre-existing bot artifacts
+documented under Build 5 — L3-vs-L3 median 9 rounds, the Mate never firing
+Ambush, denial ships unused in the L4-vs-L1 stomp. Unchanged, and none of them
+is a game-balance finding.
+
+## Build 6 rulings taken here rather than raised
+
+**The Tier-3 budget can suppress a first-time explanation, and does not burn
+it.** The brief sets one Tier-2 line and one Tier-3 card on screen at once,
+and says a crowded-out mechanic should let the resolve overlay carry it. The
+ambiguity: does that mechanic count as explained? Ruled **no** — a card that
+was never shown leaves the mechanic first-time, so it gets its explanation the
+next time it happens. The alternative silently spends a player's one
+explanation on a card they never saw.
+
+**Ability activations are announced at the top of the round, not at their
+resolve step.** Claims resolve at step 2, before predictions and attacks, but
+the view diff that reveals them is only available once the round has resolved.
+Rather than invent a step offset, both sides' activations fire at offset 0 of
+the feedback sequence — the same instant the reveal beat plays. The resolve
+overlay remains the authoritative account of ordering.
+
+**A sink floater on the opponent's water rides your own hits, not their
+hull.** A sink announces a length and never a position, so `SUNK · 4` cannot
+be placed on their ship's cells without leaking exactly what the rules
+withhold. It is anchored to the cells *you* hit this round — the most the
+rules allow to be drawn on their water.
+
+**A lapsed draft pick still plays its five beats.** The pick reaches the
+engine on the click rather than at the end of the animation, so the theatre
+can never delay the opponent; if the phase advances underneath, the sequence
+is cut short by the screen unmounting and its timers are cleared.

@@ -9,9 +9,11 @@ import { Result } from './ui/screens/Result';
 import { BracketScreen } from './ui/screens/Bracket';
 import { NetBanners, NetResult } from './ui/screens/NetStatus';
 import { ResolveOverlay } from './ui/screens/ResolveOverlay';
+import { PhaseBeats } from './ui/screens/Beats';
 import { Credits } from './ui/screens/Credits';
 import { ErrorBoundary, Failed, Loading } from './ui/components/ErrorBoundary';
 import { WalletChip, Wordmark } from './ui/components/WalletChip';
+import { FeedbackLayer } from './ui/feedback/Feedback';
 
 /**
  * The 16:9 shell.
@@ -50,13 +52,13 @@ export function App(): ReactElement {
     <div className="app">
       {/* The desktop gate. Logo, one line, nothing else. */}
       <div className="desktop-gate">
-        <Wordmark size={72} />
+        <Wordmark hero />
         <p
           style={{
             color: '#ffffff',
             fontFamily: 'var(--display)',
             fontWeight: 700,
-            fontSize: 18,
+            fontSize: 'var(--fs-lead)',
             textShadow: '0 2px 0 rgba(18,58,94,0.3)',
           }}
         >
@@ -101,8 +103,13 @@ export function App(): ReactElement {
           )}
         </ErrorBoundary>
         <ResolveOverlay />
+        <PhaseBeats />
         <NetBanners />
       </div>
+
+      {/* Above everything, including the resolve overlay: a floater has to be
+          able to rise off the cell the overlay is narrating. */}
+      <FeedbackLayer />
     </div>
   );
 }

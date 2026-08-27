@@ -15,12 +15,13 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactElement } fr
  */
 export function ChargeNumber({
   value,
-  size = 26,
+  size = 'var(--fs-head)',
   style,
   animate = true,
 }: {
   value: number;
-  size?: number;
+  /** A CSS length — always a scale token, never a bare number. */
+  size?: string;
   style?: CSSProperties;
   animate?: boolean;
 }): ReactElement {

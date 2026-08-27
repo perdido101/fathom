@@ -58,10 +58,10 @@ export class ErrorBoundary extends Component<Props, State> {
           will rejoin where you were — the grace period covers it.
         </p>
         <div className="panel col" style={{ gap: 6 }}>
-          <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>where</span>
-          <strong style={{ fontSize: 13 }}>{this.props.where}</strong>
-          <span style={{ fontSize: 12, color: 'var(--ink-dim)' }}>error</span>
-          <span className="mono" style={{ color: 'var(--danger)' }}>
+          <span style={{ fontSize: 'var(--fs-fine)', color: 'var(--ink-dim)' }}>where</span>
+          <strong style={{ fontSize: 'var(--fs-fine)' }}>{this.props.where}</strong>
+          <span style={{ fontSize: 'var(--fs-fine)', color: 'var(--ink-dim)' }}>error</span>
+          <span style={{ color: 'var(--danger)', fontWeight: 700, wordBreak: 'break-word' }}>
             {error.message}
           </span>
         </div>
@@ -81,7 +81,7 @@ export class ErrorBoundary extends Component<Props, State> {
 export function Loading({ what }: { what: string }): ReactElement {
   return (
     <div className="screen" style={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <span className="thinking" style={{ fontSize: 20 }}>
+      <span className="thinking" style={{ fontSize: 'var(--fs-lead)' }}>
         <i />
         <i />
         <i />
@@ -108,7 +108,7 @@ export function Failed({
       <h2 style={{ color: 'var(--danger)' }}>{what}</h2>
       {detail && (
         <div className="panel">
-          <span className="mono" style={{ color: 'var(--danger)' }}>
+          <span style={{ color: 'var(--danger)', fontWeight: 700, wordBreak: 'break-word' }}>
             {detail}
           </span>
         </div>

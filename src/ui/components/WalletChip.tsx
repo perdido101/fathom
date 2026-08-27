@@ -78,7 +78,7 @@ export function WalletChip(): ReactElement {
           Connect wallet
         </button>
       )}
-      <span className="pill" style={{ fontSize: 11, opacity: 0.85 }}>
+      <span className="pill" style={{ fontSize: 'var(--fs-fine)', opacity: 0.85 }}>
         devnet
       </span>
       {err && (
@@ -90,11 +90,20 @@ export function WalletChip(): ReactElement {
   );
 }
 
-/** The logo lockup, restyled for the sky. */
-export function Wordmark({ size = 52 }: { size?: number }): ReactElement {
+/**
+ * The logo lockup, restyled for the sky.
+ *
+ * The one place in the game where a size is not read off the type scale is
+ * the mark itself: a logotype is a drawing, and its circle has to track the
+ * cap height of the word beside it or the lockup comes apart. So the type
+ * takes its two sizes from the scale and the *drawing* is derived from them,
+ * which is the dependency the right way round. Noted in docs/TYPOGRAPHY.md.
+ */
+export function Wordmark({ hero = false }: { hero?: boolean }): ReactElement {
+  const glyph = hero ? 104 : 44;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden>
+      <svg viewBox="0 0 100 100" width={glyph} height={glyph} aria-hidden>
         <circle cx="50" cy="50" r="48" fill="rgba(255,255,255,0.25)" />
         <path d="M12 60 L50 24 L88 60 L73 60 L50 40 L27 60 Z" fill="#ffffff" opacity="0.9" />
         <path d="M12 78 L50 42 L88 78 L73 78 L50 58 L27 78 Z" fill="var(--gold)" />
@@ -103,7 +112,7 @@ export function Wordmark({ size = 52 }: { size?: number }): ReactElement {
         <div
           className="display"
           style={{
-            fontSize: size * 0.55,
+            fontSize: hero ? 'var(--fs-display)' : 'var(--fs-head)',
             fontWeight: 800,
             color: '#ffffff',
             textShadow: '0 3px 0 rgba(18,58,94,0.35)',
@@ -115,7 +124,7 @@ export function Wordmark({ size = 52 }: { size?: number }): ReactElement {
         <div
           className="display"
           style={{
-            fontSize: size * 0.37,
+            fontSize: hero ? 'var(--fs-head)' : 'var(--fs-fine)',
             fontWeight: 700,
             letterSpacing: '0.32em',
             color: 'var(--gold)',

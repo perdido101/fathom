@@ -5,9 +5,10 @@ import { CARDS, canFireAt } from '../../engine/cards';
 import { SHIPS } from '../../engine/ships';
 import { useStore } from '../../state/store';
 import { Board } from '../components/Board';
-import { ChargeNumber } from '../components/ChargeNumber';
 import { GameCard, CardBack, ShipCard } from '../components/GameCard';
 import { Sound } from '../sfx/SoundManager';
+import { WhyNot } from '../feedback/Feedback';
+import { whyCannotCommit, whyCannotFire } from '../feedback/reasons';
 import {
   bumpAllocation,
   isComplete,
@@ -24,13 +25,17 @@ import {
  * The battle screen at 16:9.
  *
  * Their water is the biggest single thing on screen, centre-left. Your water
- * sits lower-right, smaller, showing what has come in. Your hand is three
- * real cards fanned at the bottom centre; the commit button is huge, green,
- * and bottom-right, because it is the one control that ends a round. The
- * stake rides the top bar in gold the whole match.
+ * sits lower-right, smaller, showing what has come in. Your hand is three real
+ * cards fanned at the bottom centre; the commit button is huge, green, and
+ * bottom-right, because it is the one control that ends a round.
  *
- * Desktop means hover exists: moving over their water previews exactly the
- * cells the current declaration would strike before anything locks in.
+ * Build 6 took things away rather than adding them. The duplicate hull
+ * readout, the second timer, the opponent's card count, the panel under the
+ * prompt and four of the six hand buttons are all gone — every one of them
+ * said something the screen already said elsewhere. What is left says each
+ * fact once: the clock owns time and is now the largest thing on screen, the
+ * pips own hull, the gems own charges, and a card carries its own control
+ * only while the pointer is on it.
  */
 export function Battle(): ReactElement | null {
   const view = useStore((s) => s.view());
@@ -48,6 +53,7 @@ export function Battle(): ReactElement | null {
   const [ability, setAbility] = useState<{ defId: string; spec: FireSpec } | null>(null);
   const [firingUid, setFiringUid] = useState<number | null>(null);
   const [hoverCell, setHoverCell] = useState<CellIndex | null>(null);
+  const [hoverCard, setHoverCard] = useState<number | null>(null);
   const [wipe, setWipe] = useState(false);
 
   const round = view?.round ?? 0;
@@ -56,7 +62,7 @@ export function Battle(): ReactElement | null {
     if (round === lastRound.current) return undefined;
     lastRound.current = round;
     setWipe(true);
-    const id = setTimeout(() => setWipe(false), 520);
+    const id = setTimeout(() => setWipe(false), 720);
     return () => clearTimeout(id);
   }, [round]);
 
@@ -118,6 +124,7 @@ export function Battle(): ReactElement | null {
     setFire(null);
     setAbility(null);
     setHoverCell(null);
+    setHoverCard(null);
   }
 
   function onEnemyCell(cell: CellIndex): void {
@@ -193,20 +200,38 @@ export function Battle(): ReactElement | null {
       ability,
       basic,
     };
-    submitPlan(plan);
+    // Everything this plan aimed at. The feedback layer needs it to put
+    // BLOCKED on the cells a Mirror eats, because a cancelled attack fires no
+    // shots and so leaves no trace at all in the event stream.
+    const aim = [...committedAim, ...(basic === null ? [] : [basic])];
+    submitPlan(plan, aim);
     reset();
   }
 
-  function onOwnCardTap(uid: number): void {
-    if (!draft) return;
-    const shape = shapeOf(draft, innerDefId);
-    if (shape === 'steal') {
-      setDraft({ ...draft, toUid: uid });
+  /**
+   * A click on one of your own cards.
+   *
+   * Charging is the default action, because it is the action a player takes
+   * every single round without exception. The two aiming modes that need a
+   * card as their *target* — Siphon's destination, Kiln's payload — take
+   * precedence while they are aiming, and only while they are aiming.
+   */
+  function onOwnCardTap(uid: number, charges: number): void {
+    if (draft) {
+      const shape = shapeOf(draft, innerDefId);
+      if (shape === 'steal') {
+        setDraft({ ...draft, toUid: uid });
+        return;
+      }
+      if (draft.aiming.kind === 'ability' && SHIPS[draft.aiming.defId].shape === 'kiln') {
+        setDraft({ ...draft, innerUid: uid, cells: [], dir: null });
+      }
       return;
     }
-    if (draft.aiming.kind === 'ability' && SHIPS[draft.aiming.defId].shape === 'kiln') {
-      setDraft({ ...draft, innerUid: uid, cells: [], dir: null });
-    }
+    if (blocked.noCharge) return;
+    setChargeTo(uid);
+    // The click's pitch rises with the count the card will hold.
+    Sound.play('charge-placed', { rate: 1 + 0.09 * Math.min(charges + 1, 8) });
   }
 
   function onEnemyCardTap(uid: number): void {
@@ -221,8 +246,13 @@ export function Battle(): ReactElement | null {
 
   const chargeReady = blocked.noCharge || chargeTo !== null || me.hand.length === 0;
   const ready = chargeReady && !draft;
+  const commitReason = whyCannotCommit(
+    chargeTo !== null,
+    blocked,
+    draft !== null,
+    me.hand.length === 0,
+  );
   const warn = clock <= 5;
-  const foeBank = foe.hand.reduce((n, c) => n + c.charges, 0);
 
   const collidedCards = new Set(
     view.cardDraft.collisions
@@ -237,7 +267,7 @@ export function Battle(): ReactElement | null {
         flex: 1,
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) clamp(360px, 26vw, 470px)',
-        gridTemplateRows: '64px 86px minmax(0, 1fr) clamp(240px, 27vh, 300px)',
+        gridTemplateRows: '76px 86px minmax(0, 1fr) clamp(240px, 27vh, 300px)',
         gridTemplateAreas: `
           "top top"
           "foestrip foestrip"
@@ -250,7 +280,7 @@ export function Battle(): ReactElement | null {
         position: 'relative',
       }}
     >
-      {/* --- top bar: round, hull pips, the big timer, the stake ----------- */}
+      {/* --- top bar: round, hull pips, the clock, the stake --------------- */}
       <div
         className="panel tight"
         style={{
@@ -262,20 +292,23 @@ export function Battle(): ReactElement | null {
         }}
       >
         <span className="pill">
-          Round {view.round}/{view.roundCap}
+          Round&nbsp;<span className="num">{view.round}</span>
+          <span style={{ color: 'var(--ink-faint)' }}>/{view.roundCap}</span>
         </span>
         <HullPips label="You" value={me.hullRemaining} colour="var(--confirm)" />
         <div className="spacer" />
+        {/* The screen's one level-1 element. Every decision a player makes
+            here is a decision about how to spend this number. */}
         <span
           className={`big-num ${warn ? 'timer-hot' : ''}`}
-          style={{ fontSize: 40, color: warn ? 'var(--danger)' : undefined }}
+          style={{ fontSize: 'var(--fs-hero)', color: warn ? 'var(--danger)' : undefined }}
         >
           {playingBack ? '—' : `${clock}`}
         </span>
         <div className="spacer" />
         <HullPips label={foe.name} value={foe.hullRemaining} colour="var(--danger)" />
         {mode === 'arena' || mode === 'tournament' ? (
-          <span className="pill gold" style={{ fontSize: 16 }}>
+          <span className="pill gold">
             ◎ {(stake * (mode === 'tournament' ? 8 : 2)).toFixed(2)} pot
           </span>
         ) : (
@@ -288,7 +321,9 @@ export function Battle(): ReactElement | null {
         className="panel tight"
         style={{ gridArea: 'foestrip', display: 'flex', alignItems: 'center', gap: 14 }}
       >
-        <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 15 }}>
+        <span
+          style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'var(--fs-body)' }}
+        >
           {foe.name}
           {!foe.connected && ' · away'}
         </span>
@@ -307,10 +342,9 @@ export function Battle(): ReactElement | null {
           ))}
         </div>
         <div className="spacer" />
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
-          {foe.cardCount} cards · bank{' '}
-          <ChargeNumber value={foeBank} size={18} style={{ color: 'var(--gold-deep)' }} />
-        </span>
+        {/* Their card count and charge bank were printed here until Build 6.
+            Both are sums of things already on this row: you can count their
+            cards, and every gem is already showing its own number. */}
         <div className="row" style={{ gap: 10 }}>
           {foe.hand.map((c) => {
             const known = c.defId !== null && collidedCards.has(c.defId);
@@ -319,6 +353,7 @@ export function Battle(): ReactElement | null {
               <button
                 key={c.uid}
                 onClick={() => onEnemyCardTap(c.uid)}
+                data-anchor={`card:foe:${c.uid}`}
                 aria-label={known && c.defId ? CARDS[c.defId].name : 'face-down enemy card'}
                 style={{
                   position: 'relative',
@@ -341,9 +376,10 @@ export function Battle(): ReactElement | null {
                       background: 'var(--panel)',
                       display: 'grid',
                       placeItems: 'center',
-                      fontSize: 8,
+                      fontSize: 'var(--fs-fine)',
                       fontWeight: 800,
                       fontFamily: 'var(--display)',
+                      lineHeight: 1.02,
                       color: 'var(--ink)',
                       padding: 2,
                       textAlign: 'center',
@@ -354,10 +390,7 @@ export function Battle(): ReactElement | null {
                 ) : (
                   <CardBack />
                 )}
-                <span
-                  className="gem small"
-                  style={{ position: 'absolute', right: -8, bottom: -8, fontSize: 13 }}
-                >
+                <span className="gem small num" style={{ position: 'absolute', right: -8, bottom: -8 }}>
                   {c.charges}
                 </span>
                 {taking > 0 && (
@@ -370,7 +403,7 @@ export function Battle(): ReactElement | null {
                       fontFamily: 'var(--display)',
                       fontWeight: 800,
                       color: 'var(--danger)',
-                      fontSize: 14,
+                      fontSize: 'var(--fs-fine)',
                     }}
                   >
                     −{taking}
@@ -394,6 +427,7 @@ export function Battle(): ReactElement | null {
       >
         <div style={{ width: 'min(100%, 56vh)', minWidth: 320 }}>
           <Board
+            side="foe"
             marks={me.marks}
             known={me.knownShipCells}
             aim={draft ? [...aimCells, ...hoverPreview] : committedAim}
@@ -406,17 +440,23 @@ export function Battle(): ReactElement | null {
       </div>
 
       {/* --- side column: prompt, your fleet, your water ------------------- */}
-      <div style={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-        <div className="panel tight" style={{ minHeight: 92 }}>
-          {draft ? (
+      <div
+        style={{ gridArea: 'side', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}
+      >
+        {draft ? (
+          /* Aiming is the one state here that earns a surface, because it
+             holds controls. The idle prompt below does not, and lost its. */
+          <div className="panel tight">
             <div className="col" style={{ gap: 8 }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
-                <strong style={{ fontFamily: 'var(--display)', fontSize: 16 }}>
+                <strong style={{ fontFamily: 'var(--display)', fontSize: 'var(--fs-body)' }}>
                   {draft.aiming.kind === 'card'
                     ? CARDS[draft.aiming.defId].name
                     : SHIPS[draft.aiming.defId].name}
                 </strong>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-dim)' }}>
+                <span
+                  style={{ fontSize: 'var(--fs-fine)', fontWeight: 700, color: 'var(--ink-dim)' }}
+                >
                   {prompt(draft, draftCharges, innerDefId)}
                 </span>
               </div>
@@ -462,7 +502,11 @@ export function Battle(): ReactElement | null {
                 </div>
               )}
               <div className="row">
-                <button className="btn small ghost" style={{ flex: 1 }} onClick={() => setDraft(null)}>
+                <button
+                  className="btn small ghost"
+                  style={{ flex: 1 }}
+                  onClick={() => setDraft(null)}
+                >
                   Cancel
                 </button>
                 <button
@@ -475,31 +519,31 @@ export function Battle(): ReactElement | null {
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="col" style={{ gap: 6 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-dim)' }}>
-                {blocked.noCharge && 'Blacked out — no charge this round. '}
-                {blocked.noFire && 'Locked — no card may be fired this round. '}
-                {basic === null
-                  ? 'Click their water to aim your free shot.'
-                  : `Free shot: ${label(basic)}.`}
-                {chargeTo === null && !blocked.noCharge ? ' Charge a card below.' : ''}
-              </span>
-              <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                {fire && (
-                  <button className="pill" onClick={() => setFire(null)}>
-                    Firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} ✕
-                  </button>
-                )}
-                {ability && (
-                  <button className="pill" onClick={() => setAbility(null)}>
-                    {SHIPS[ability.defId].name} ✕
-                  </button>
-                )}
-              </div>
+          </div>
+        ) : (
+          <div className="col prompt-line" style={{ gap: 6 }}>
+            <span>
+              {blocked.noCharge && 'Blacked out — no charge this round. '}
+              {blocked.noFire && 'Locked — no card may be fired this round. '}
+              {basic === null
+                ? 'Click their water to aim your free shot.'
+                : `Free shot: ${label(basic)}.`}
+              {chargeTo === null && !blocked.noCharge ? ' Click a card to charge it.' : ''}
+            </span>
+            <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {fire && (
+                <button className="pill" onClick={() => setFire(null)}>
+                  Firing {CARDS[me.hand.find((c) => c.uid === fire.uid)?.defId ?? '']?.name} ✕
+                </button>
+              )}
+              {ability && (
+                <button className="pill" onClick={() => setAbility(null)}>
+                  {SHIPS[ability.defId].name} ✕
+                </button>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           {me.ships.map((s) => {
@@ -520,20 +564,18 @@ export function Battle(): ReactElement | null {
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', minHeight: 0, flex: 1 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', minHeight: 0, flex: 1 }}>
+          {/* Your water carried a "hull 9/9" caption until Build 6. The pips
+              in the top bar are the same number, larger and always in view. */}
           <div style={{ width: 'min(100%, 30vh)', marginLeft: 'auto' }}>
             <Board
+              side="mine"
               marks={foe.marks}
               hulls={me.ships}
               compact
               flash={playingBack ? shots.theirs : []}
-              sinking={
-                playingBack ? me.ships.filter((sh) => sh.sunk).flatMap((sh) => sh.cells) : []
-              }
+              sinking={playingBack ? me.ships.filter((sh) => sh.sunk).flatMap((sh) => sh.cells) : []}
             />
-            <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, marginTop: 4 }}>
-              Your waters · hull {me.hullRemaining}/9
-            </p>
           </div>
         </div>
       </div>
@@ -546,12 +588,12 @@ export function Battle(): ReactElement | null {
           justifyContent: 'center',
           alignItems: 'flex-end',
           gap: 4,
-          paddingBottom: 6,
+          paddingBottom: 16,
         }}
       >
         {me.hand.map((c, i) => {
           const withCharge = c.charges + (chargeTo === c.uid ? 1 : 0);
-          const firable = !blocked.noFire && canFireAt(c.defId, withCharge);
+          const fireReason = whyCannotFire(c.defId, withCharge, blocked, fire !== null);
           const mid = (me.hand.length - 1) / 2;
           const angle = (i - mid) * 4;
           const lift = Math.abs(i - mid) * 10;
@@ -559,23 +601,26 @@ export function Battle(): ReactElement | null {
             <div
               key={c.uid}
               className="hand-slot"
+              onMouseEnter={() => setHoverCard(c.uid)}
+              onMouseLeave={() => setHoverCard((u) => (u === c.uid ? null : u))}
               style={{
+                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 8,
                 transform: `rotate(${angle}deg) translateY(${lift}px)`,
                 transition: 'transform var(--t-fast)',
-                zIndex: chargeTo === c.uid || fire?.uid === c.uid ? 2 : 1,
+                zIndex: chargeTo === c.uid || fire?.uid === c.uid || hoverCard === c.uid ? 3 : 1,
               }}
             >
               <GameCard
                 defId={c.defId}
                 charges={withCharge}
                 size="md"
+                anchor={`card:me:${c.uid}`}
                 selected={chargeTo === c.uid || fire?.uid === c.uid || draft?.innerUid === c.uid}
                 pulse={chargeTo === c.uid}
-                onClick={() => onOwnCardTap(c.uid)}
+                onClick={() => onOwnCardTap(c.uid, c.charges)}
                 className={`hand-card ${firingUid === c.uid ? 'card-firing' : ''}`}
                 style={{
                   transform: fire?.uid === c.uid ? 'translateY(-14px)' : undefined,
@@ -585,26 +630,24 @@ export function Battle(): ReactElement | null {
                       : undefined,
                 }}
               />
-              <div className="row" style={{ gap: 6 }}>
-                <button
-                  className="btn small"
-                  disabled={blocked.noCharge}
-                  onClick={() => {
-                    setChargeTo(c.uid);
-                    // The click's pitch rises with the count the card will hold.
-                    Sound.play('charge-placed', { rate: 1 + 0.09 * Math.min(withCharge, 8) });
-                  }}
-                >
-                  Charge
-                </button>
-                <button
-                  className="btn small gold"
-                  disabled={!firable || fire !== null}
-                  onClick={() => beginCard(c.uid, c.defId, c.charges)}
-                >
-                  Fire
-                </button>
-              </div>
+              {/* One control, on one card, only while the pointer is on it.
+                  Six buttons used to sit here permanently for three cards.
+                  When the card cannot fire, the same slot says why — which is
+                  the gap a disabled button left open for five builds. */}
+              {hoverCard === c.uid && (
+                <div className="card-action">
+                  {fireReason === null ? (
+                    <button
+                      className="btn small gold"
+                      onClick={() => beginCard(c.uid, c.defId, c.charges)}
+                    >
+                      Fire · {withCharge}
+                    </button>
+                  ) : (
+                    <span className="cant">{fireReason}</span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -618,27 +661,45 @@ export function Battle(): ReactElement | null {
           flexDirection: 'column',
           justifyContent: 'flex-end',
           alignItems: 'stretch',
-          gap: 10,
           paddingBottom: 6,
         }}
       >
-        <div className={`timer-bar ${warn ? 'warn' : ''}`}>
-          <i style={{ width: `${Math.max(0, (clock / roundSeconds) * 100)}%` }} />
-        </div>
-        <button className="btn go huge" disabled={!ready} onClick={commit}>
-          {playingBack ? (
-            <span className="thinking">
-              THEY ARE PLANNING <i />
-              <i />
-              <i />
+        <WhyNot reason={ready || playingBack ? null : commitReason}>
+          <button
+            className="btn go huge commit-drain"
+            disabled={!ready || playingBack}
+            onClick={commit}
+            style={{ width: '100%' }}
+          >
+            {/* The second timer bar came out in Build 6. Pressure near the
+                decision now lives *in* the decision: one element, two jobs. */}
+            <i
+              className={`drain ${warn ? 'warn' : ''}`}
+              style={{
+                width: `${100 - Math.max(0, Math.min(100, (clock / roundSeconds) * 100))}%`,
+              }}
+            />
+            <span style={{ position: 'relative' }}>
+              {playingBack ? (
+                <span className="thinking">
+                  THEY ARE PLANNING <i />
+                  <i />
+                  <i />
+                </span>
+              ) : (
+                'COMMIT'
+              )}
             </span>
-          ) : (
-            `COMMIT · ${clock}s`
-          )}
-        </button>
+          </button>
+        </WhyNot>
       </div>
 
-      {wipe && <div className="round-wipe" />}
+      {wipe && (
+        <>
+          <div className="round-wipe" />
+          <span className="round-stamp">Round {view.round}</span>
+        </>
+      )}
     </div>
   );
 }
@@ -655,8 +716,10 @@ function HullPips({
 }): ReactElement {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 14 }}>{who}</span>
-      <span style={{ display: 'flex', gap: 3 }}>
+      <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'var(--fs-fine)' }}>
+        {who}
+      </span>
+      <span style={{ display: 'flex', gap: 3 }} aria-label={`${value} of 9 hull cells`}>
         {Array.from({ length: 9 }, (_, i) => (
           <i
             key={i}
@@ -689,6 +752,8 @@ function specCells(spec: FireSpec, defId: string): CellIndex[] {
       return [spec.origin];
     case 'line':
       return [spec.origin];
+    case 'kiln':
+      return specCells(spec.inner, defId);
     default:
       return [];
   }

@@ -64,6 +64,13 @@ export interface ClientView {
     timerStrikes: number;
     draftedShips: string[];
     draftedCards: string[];
+    /**
+     * Your deployment commitment. A commitment is published precisely so the
+     * other side can hold you to it later, so putting it in the view leaks
+     * nothing — it is the one hidden-information screen that is meant to be
+     * looked at.
+     */
+    deployCommit: string | null;
     /** Your shot history on their board. */
     marks: Record<CellIndex, 'hit' | 'miss'>;
     knownShipCells: CellIndex[];
@@ -91,6 +98,8 @@ export interface ClientView {
     hullRemaining: number;
     /** How many cards they are holding. Public — you can see their hand. */
     cardCount: number;
+    /** Their deployment commitment. Public for the same reason yours is. */
+    deployCommit: string | null;
     connected: boolean;
   };
 
@@ -155,6 +164,7 @@ export function clientView(ms: MatchState, viewer: PlayerId): ClientView {
       timerStrikes: me.timerStrikes,
       draftedShips: me.draftedShips.slice(),
       draftedCards: me.draftedCards.slice(),
+      deployCommit: me.deployCommit,
       marks: { ...me.marks },
       knownShipCells: me.knownShipCells.slice(),
       hullRemaining: me.ships.reduce((n, s) => n + s.hits.filter((h) => !h).length, 0),
@@ -181,6 +191,7 @@ export function clientView(ms: MatchState, viewer: PlayerId): ClientView {
       marks: { ...foe.marks },
       hullRemaining: 9 - Object.values(me.marks).filter((m) => m === 'hit').length,
       cardCount: foe.hand.length,
+      deployCommit: foe.deployCommit,
       connected: foe.connected,
     },
 
