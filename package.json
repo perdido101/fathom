@@ -26,6 +26,7 @@
     "serve": "tsx scripts/serve.ts",
     "screens": "node scripts/screens.mjs",
     "clips": "node scripts/clips.mjs",
+    "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs",
     "inventory": "tsx scripts/ui-inventory.ts"
   },
   "dependencies": {
@@ -40,6 +41,8 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@fontsource/bricolage-grotesque": "^5.3.0",
+    "@fontsource/source-serif-4": "^5.3.0",
     "@types/node": "^22.7.5",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",

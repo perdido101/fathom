@@ -11,3 +11,8 @@ chain/program/target/
 # the web-sized set is worth keeping in the repository.
 screens/*.png
 ui-inventory.html
+
+# Regenerable with `npm run guide` — it inlines every screenshot as a data
+# URI, so it is 3.4 MB of duplicated bytes. The PDF it prints to is kept:
+# that is the handoff artefact, and it is what gets read offline.
+SCREEN_GUIDE.html
