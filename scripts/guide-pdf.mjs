@@ -39,14 +39,23 @@ for (const [sel, name] of [
   const el = await page.$(sel);
   if (el) await el.screenshot({ path: `sim-out/${name}.png` });
 }
-// Every pinned plate's figure, so a regeneration can be checked for pins
-// that landed on top of the thing they name — the failure mode this guide
-// has produced twice now.
+/*
+ * Every plate's figure, with its callout pins composited in.
+ *
+ * Two jobs. It lets a regeneration be checked for pins that landed on top of
+ * the thing they name — the failure mode this guide has produced twice now.
+ * And it is the only way the Word build can show a pinned screenshot at all:
+ * the pins are absolutely-positioned HTML, and Word has no equivalent, so it
+ * gets the composite rather than the bare capture.
+ */
 mkdirSync('sim-out/pins', { recursive: true });
-for (const fig of await page.$$('.plate.has-pins figure.shot')) {
+let figures = 0;
+for (const fig of await page.$$('.plate figure.shot')) {
   const id = await fig.evaluate((el) => el.closest('.plate').id);
   await fig.screenshot({ path: `sim-out/pins/${id}.png` });
+  figures++;
 }
+console.log(`${figures} plate figures captured into sim-out/pins/`);
 
 await page.emulateMedia({ media: 'print' });
 await page.pdf({

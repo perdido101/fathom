@@ -26,7 +26,8 @@
     "serve": "tsx scripts/serve.ts",
     "screens": "node scripts/screens.mjs",
     "clips": "node scripts/clips.mjs",
-    "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs",
+    "guide": "tsx scripts/screen-guide.ts && node scripts/guide-pdf.mjs && tsx scripts/guide-docx.ts",
+    "guide:docx": "tsx scripts/guide-docx.ts",
     "feedback": "tsx scripts/feedback-doc.ts",
     "inventory": "tsx scripts/ui-inventory.ts"
   },
@@ -49,6 +50,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.3.2",
+    "docx": "^9.7.1",
     "playwright": "^1.62.1",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
